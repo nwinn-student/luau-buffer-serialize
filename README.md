@@ -1,18 +1,12 @@
 # Buffer Serializer
 
-> Not stable yet
+> Design Stage: In Progress
 
-A first pass compressor for numbers, vectors, booleans, and collections thereof.  A second pass is recommended using some lossless compression module as no string manipulation is occurring within this module, except behind the scenes by the buffer library.  Custom types are permitted, and approaches can be added to suit usage cases.  I strongly recommend adding commonly used constants, as it converts X bytes or bits into just one byte.
+A first pass compressor for numbers, vectors, booleans, and collections thereof.  A second pass is recommended using some lossless compression module like Deflate/zlib.  Custom types are permitted, and approaches can be added to suit usage cases.
 
-There are 8 types that can be defined and 32 approaches for each type.  An approach can be a type, but it is usually a constant or it defines how to serialize the data.  The currently added types are `string`, `boolean`, `number`, `vector`, `collection`, with the remaining ones being `custom1`, `custom2`, and `support`, where support is supposed to be a type used to store 32 types if needed.
+There are 8 types that can be defined and 32 approaches for each type.  An approach can be a type, but it is usually a constant or it defines how to serialize the data.  The currently added types are `string`, `boolean`, `number`, `vector`, `table`, and `userdata`.  Where `userdata` is used to point to custom types.
 
-Numbers are not guaranteed to save bytes.**
-
-Vectors are not guaranteed to save bytes.**
-
-Collections are not guaranteed to save bytes.** (Mainly smaller or mixed types result in a loss).
-
-Strings are just collections using a specific format.  Vectors are just fixed size collections.
+String/number/vector/table are not guaranteed to save bytes, boolean is.
 
 Although there is no guarantee, the loss is incredibly minimal, usually a byte or two, which is made up by the saved bytes/bits.  The loss is minimal since there are multiple approaches at play that are compared to see which produces a cheaper output.
 
@@ -43,8 +37,6 @@ Storing data in a database, transmitting data to a shared source.
 - [X] char: Represents that the number is a char (2 bytes) (Takes 3 byte)
 - [X] three_byte: Represents that the number is 3 bytes (Takes 4 byte)
 - [X] int: Represents that the number is an int (4 bytes) (Takes 5 byte)
-- [ ] five_byte: Represents that the number is 5 bytes (Takes 6 byte) (Uncertain since it requires a hacky solution)
-- [ ] six_byte: Represents that the number is 6 bytes (Takes 7 byte) (Uncertain since it requires a hacky solution)
 - [X] float: Represents that the number is a float (4 bytes) (Takes 5 byte)
 - [X] double: Represents that the number is a double (8 bytes) (Takes 9 byte)
 
@@ -56,12 +48,10 @@ Uses 5 bits to represent the size of the number in bits (0 size means 0 and 1 si
 - [ ] bit_neg_float: Says to look at the next X bits for a negative float (Takes 1.875 to 5.625 bytes)
 - [ ] bit_float: Uses an extra bit to determine pos/neg (Takes 2 to 5.75 bytes)
 - [ ] bit_int_and_float: Uses two extra bits to determine float/int and pos/neg (Takes 1+0.875+0.25 = 2.125 to 1+0.875+4 = 5.875 bytes)
-- [ ] bit_all: Uses 3 extra bits to determine float/double/int/long and pos/neg, uncertain if converting double/long to int is worth it. (Takes 1+1+0.25 = 2.25 to 1+1+4 = 6 bytes)
 
  * Converting a float to an integer is necessary since we cannot easily save bits for floats by looking at the most significant bit as with ints.
- * I am using floor(log_2 (n + 1) * 2^25 ) to compress and 2^(n / 2^25) - 1 to expand, the accuracy hit should be minimal.
- * Changing 2^25 to 2^22 is used to compress/expand doubles into ints, however there is an accuracy hit.
- * Changing 2^25 to 2^26 is used to compress/expand longs into ints, however there is an even greater accuracy hit since longs are not supported within Luau.
+ * I am using round(log_2 (n + 1) * 2^25 ) to compress and 2^(n / 2^25) - 1 to expand. (2672/100000 inaccurate past e-6, so it will need to be fixed before it is used)
+ * 
 
 `vector`: (X, Y, Z), All of which are floats.
  - [X] zero: The constant `(0,0,0)` (Takes 1 byte)
@@ -92,3 +82,31 @@ Operations, so (x, x+a, x+a+b), if a=b then just plus, else plus_2
  - [ ] to_byte: TODO ()
  - [ ] to_char: TODO ()
  - [ ] bit_number: TODO ()
+
+```luau
+-- Used for string and table since they have variable sizes
+size = 0.625 + math.log(n, 2) / 8
+```
+
+`string`
+ - [ ] empty: The constant `""` (Takes 1 bytes)
+ - [ ] normal: Represents a string of length n (Takes 1+n+size = 1.625 + n + log_2(n)/8 bytes)
+
+`table`
+ - [ ] truthy: An array of length n with only true values. (Takes 1+size bytes)
+ - [ ] falsey: An array of length n with only false values.  (Takes 1+size bytes)
+ - [ ] boolean: An array of length n with only boolean values.  (Takes 1+n/8+size bytes)
+ - [ ] zero: An array of length n with only zero values.  (Takes 1+size bytes)
+ - [ ] one: An array of length n with only one values.  (Takes 1+size bytes)
+ - [ ] byte: An array of length n with only byte values.  (Takes 1+n+size bytes)
+ - [ ] char: An array of length n with only char values.  (Takes 1+2n+size bytes)
+ - [ ] tbyte: An array of length n with only tbyte values.  (Takes 1+3n+size bytes)
+ - [ ] int: An array of length n with only int values.  (Takes 1+4n+size bytes)
+ - [ ] float: An array of length n with only float values.  (Takes 1+4n+size bytes)
+ - [ ] double: An array of length n with only double values.  (Takes 1+8n+size bytes)
+ - [ ] number: An array of length n with only mixed number values.  (Takes 1+size+(n to 9n) bytes)
+ - [ ] bit_number: TODO
+ - [ ] vector: TODO
+ - [ ] string: TODO
+ - [ ] table: TODO
+ - [ ] any: TODO
