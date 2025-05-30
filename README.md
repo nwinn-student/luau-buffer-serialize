@@ -2,19 +2,15 @@
 
 > Design Stage: In Progress
 
-A first pass compressor for numbers, vectors, booleans, and collections thereof.  A second pass is recommended using some lossless compression module like Deflate/zlib.  Custom types are permitted, and approaches can be added to suit usage cases.
+Compression results are limited to the data format, so it must be optimized prior to any compression (to both save bytes and time).  Buffer Serializer is a first pass compressor for numbers, vectors, booleans, and collections thereof, with the intention to perform as a precursor lossless compression approach that prepares the data for a more thorough compression algorithm.  Lossless compression module like Deflate/zlib serve as the more thorough algorithms suited for a second pass.  Custom types are permitted, and approaches can be added to suit usage cases.
 
-There are 8 types that can be defined and 32 approaches for each type.  An approach can be a type, but it is usually a constant or it defines how to serialize the data.  The currently added types are `string`, `boolean`, `number`, `vector`, `table`, and `userdata`.  Where `userdata` is used to point to custom types.
-
-String/number/vector/table are not guaranteed to save bytes, boolean is.
-
-Although there is no guarantee, the loss is incredibly minimal, usually a byte or two, which is made up by the saved bytes/bits.  The loss is minimal since there are multiple approaches at play that are compared to see which produces a cheaper output.
+There are 8 types that can be defined and 32 approaches for each type.  An approach can be a type, but it is usually a constant or it defines how to serialize the data.  The currently added types are `string`, `boolean`, `number`, `vector`, `table`, and `userdata`.  Where `userdata` is used to point to custom types.  The two leftover slots can be used to define more custom types, but it will require manually modifying the modules.
 
 # Requirements
 Luau 0.670+
 
 # Usage Cases
-Storing data in a database, transmitting data to a shared source.
+Storing data in a database, transmitting data to a shared source, preparing the data for masking, encryption, or further compression.
 
 # Example Inputs/Outputs
 100 is a byte, so we can say it is numberType, byteApproach, 100.  Which totals 1+1=2 bytes (100 -> '100' is 3 bytes, so we save one).
@@ -44,14 +40,6 @@ Uses 5 bits to represent the size of the number in bits (0 size means 0 and 1 si
 - [ ] bit_pos_int: Says to look at the next X bits for a positive integer (Takes 1+0.625+0.25 = 1.875 to 1+0.625+4 = 5.625 bytes)
 - [ ] bit_neg_int: Says to look at the next X bits for a negative integer (Takes 1.875 to 5.625 bytes)
 - [ ] bit_int: Uses an extra bit to determine pos/neg (Takes 1+0.75+0.25 = 2 to 1+0.75+4 = 5.75 bytes)
-- [ ] bit_pos_float: Says to look at the next X bits for a positive float (I will be converting the float into an integer***) (Takes 1.875 to 5.625 bytes)
-- [ ] bit_neg_float: Says to look at the next X bits for a negative float (Takes 1.875 to 5.625 bytes)
-- [ ] bit_float: Uses an extra bit to determine pos/neg (Takes 2 to 5.75 bytes)
-- [ ] bit_int_and_float: Uses two extra bits to determine float/int and pos/neg (Takes 1+0.875+0.25 = 2.125 to 1+0.875+4 = 5.875 bytes)
-
- * Converting a float to an integer is necessary since we cannot easily save bits for floats by looking at the most significant bit as with ints.
- * I am using round(log_2 (n + 1) * 2^25 ) to compress and 2^(n / 2^25) - 1 to expand. (2672/100000 inaccurate past e-6, so it will need to be fixed before it is used)
- * 
 
 `vector`: (X, Y, Z), All of which are floats.
  - [X] zero: The constant `(0,0,0)` (Takes 1 byte)
@@ -108,5 +96,6 @@ size = 0.625 + math.log(n, 2) / 8
  - [ ] bit_number: TODO
  - [ ] vector: TODO
  - [ ] string: TODO
- - [ ] table: TODO
- - [ ] any: TODO
+ - [ ] dictionary: A dictionary of length n with any key/value pairs.  (Takes 1+size+TODO bytes)
+ - [ ] table: An array of length n with only table values.  (Takes 1+size+tableBytes bytes)
+ - [ ] any: An mixed table of length n with any key/value pairs.  (Takes 1+size+TODO bytes)
