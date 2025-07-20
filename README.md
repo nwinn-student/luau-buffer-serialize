@@ -72,38 +72,30 @@ size = 0.625 + math.log(n, 2) / 8
  * 3-8 = buffer = 6
 
 ### String
-9-18 = string = 10
-
-19-82 = custom string = 64 (constants)
-
-83-87 = next_string = 5 (entire next byte for string constants)
+ * 9-18 = string = 10
+ * 19-82 = custom string = 64 (constants)
+ * 83-87 = next_string = 5 (entire next byte for string constants)
 
 ### Number
-88-99 = number = 12
-
-100-123 = custom number = 24 (constants)
-
-124-127 = next_num = 4 (entire next byte is for number constants)
+ * 88-99 = number = 12
+ * 100-123 = custom number = 24 (constants)
+ * 124-127 = next_num = 4 (entire next byte is for number constants)
 
 ### Vector
-128-149 = vector = 22
-
-150-173 = custom vector = 24 (constants)
-
-174-177 = next_vec = 4 (entire next byte is for vector constants)
+ * 128-149 = vector = 22
+ * 150-173 = custom vector = 24 (constants)
+ * 174-177 = next_vec = 4 (entire next byte is for vector constants)
 
 ### Table
-178-205 = table = 28
+ * 178-205 = table = 28
 
 ### Userdata
-206-211 = userdata = 6 (custom approaches)
-
-212-227 = custom userdata = 16 (constants)
-
-228-231 = next_ud = 4 (entire next byte is for userdata constants)
+ * 206-211 = userdata = 6 (custom approaches)
+ * 212-227 = custom userdata = 16 (constants)
+ * 228-231 = next_ud = 4 (entire next byte is for userdata constants)
 
 ### Future Approaches (just in case)
-232-255 = future = 24
+ * 232-255 = future = 24
 
 Max String Constant Count: 1344
 Max Number Constant Count: 1048
