@@ -44,6 +44,7 @@ Storing data in a database, transmitting data to a shared source, preparing the 
  - [X] z_axis: The constant `(0,0,1)` (Takes 1 byte)
  - [X] xy_axis: The constant `(1,1,0)` (Takes 1 byte)
  - [X] yz_axis: The constant `(0,1,1)` (Takes 1 byte)
+ - [X] xz_axis: The constant `(1,0,1)` (Takes 1 byte)
  - [X] byte: Represents that all three values are bytes (Takes 4 byte)
  - [X] char: Represents that all three values are chars (Takes 7 byte)
  - [X] three_byte: Represents that all three values are three_bytes (Takes 10 byte)
@@ -63,4 +64,33 @@ size = 0.625 + math.log(n, 2) / 8
  - [ ] empty: The constant `""` (Takes 1 byte)
 
 `table`
- - [ ] empty table: The constant ```luau {}``` (Takes 1 byte)
+ - [ ] empty table: The constant ```{}``` (Takes 1 byte)
+
+## Byte Specification
+0 = nil / function / thread = 1
+1-2 = boolean = 2
+3-8 = buffer = 6
+9-18 = string = 10
+19-82 = custom string = 64 (constants)
+83-87 = next_string = 5 (entire next byte for string constants)
+
+88-99 = number = 12
+100-123 = custom number = 24 (constants)
+124-127 = next_num = 4 (entire next byte is for number constants)
+
+128-149 = vector = 22
+150-173 = custom vector = 24 (constants)
+174-177 = next_vec = 4 (entire next byte is for vector constants)
+
+178-205 = table = 28
+
+206-211 = userdata = 6 (custom approaches)
+212-227 = custom userdata = 16 (constants)
+228-231 = next_ud = 4 (entire next byte is for userdata constants)
+
+232-255 = future = 24
+
+Max String Constant Count: 1344
+Max Number Constant Count: 1048
+Max Vector Constant Count: 1048
+Max Userdata Constant Count: 1040
