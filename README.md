@@ -67,11 +67,9 @@ size = 0.625 + math.log(n, 2) / 8
  - [ ] empty table: The constant ```{}``` (Takes 1 byte)
 
 ## Byte Specification
-0 = nil / function / thread = 1
-
-1-2 = boolean = 2
-
-3-8 = buffer = 6
+ * 0 = nil / function / thread = 1
+ * 1-2 = boolean = 2
+ * 3-8 = buffer = 6
 
 ### String
 9-18 = string = 10
