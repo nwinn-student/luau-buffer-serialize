@@ -36,11 +36,6 @@ Storing data in a database, transmitting data to a shared source, preparing the 
 - [X] float: Represents that the number is a float (4 bytes) (Takes 5 byte)
 - [X] double: Represents that the number is a double (8 bytes) (Takes 9 byte)
 
-Uses 5 bits to represent the size of the number in bits (0 size means 0 and 1 size means 1) (May not be used in `number`, but in `vector`, `collection`, `string`, uncertain.)
-- [ ] bit_pos_int: Says to look at the next X bits for a positive integer (Takes 1+0.625+0.25 = 1.875 to 1+0.625+4 = 5.625 bytes)
-- [ ] bit_neg_int: Says to look at the next X bits for a negative integer (Takes 1.875 to 5.625 bytes)
-- [ ] bit_int: Uses an extra bit to determine pos/neg (Takes 1+0.75+0.25 = 2 to 1+0.75+4 = 5.75 bytes)
-
 `vector`: (X, Y, Z), All of which are floats.
  - [X] zero: The constant `(0,0,0)` (Takes 1 byte)
  - [X] one: The constant `(1,1,1)` (Takes 1 byte)
@@ -59,43 +54,13 @@ Uses 5 bits to represent the size of the number in bits (0 size means 0 and 1 si
  - [X] scalar_three_byte: Represents that the vector is a three_byte multiple of one of the constants (Takes 1+3+1 = 5 bytes)
  - [X] scalar_float: Represents that the vector is a float multiple of one of the constants (Takes 1+4+1 = 6 bytes)
 
-Operations, so (x, x+a, x+a+b), if a=b then just plus, else plus_2
- - [X] plus: TODO (Takes 1+1+1 = 3 to 1+5+5 = 11 bytes)
- - [X] times: TODO (Takes 3 to 11 bytes)
- - [X] divide: TODO (Takes 3 to 11 bytes)
- - [X] plus_2: TODO (Takes 1+1+1+1 = 4 to 1+5+5+5 = 16 bytes)
- - [X] times_2: TODO (Takes 4 to 16 bytes)
- - [X] divide_2: TODO (Takes 4 to 16 bytes)
- - [ ] dot: TODO (not dot product) ()
- - [ ] to_byte: TODO ()
- - [ ] to_char: TODO ()
- - [ ] bit_number: TODO ()
-
 ```luau
 -- Used for string and table since they have variable sizes
 size = 0.625 + math.log(n, 2) / 8
 ```
 
 `string`
- - [ ] empty: The constant `""` (Takes 1 bytes)
- - [ ] normal: Represents a string of length n (Takes 1+n+size = 1.625 + n + log_2(n)/8 bytes)
+ - [ ] empty: The constant `""` (Takes 1 byte)
 
 `table`
- - [ ] truthy: An array of length n with only true values. (Takes 1+size bytes)
- - [ ] falsey: An array of length n with only false values.  (Takes 1+size bytes)
- - [ ] boolean: An array of length n with only boolean values.  (Takes 1+n/8+size bytes)
- - [ ] zero: An array of length n with only zero values.  (Takes 1+size bytes)
- - [ ] one: An array of length n with only one values.  (Takes 1+size bytes)
- - [ ] byte: An array of length n with only byte values.  (Takes 1+n+size bytes)
- - [ ] char: An array of length n with only char values.  (Takes 1+2n+size bytes)
- - [ ] tbyte: An array of length n with only tbyte values.  (Takes 1+3n+size bytes)
- - [ ] int: An array of length n with only int values.  (Takes 1+4n+size bytes)
- - [ ] float: An array of length n with only float values.  (Takes 1+4n+size bytes)
- - [ ] double: An array of length n with only double values.  (Takes 1+8n+size bytes)
- - [ ] number: An array of length n with only mixed number values.  (Takes 1+size+(n to 9n) bytes)
- - [ ] bit_number: TODO
- - [ ] vector: TODO
- - [ ] string: TODO
- - [ ] dictionary: A dictionary of length n with any key/value pairs.  (Takes 1+size+TODO bytes)
- - [ ] table: An array of length n with only table values.  (Takes 1+size+tableBytes bytes)
- - [ ] any: An mixed table of length n with any key/value pairs.  (Takes 1+size+TODO bytes)
+ - [ ] empty table: The constant ```luau {}``` (Takes 1 byte)
