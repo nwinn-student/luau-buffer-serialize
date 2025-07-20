@@ -110,8 +110,8 @@ All approaches that take more than one byte are specified, alongside how many by
 - [ ] equal_to_nth_ancestor [195]: 
 - [ ] equal_to_nth_existing_1 [196]: 
 - [ ] equal_to_nth_existing_2 [197]: 
-- [ ] array_same_value [198]:  (uses a3, only worth it if size is 2+)
-- [ ] same_value [199]: (doesnt matter dict or not uses a3d3, first is size then is value then is keys)
+- [ ] array_same_value [198]:  
+- [ ] same_value [199]: 
 
 
 ## Byte Specification
