@@ -21,6 +21,21 @@ Storing data in a database, transmitting data to a shared source, preparing the 
 
 (1.5, 2.5, 0.5) is a vector, so we can say it is vectorType, floatApproach, 1.5, 2.5, 0.5.  Which totals 1+4+4+4=13 bytes ((1.5,2.5,0.5) -> '(1.5,2.5,0.5)' is 13 bytes, so we save none).
 
+# Constant Amount Supported
+| Type | Amount | Cost |
+| ---- | ---- | ---- |
+| `string` | 64 | 1 byte |
+| `number` | 24 | 1 byte |
+| `vector` | 24 | 1 byte |
+| `userdata` | 16 | 1 byte |
+| ---- | ---- | ---- |
+| `string` | 1280 | 2 bytes |
+| `number` | 1024 | 2 bytes |
+| `vector` | 1024 | 2 bytes |
+| `userdata` | 1024 | 2 bytes |
+
+
+
 # Technical Details
 All approaches that take more than one byte are specified, alongside how many bytes they may take.
 
@@ -89,29 +104,32 @@ All approaches that take more than one byte are specified, alongside how many by
 - [ ] UNKNOWN [147]: An approach that may be used in the future.
 - [ ] UNKNOWN [148]: An approach that may be used in the future.
 
-`table`
+`table` [**Subject to change**]
+Definition of array used: An array is a list of elements from index 1 to n where there exist no gaps between the integers 1 and n.
+
 - [ ] empty table [178]: The constant ```{}```
-- [ ] array_one [179]: 
-- [ ] array_two [180]: 
-- [ ] array_three [181]: 
-- [ ] dict_1 [182]: 
-- [ ] dict_2 [183]: 
-- [ ] dict_3 [184]: 
-- [ ] a1d1 [185]: 
-- [ ] a1d2 [186]: 
-- [ ] a1d3 [187]: 
-- [ ] a2d1 [188]: 
-- [ ] a2d2 [189]: 
-- [ ] a2d3 [190]: 
-- [ ] a3d1 [191]: 
-- [ ] a3d2 [192]: 
-- [ ] a3d3 [193]:
-- [ ] equal_to_parent [194]:
-- [ ] equal_to_nth_ancestor [195]: 
-- [ ] equal_to_nth_existing_1 [196]: 
-- [ ] equal_to_nth_existing_2 [197]: 
-- [ ] array_same_value [198]:  
-- [ ] same_value [199]: 
+- [ ] array_one [179]: Represents an array whose length can be represented in a byte
+- [ ] array_two [180]: Represents an array whose length can be represented in a char
+- [ ] array_three [181]: Represents an array whose length can be represented in three bytes
+- [ ] dict_one [182]: Represents a dictionary whose length can be represented in a byte
+- [ ] dict_two [183]: Represents a dictionary whose length can be represented in a char
+- [ ] dict_three [184]: Represents a dictionary whose length can be represented in three bytes
+
+The below are ONLY worth it to save space in the buffer by bypassing the array indeces.
+- [ ] a1d1 [185]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another byte
+- [ ] a1d2 [186]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another char
+- [ ] a1d3 [187]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another three bytes
+- [ ] a2d1 [188]: Represents a mixed table whose array part can be represented using a char and dictionary part using another byte
+- [ ] a2d2 [189]: Represents a mixed table whose array part can be represented using a char and dictionary part using another char
+- [ ] a2d3 [190]: Represents a mixed table whose array part can be represented using a char and dictionary part using another three bytes
+- [ ] a3d1 [191]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another byte
+- [ ] a3d2 [192]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another char
+- [ ] a3d3 [193]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another three bytes
+
+Useful to allow for tables to store themselves, avoiding recursive issues.
+- [ ] equal_to_parent [194]: Represents that the table is equivalent in reference to the parent table
+- [ ] equal_to_existing_table [195]: Two bytes of similar tables
+(Do we want to have equal_to_existing_value?  It can be done in the higher compression stage, but if it is fast enough it could be done here.)
 
 
 ## Byte Specification
@@ -144,8 +162,3 @@ All approaches that take more than one byte are specified, alongside how many by
 
 ### Future Approaches (just in case)
  * 232-255 = future = 24
-
- - Max String Constant Count: 1344
- - Max Number Constant Count: 1048
- - Max Vector Constant Count: 1048
- - Max Userdata Constant Count: 1040
