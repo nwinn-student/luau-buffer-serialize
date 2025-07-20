@@ -12,14 +12,17 @@ Luau 0.670+
 # Usage Cases
 Storing data in a database, transmitting data to a shared source, preparing the data for masking, encryption, or further compression.
 
-# Example Inputs/Outputs
-100 is a byte, so we can say it is numberType, byteApproach, 100.  Which totals 1+1=2 bytes (100 -> '100' is 3 bytes, so we save one).
+# Example
+```luau
+-- Serialize
+local data = "Hello World!"
+local output = BufferSerialize.serialize(data)
 
-15.5 is a float, so we can say it is numberType, floatApproach, 15.5.  Which totals 1+4=5 bytes (15.5 -> '15.5' is 4 bytes, so we lose one).
+-- Deserialize
+local input = BufferSerialize.deserialize(output)
 
-(0,1,5) is a vector, so we can say it is vectorType, byteApproach, 0, 1, 5.  Which totals 1+1+1+1=4 bytes ((0,1,5) -> '(0,1,5)' is 7 bytes, so we save three).
-
-(1.5, 2.5, 0.5) is a vector, so we can say it is vectorType, floatApproach, 1.5, 2.5, 0.5.  Which totals 1+4+4+4=13 bytes ((1.5,2.5,0.5) -> '(1.5,2.5,0.5)' is 13 bytes, so we save none).
+print(`Initial Data: {data}, Final Data: {input}`)
+```
 
 # Constant Amount Supported
 | Type | Amount | Cost |
@@ -35,8 +38,8 @@ Storing data in a database, transmitting data to a shared source, preparing the 
 | `userdata` | 1024 | 2 bytes |
 
 
-
 # Technical Details
+
 All approaches that take more than one byte are specified, alongside how many bytes they may take.
 
 `nil`
@@ -130,35 +133,3 @@ Useful to allow for tables to store themselves, avoiding recursive issues.
 - [ ] equal_to_parent [194]: Represents that the table is equivalent in reference to the parent table
 - [ ] equal_to_existing_table [195]: Two bytes of similar tables
 (Do we want to have equal_to_existing_value?  It can be done in the higher compression stage, but if it is fast enough it could be done here.)
-
-
-## Byte Specification
- * 0 = nil / function / thread = 1
- * 1-2 = boolean = 2
- * 3-8 = buffer = 6
-
-### String
- * 9-18 = string = 10
- * 19-82 = custom string = 64 (constants)
- * 83-87 = next_string = 5 (entire next byte for string constants)
-
-### Number
- * 88-99 = number = 12
- * 100-123 = custom number = 24 (constants)
- * 124-127 = next_num = 4 (entire next byte is for number constants)
-
-### Vector
- * 128-149 = vector = 22
- * 150-173 = custom vector = 24 (constants)
- * 174-177 = next_vec = 4 (entire next byte is for vector constants)
-
-### Table
- * 178-205 = table = 28
-
-### Userdata
- * 206-211 = userdata = 6 (custom approaches)
- * 212-227 = custom userdata = 16 (constants)
- * 228-231 = next_ud = 4 (entire next byte is for userdata constants)
-
-### Future Approaches (just in case)
- * 232-255 = future = 24
