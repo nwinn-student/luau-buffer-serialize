@@ -1,18 +1,29 @@
-# Buffer Serializer
+# Buffer Serializer {#buffer-serializer}
 
 > Design Stage: In Progress
+
+#### Table of Contents
+- [Purpose](#purpose)
+- [Requirements](#requirements)
+- [Usage Cases](#usage-cases)
+- [Example](#example)
+- [Constant Amount Supported](#constant-amount-supported)
+- [Technical Details](#technical-details)
+
+
+## Purpose {#purpose}
 
 Compression results are limited to the data format, so it must be optimized prior to any compression (to both save bytes and time).  Buffer Serializer is a first pass compressor for numbers, vectors, booleans, and collections thereof, with the intention to perform as a precursor lossless compression approach that prepares the data for a more thorough compression algorithm.  Lossless compression module like Deflate/zlib serve as the more thorough algorithms suited for a second pass.  Custom types are permitted, and approaches can be added to suit usage cases.
 
 The currently supported types are `nil`, `string`, `boolean`, `buffer`, `number`, `vector`, `table`, and `userdata`.  Where `userdata` is used to point to custom types.
 
-# Requirements
+## Requirements {#requirements}
 Luau 0.670+
 
-# Usage Cases
+## Usage Cases {#usage-cases}
 Storing data in a database, transmitting data to a shared source, preparing the data for masking, encryption, or further compression.
 
-# Example
+## Example {#example}
 ```luau
 -- Serialize
 local data = "Hello World!"
@@ -24,7 +35,7 @@ local input = BufferSerialize.deserialize(output)
 print(`Initial Data: {data}, Final Data: {input}`)
 ```
 
-# Constant Amount Supported
+## Constant Amount Supported {#constant-amount-supported}
 | Type | Amount | Cost |
 | ---- | ---- | ---- |
 | `string` | 64 | 1 byte |
@@ -38,7 +49,7 @@ print(`Initial Data: {data}, Final Data: {input}`)
 | `userdata` | 1024 | 2 bytes |
 
 
-# Technical Details
+## Technical Details {#technical-details}
 
 All approaches that take more than one byte are specified, alongside how many bytes they may take.
 
