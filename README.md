@@ -13,15 +13,22 @@
 
 ## Purpose
 
-Compression results are limited to the data format, so it must be optimized prior to any compression (to both save bytes and time).  Buffer Serializer is a first pass compressor for numbers, vectors, booleans, and collections thereof, with the intention to perform as a precursor lossless compression approach that prepares the data for a more thorough compression algorithm.  Lossless compression module like Deflate/zlib serve as the more thorough algorithms suited for a second pass.  Custom types are permitted, and approaches can be added to suit usage cases.
-
-The currently supported types are `nil`, `string`, `boolean`, `buffer`, `number`, `vector`, `table`, and `userdata`.  Where `userdata` is used to point to custom types.
+BufferSerializer is a serializer for complex data structures with the capability to compress known constants whose goal tredges the line of speed and effective output size.  
+  
+The currently supported types are `nil`, `string`, `boolean`, `buffer`, `number`, `vector`, `table`, and `userdata`.
 
 ## Requirements
-Luau 0.670+
+[Luau 0.670+](https://github.com/luau-lang/luau/releases)
 
 ## Usage Cases
-Storing data in a database, transmitting data to a shared source, preparing the data for masking, encryption, or further compression.
+A user may need to prepare data for storing in a database, they will use BufferSerializer to convert the table with the data into a buffer, then passing the buffer to a lossless compressor module such as [LibDeflate](https://github.com/safeteeWow/LibDeflate) and storing the value.
+
+Another user may need to pass data from one server to another, they will use BufferSerializer to convert the data into a buffer, then a string, passing the Luau string to the other server to be deserialized and understood.
+
+Another user may need to serialize a table that contains itself, as they wish to pass classes and objects across the network.  BufferSerializer can be used to convert the table into a buffer, which is then converted into a string and passed across the network.
+
+A user with an extension of Luau may wish to have their userdata objects specially handled, using BufferSerializer, they create a function to handle userdata objects that are not constants and use BufferSerializer to convert the userdata's information into understandable information.  When reading the information, another specified function is called to specially read the userdata.
+
 
 ## Example
 ```luau
@@ -103,44 +110,45 @@ All approaches that take more than one byte are specified, alongside how many by
 - [ ] xy_axis [133]: The constant `(1,1,0)`
 - [ ] xz_axis [134]: The constant `(1,0,1)`
 - [ ] yz_axis [135]: The constant `(0,1,1)`
-- [ ] byte [136]: Represents that all three values are bytes (Takes ?? byte)
-- [ ] char [137]: Represents that all three values are chars (Takes ?? byte)
-- [ ] three_byte [138]: Represents that all three values are three_bytes (Takes ?? byte)
-- [ ] float [139]: Represents that all three values are floats (Takes ?? byte, worst case)
-- [ ] number [140]: Represents that at least one of the values is of a different type (Takes ?? to ?? bytes)
-- [ ] scalar_byte [141]: Represents that the vector is a byte multiple of one of the constants (Takes ?? bytes)
-- [ ] scalar_char [142]: Represents that the vector is a char multiple of one of the constants (Takes ?? bytes)
-- [ ] scalar_three_byte [143]: Represents that the vector is a three_byte multiple of one of the constants (Takes ?? bytes)
-- [ ] scalar_float [144]: Represents that the vector is a float multiple of one of the constants (Takes 1+4+1 = 6 bytes)
-- [ ] scalar_number [145]: Represents that the vector is a number multiple of one of the constants (Takes ?? bytes)
+- [ ] byte [136]: Represents that all three values are bytes (Takes 4 bytes)
+- [ ] char [137]: Represents that all three values are chars (Takes 4 to 7 bytes) (best case is that the numbers are constants)
+- [ ] three_byte [138]: Represents that all three values are three_bytes (Takes 4 to 10 bytes) (best case is that the numbers are constants)
+- [ ] float [139]: Represents that all three values are floats (Takes 4 to 13 bytes, worst case) (best case is that the numbers are constants)
+- [ ] number [140]: Represents that at least one of the values is of a different type (Takes 4 to 15 bytes) (best case is that the numbers are constants)
+- [ ] scalar_byte [141]: Represents that the vector is a byte multiple of one of the constants (Takes 3 bytes)
+- [ ] scalar_char [142]: Represents that the vector is a char multiple of one of the constants (Takes 4 bytes)
+- [ ] scalar_three_byte [143]: Represents that the vector is a three_byte multiple of one of the constants (Takes 5 bytes)
+- [ ] scalar_float [144]: Represents that the vector is a float multiple of one of the constants (Takes 6 bytes)
+- [ ] scalar_number [145]: Represents that the vector is a number multiple of one of the constants where the number is also a constant (Takes 3 to 4 bytes)
 - [ ] UNKNOWN [145]: An approach that may be used in the future.
 - [ ] UNKNOWN [146]: An approach that may be used in the future.
 - [ ] UNKNOWN [147]: An approach that may be used in the future.
 - [ ] UNKNOWN [148]: An approach that may be used in the future.
 
-`table` [**Subject to change**]
-Definition of array used: An array is a list of elements from index 1 to n where there exist no gaps between the integers 1 and n.
+`table` [**Subject to change**]  
+Definition of array used: An array is a list of elements from index 1 to n where there exist no gaps between the integers 1 and n.  
+The arraySize variable represents the amount of bytes used to store all of the values within the array part.  The minimum value for arraySize is arrayLen, but such an occurance is highly unlikely.  
+The dictSize variable represents the amount of bytes used to store all of the keys and values within the dictionary part.  The minimum value for dictSize is dictLen * 2, but such an occurance is highly unlikely.
 
 - [ ] empty table [178]: The constant ```{}```
-- [ ] array_one [179]: Represents an array whose length can be represented in a byte
-- [ ] array_two [180]: Represents an array whose length can be represented in a char
-- [ ] array_three [181]: Represents an array whose length can be represented in three bytes
-- [ ] dict_one [182]: Represents a dictionary whose length can be represented in a byte
-- [ ] dict_two [183]: Represents a dictionary whose length can be represented in a char
-- [ ] dict_three [184]: Represents a dictionary whose length can be represented in three bytes
+- [ ] array_one [179]: Represents an array whose length can be represented in a byte (Takes 2 + arraySize bytes)
+- [ ] array_two [180]: Represents an array whose length can be represented in a char (Takes 3 + arraySize bytes)
+- [ ] array_three [181]: Represents an array whose length can be represented in three bytes (Takes 4 + arraySize bytes)
+- [ ] dict_one [182]: Represents a dictionary whose length can be represented in a byte (Takes 2 + dictSize bytes)
+- [ ] dict_two [183]: Represents a dictionary whose length can be represented in a char (Takes 3 + dictSize bytes)
+- [ ] dict_three [184]: Represents a dictionary whose length can be represented in three bytes (Takes 4 + dictSize bytes)
 
 The below are ONLY worth it to save space in the buffer by bypassing the array indeces.
-- [ ] a1d1 [185]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another byte
-- [ ] a1d2 [186]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another char
-- [ ] a1d3 [187]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another three bytes
-- [ ] a2d1 [188]: Represents a mixed table whose array part can be represented using a char and dictionary part using another byte
-- [ ] a2d2 [189]: Represents a mixed table whose array part can be represented using a char and dictionary part using another char
-- [ ] a2d3 [190]: Represents a mixed table whose array part can be represented using a char and dictionary part using another three bytes
-- [ ] a3d1 [191]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another byte
-- [ ] a3d2 [192]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another char
-- [ ] a3d3 [193]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another three bytes
+- [ ] a1d1 [185]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another byte (Takes 3 + arraySize + dictSize bytes)
+- [ ] a1d2 [186]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another char (Takes 4 + arraySize + dictSize bytes)
+- [ ] a1d3 [187]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another three bytes (Takes 5 + arraySize + dictSize bytes)
+- [ ] a2d1 [188]: Represents a mixed table whose array part can be represented using a char and dictionary part using another byte (Takes 4 + arraySize + dictSize bytes)
+- [ ] a2d2 [189]: Represents a mixed table whose array part can be represented using a char and dictionary part using another char (Takes 5 + arraySize + dictSize bytes)
+- [ ] a2d3 [190]: Represents a mixed table whose array part can be represented using a char and dictionary part using another three bytes (Takes 6 + arraySize + dictSize bytes)
+- [ ] a3d1 [191]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another byte (Takes 5 + arraySize + dictSize bytes)
+- [ ] a3d2 [192]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another char (Takes 6 + arraySize + dictSize bytes)
+- [ ] a3d3 [193]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
 
-Useful to allow for tables to store themselves, avoiding recursive issues.
+Useful to allow for tables to store themselves.
 - [ ] equal_to_parent [194]: Represents that the table is equivalent in reference to the parent table
-- [ ] equal_to_existing_table [195]: Two bytes of similar tables
-(Do we want to have equal_to_existing_value?  It can be done in the higher compression stage, but if it is fast enough it could be done here.)
+- [ ] equal_to_existing_value [195]: Two bytes of similar values (Takes 3 bytes)
