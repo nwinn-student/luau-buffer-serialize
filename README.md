@@ -115,11 +115,11 @@ All approaches that take more than one byte are specified, alongside how many by
 - [ ] three_byte [138]: All three values are three_bytes (Takes 4 to 10 bytes)
 - [ ] float [139]: All three values are floats (Takes 4 to 13 bytes, worst case) 
 - [ ] number [140]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
-- [ ] scalar_byte [141]: The vector is a byte multiple of one of the constants (Takes 3 bytes)
-- [ ] scalar_char [142]: The vector is a char multiple of one of the constants (Takes 4 bytes)
-- [ ] scalar_three_byte [143]: The vector is a three_byte multiple of one of the constants (Takes 5 bytes)
-- [ ] scalar_float [144]: The vector is a float multiple of one of the constants (Takes 6 bytes)
-- [ ] scalar_number [145]: The vector is a number multiple of one of the constants where the number is also a constant (Takes 3 to 4 bytes)
+- [ ] scalar_byte [141]: The vector is a byte multiple of an above constant vector (Takes 3 bytes)
+- [ ] scalar_char [142]: The vector is a char multiple of an above constant vector (Takes 4 bytes)
+- [ ] scalar_three_byte [143]: The vector is a three_byte multiple of an above constant vector (Takes 5 bytes)
+- [ ] scalar_float [144]: The vector is a float multiple of an above constant vector (Takes 6 bytes)
+- [ ] scalar_number [145]: The vector is a constant multiple of an above constant vector (Takes 3 to 4 bytes)
 - [ ] UNKNOWN [145]: An approach that may be used in the future.
 - [ ] UNKNOWN [146]: An approach that may be used in the future.
 - [ ] UNKNOWN [147]: An approach that may be used in the future.
