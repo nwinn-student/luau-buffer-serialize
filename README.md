@@ -69,20 +69,20 @@ All approaches that take more than one byte are specified, alongside how many by
 
 `buffer`
 - [X] empty [3]: The empty buffer
-- [X] byte [4]: Represents that a buffer has a length that can be represented as a byte (Takes 2 + bufferLen bytes)
-- [X] char [5]: Represents that a buffer has a length that can be represented as a char (Takes 3 + bufferLen bytes)
-- [X] three_byte [6]: Represents that a buffer has a length that can be represented in 3 bytes (Takes 4 + bufferLen bytes)
-- [X] int [7]: Represents that a buffer has a length that can be represented as an int (Takes 5 + bufferLen bytes)
+- [X] byte [4]: A buffer has a length that can be represented as a byte (Takes 2 + bufferLen bytes)
+- [X] char [5]: A buffer has a length that can be represented as a char (Takes 3 + bufferLen bytes)
+- [X] three_byte [6]: A buffer has a length that can be represented in 3 bytes (Takes 4 + bufferLen bytes)
+- [X] int [7]: A buffer has a length that can be represented as an int (Takes 5 + bufferLen bytes)
 - [ ] UNKNOWN [8]: An approach that may be used in the future.
 
 `string`
 - [X] empty [9]: The constant `""`
-- [X] byte [10]: Represents that a string has a length that can be represented as a byte (Takes 2 + strLen bytes)
-- [X] char [11]: Represents that a string has a length that can be represented as a char (Takes 3 + strLen bytes)
-- [X] three_byte [12]: Represents that a string has a length that can be represented in 3 bytes (Takes 4 + strLen bytes)
-- [X] int [13]: Represents that a string has a length that can be represented as an int (Takes 5 + strLen bytes)
-- [ ] concatcn [14]: Concatenation of a constant and a number, support of strings up to 32 characters (Takes 3-5 bytes)
-- [ ] concatnc [15]: Concatenation of a number and a constant, support of strings up to 32 characters (Takes 3-5 bytes)
+- [X] byte [10]: A string has a length that can be represented as a byte (Takes 2 + strLen bytes)
+- [X] char [11]: A string has a length that can be represented as a char (Takes 3 + strLen bytes)
+- [X] three_byte [12]: A string has a length that can be represented in 3 bytes (Takes 4 + strLen bytes)
+- [X] int [13]: A string has a length that can be represented as an int (Takes 5 + strLen bytes)
+- [ ] concatcn [14]: Concatenation of a constant and a number (Takes 3-5 bytes, 32- chars)
+- [ ] concatnc [15]: Concatenation of a number and a constant (Takes 3-5 bytes, 32- chars)
 - [ ] UNKNOWN [16]: An approach that may be used in the future.
 - [ ] UNKNOWN [17]: An approach that may be used in the future.
 - [ ] UNKNOWN [18]: An approach that may be used in the future.
@@ -90,12 +90,12 @@ All approaches that take more than one byte are specified, alongside how many by
 `number`
 - [X] zero [88]: The constant `0`
 - [X] one [89]: The constant `1`
-- [X] byte [90]: Represents that the number is a byte (Takes 2 byte)
-- [X] char [91]: Represents that the number is a char (2 bytes) (Takes 3 byte)
-- [X] three_byte [92]: Represents that the number is 3 bytes (Takes 4 byte)
-- [X] int [93]: Represents that the number is an int (4 bytes) (Takes 5 byte)
-- [X] float [94]: Represents that the number is a float (4 bytes) (Takes 5 byte)
-- [X] double [95]: Represents that the number is a double (8 bytes) (Takes 9 byte)
+- [X] byte [90]: The number is a byte (Takes 2 byte)
+- [X] char [91]: The number is a char (2 bytes) (Takes 3 byte)
+- [X] three_byte [92]: The number is 3 bytes (Takes 4 byte)
+- [X] int [93]: The number is an int (4 bytes) (Takes 5 byte)
+- [X] float [94]: The number is a float (4 bytes) (Takes 5 byte)
+- [X] double [95]: The number is a double (8 bytes) (Takes 9 byte)
 - [ ] UNKNOWN [96]: An approach that may be used in the future, maybe five_byte.
 - [ ] UNKNOWN [97]: An approach that may be used in the future, maybe six_byte.
 - [ ] UNKNOWN [98]: An approach that may be used in the future.
@@ -110,16 +110,16 @@ All approaches that take more than one byte are specified, alongside how many by
 - [ ] xy_axis [133]: The constant `(1,1,0)`
 - [ ] xz_axis [134]: The constant `(1,0,1)`
 - [ ] yz_axis [135]: The constant `(0,1,1)`
-- [ ] byte [136]: Represents that all three values are bytes (Takes 4 bytes)
-- [ ] char [137]: Represents that all three values are chars (Takes 4 to 7 bytes) (best case is that the numbers are constants)
-- [ ] three_byte [138]: Represents that all three values are three_bytes (Takes 4 to 10 bytes) (best case is that the numbers are constants)
-- [ ] float [139]: Represents that all three values are floats (Takes 4 to 13 bytes, worst case) (best case is that the numbers are constants)
-- [ ] number [140]: Represents that at least one of the values is of a different type (Takes 4 to 15 bytes) (best case is that the numbers are constants)
-- [ ] scalar_byte [141]: Represents that the vector is a byte multiple of one of the constants (Takes 3 bytes)
-- [ ] scalar_char [142]: Represents that the vector is a char multiple of one of the constants (Takes 4 bytes)
-- [ ] scalar_three_byte [143]: Represents that the vector is a three_byte multiple of one of the constants (Takes 5 bytes)
-- [ ] scalar_float [144]: Represents that the vector is a float multiple of one of the constants (Takes 6 bytes)
-- [ ] scalar_number [145]: Represents that the vector is a number multiple of one of the constants where the number is also a constant (Takes 3 to 4 bytes)
+- [ ] byte [136]: All three values are bytes (Takes 4 bytes)
+- [ ] char [137]: All three values are chars (Takes 4 to 7 bytes)
+- [ ] three_byte [138]: All three values are three_bytes (Takes 4 to 10 bytes)
+- [ ] float [139]: All three values are floats (Takes 4 to 13 bytes, worst case) 
+- [ ] number [140]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
+- [ ] scalar_byte [141]: The vector is a byte multiple of one of the constants (Takes 3 bytes)
+- [ ] scalar_char [142]: The vector is a char multiple of one of the constants (Takes 4 bytes)
+- [ ] scalar_three_byte [143]: The vector is a three_byte multiple of one of the constants (Takes 5 bytes)
+- [ ] scalar_float [144]: The vector is a float multiple of one of the constants (Takes 6 bytes)
+- [ ] scalar_number [145]: The vector is a number multiple of one of the constants where the number is also a constant (Takes 3 to 4 bytes)
 - [ ] UNKNOWN [145]: An approach that may be used in the future.
 - [ ] UNKNOWN [146]: An approach that may be used in the future.
 - [ ] UNKNOWN [147]: An approach that may be used in the future.
@@ -131,26 +131,26 @@ The arraySize variable represents the amount of bytes used to store all of the v
 The dictSize variable represents the amount of bytes used to store all of the keys and values within the dictionary part.  The minimum value for dictSize is dictLen * 2, but such an occurance is highly unlikely.
 
 - [ ] empty table [178]: The constant ```{}```
-- [ ] array_one [179]: Represents an array whose length can be represented in a byte (Takes 2 + arraySize bytes)
-- [ ] array_two [180]: Represents an array whose length can be represented in a char (Takes 3 + arraySize bytes)
-- [ ] array_three [181]: Represents an array whose length can be represented in three bytes (Takes 4 + arraySize bytes)
-- [ ] dict_one [182]: Represents a dictionary whose length can be represented in a byte (Takes 2 + dictSize bytes)
-- [ ] dict_two [183]: Represents a dictionary whose length can be represented in a char (Takes 3 + dictSize bytes)
-- [ ] dict_three [184]: Represents a dictionary whose length can be represented in three bytes (Takes 4 + dictSize bytes)
+- [ ] array_one [179]: An array whose length can be represented in a byte (Takes 2 + arraySize bytes)
+- [ ] array_two [180]: An array whose length can be represented in a char (Takes 3 + arraySize bytes)
+- [ ] array_three [181]: An array whose length can be represented in three bytes (Takes 4 + arraySize bytes)
+- [ ] dict_one [182]: A dictionary whose length can be represented in a byte (Takes 2 + dictSize bytes)
+- [ ] dict_two [183]: A dictionary whose length can be represented in a char (Takes 3 + dictSize bytes)
+- [ ] dict_three [184]: A dictionary whose length can be represented in three bytes (Takes 4 + dictSize bytes)
 
 The below are ONLY worth it to save space in the buffer by bypassing the array indeces.
-- [ ] a1d1 [185]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another byte (Takes 3 + arraySize + dictSize bytes)
-- [ ] a1d2 [186]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another char (Takes 4 + arraySize + dictSize bytes)
-- [ ] a1d3 [187]: Represents a mixed table whose array part can be represented using a byte and dictionary part using another three bytes (Takes 5 + arraySize + dictSize bytes)
-- [ ] a2d1 [188]: Represents a mixed table whose array part can be represented using a char and dictionary part using another byte (Takes 4 + arraySize + dictSize bytes)
-- [ ] a2d2 [189]: Represents a mixed table whose array part can be represented using a char and dictionary part using another char (Takes 5 + arraySize + dictSize bytes)
-- [ ] a2d3 [190]: Represents a mixed table whose array part can be represented using a char and dictionary part using another three bytes (Takes 6 + arraySize + dictSize bytes)
-- [ ] a3d1 [191]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another byte (Takes 5 + arraySize + dictSize bytes)
-- [ ] a3d2 [192]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another char (Takes 6 + arraySize + dictSize bytes)
-- [ ] a3d3 [193]: Represents a mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
+- [ ] a1d1 [185]: A mixed table whose array part can be represented using a byte and dictionary part using another byte (Takes 3 + arraySize + dictSize bytes)
+- [ ] a1d2 [186]: A mixed table whose array part can be represented using a byte and dictionary part using another char (Takes 4 + arraySize + dictSize bytes)
+- [ ] a1d3 [187]: A mixed table whose array part can be represented using a byte and dictionary part using another three bytes (Takes 5 + arraySize + dictSize bytes)
+- [ ] a2d1 [188]: A mixed table whose array part can be represented using a char and dictionary part using another byte (Takes 4 + arraySize + dictSize bytes)
+- [ ] a2d2 [189]: A mixed table whose array part can be represented using a char and dictionary part using another char (Takes 5 + arraySize + dictSize bytes)
+- [ ] a2d3 [190]: A mixed table whose array part can be represented using a char and dictionary part using another three bytes (Takes 6 + arraySize + dictSize bytes)
+- [ ] a3d1 [191]: A mixed table whose array part can be represented using three bytes and dictionary part using another byte (Takes 5 + arraySize + dictSize bytes)
+- [ ] a3d2 [192]: A mixed table whose array part can be represented using three bytes and dictionary part using another char (Takes 6 + arraySize + dictSize bytes)
+- [ ] a3d3 [193]: A mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
 
 Useful to allow for tables to store themselves.
-- [ ] equal_to_parent [194]: Represents that the table is equivalent in reference to the parent table
+- [ ] equal_to_parent [194]: The table is equivalent in reference to the parent table
 
 Useful to deduplicate.
 - [ ] equal_to_existing_value [195]: Two bytes of similar values (Takes 3 bytes)
