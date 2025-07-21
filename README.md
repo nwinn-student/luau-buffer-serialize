@@ -1,4 +1,4 @@
-# Buffer Serializer {#buffer-serializer}
+# Buffer Serializer
 
 > Design Stage: In Progress
 
@@ -11,7 +11,7 @@
 - [Technical Details](#technical-details)
 
 
-## Purpose {#purpose}
+## Purpose
 
 Compression results are limited to the data format, so it must be optimized prior to any compression (to both save bytes and time).  Buffer Serializer is a first pass compressor for numbers, vectors, booleans, and collections thereof, with the intention to perform as a precursor lossless compression approach that prepares the data for a more thorough compression algorithm.  Lossless compression module like Deflate/zlib serve as the more thorough algorithms suited for a second pass.  Custom types are permitted, and approaches can be added to suit usage cases.
 
