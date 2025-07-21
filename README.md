@@ -17,13 +17,13 @@ Compression results are limited to the data format, so it must be optimized prio
 
 The currently supported types are `nil`, `string`, `boolean`, `buffer`, `number`, `vector`, `table`, and `userdata`.  Where `userdata` is used to point to custom types.
 
-## Requirements {#requirements}
+## Requirements
 Luau 0.670+
 
-## Usage Cases {#usage-cases}
+## Usage Cases
 Storing data in a database, transmitting data to a shared source, preparing the data for masking, encryption, or further compression.
 
-## Example {#example}
+## Example
 ```luau
 -- Serialize
 local data = "Hello World!"
@@ -35,7 +35,7 @@ local input = BufferSerialize.deserialize(output)
 print(`Initial Data: {data}, Final Data: {input}`)
 ```
 
-## Constant Amount Supported {#constant-amount-supported}
+## Constant Amount Supported
 | Type | Amount | Cost |
 | ---- | ---- | ---- |
 | `string` | 64 | 1 byte |
@@ -49,7 +49,7 @@ print(`Initial Data: {data}, Final Data: {input}`)
 | `userdata` | 1024 | 2 bytes |
 
 
-## Technical Details {#technical-details}
+## Technical Details
 
 All approaches that take more than one byte are specified, alongside how many bytes they may take.
 
