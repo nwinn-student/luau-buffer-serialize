@@ -43,13 +43,13 @@ print(`Initial Data: {data}, Final Data: {input}`)
 ```
 
 ## Constant Amount Supported
-| Type | Amount | Cost |
+| **Type** | **Amount** | **Cost** |
 | ---- | ---- | ---- |
 | `string` | 64 | 1 byte |
 | `number` | 24 | 1 byte |
 | `vector` | 24 | 1 byte |
 | `userdata` | 16 | 1 byte |
-| ---- | ---- | ---- |
+|  |  |  |
 | `string` | 1280 | 2 bytes |
 | `number` | 1024 | 2 bytes |
 | `vector` | 1024 | 2 bytes |
@@ -151,4 +151,16 @@ The below are ONLY worth it to save space in the buffer by bypassing the array i
 
 Useful to allow for tables to store themselves.
 - [ ] equal_to_parent [194]: Represents that the table is equivalent in reference to the parent table
+
+Useful to deduplicate.
 - [ ] equal_to_existing_value [195]: Two bytes of similar values (Takes 3 bytes)
+- [ ] UNKNOWN [196]: An approach that may be used in the future.
+- [ ] UNKNOWN [197]: An approach that may be used in the future.
+- [ ] UNKNOWN [198]: An approach that may be used in the future.
+- [ ] UNKNOWN [199]: An approach that may be used in the future.
+- [ ] UNKNOWN [200]: An approach that may be used in the future.
+- [ ] UNKNOWN [201]: An approach that may be used in the future.
+- [ ] UNKNOWN [202]: An approach that may be used in the future.
+- [ ] UNKNOWN [203]: An approach that may be used in the future.
+- [ ] UNKNOWN [204]: An approach that may be used in the future.
+- [ ] UNKNOWN [205]: An approach that may be used in the future.
