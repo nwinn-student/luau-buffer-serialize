@@ -46,8 +46,8 @@ print(`Initial Data: {data}, Final Data: {input}`)
 | **Type** | **Amount** | **Cost** |
 | ---- | ---- | ---- |
 | `string` | 64 | 1 byte |
-| `number` | 24 | 1 byte |
-| `vector` | 24 | 1 byte |
+| `number` | 32 | 1 byte |
+| `vector` | 32 | 1 byte |
 | `userdata` | 16 | 1 byte |
 |  |  |  |
 | `string` | 1280 | 2 bytes |
@@ -102,39 +102,31 @@ All approaches that take more than one byte are specified, alongside how many by
 - [ ] UNKNOWN [99]: An approach that may be used in the future.
 
 `vector`: (X, Y, Z), All of which are floats.
-- [ ] zero [128]: The constant `(0,0,0)`
-- [ ] one [129]: The constant `(1,1,1)`
-- [ ] x_axis [130]: The constant `(1,0,0)`
-- [ ] y_axis [131]: The constant `(0,1,0)`
-- [ ] z_axis [132]: The constant `(0,0,1)`
-- [ ] xy_axis [133]: The constant `(1,1,0)`
-- [ ] xz_axis [134]: The constant `(1,0,1)`
-- [ ] yz_axis [135]: The constant `(0,1,1)`
-- [ ] byte [136]: All three values are bytes (Takes 4 bytes)
-- [ ] char [137]: All three values are chars (Takes 4 to 7 bytes)
-- [ ] three_byte [138]: All three values are three_bytes (Takes 4 to 10 bytes)
-- [ ] float [139]: All three values are floats (Takes 4 to 13 bytes, worst case) 
-- [ ] number [140]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
-- [ ] scalar_byte [141]: The vector is a byte multiple of an above constant vector (Takes 3 bytes)
-- [ ] scalar_char [142]: The vector is a char multiple of an above constant vector (Takes 4 bytes)
-- [ ] scalar_three_byte [143]: The vector is a three_byte multiple of an above constant vector (Takes 5 bytes)
-- [ ] scalar_float [144]: The vector is a float multiple of an above constant vector (Takes 6 bytes)
-- [ ] scalar_number [145]: The vector is a constant multiple of an above constant vector (Takes 3 to 4 bytes)
-- [ ] UNKNOWN [145]: An approach that may be used in the future.
-- [ ] UNKNOWN [146]: An approach that may be used in the future.
+- [ ] constant [136]: Next byte represents an identity vector (Takes 2 bytes) [(0,0,0), (0,0,1)..., (1,1,1)]
+- [ ] byte [137]: All three values are bytes (Takes 4 bytes)
+- [ ] char [138]: All three values are chars (Takes 4 to 7 bytes)
+- [ ] three_byte [139]: All three values are three_bytes (Takes 4 to 10 bytes)
+- [ ] float [140]: All three values are floats (Takes 4 to 13 bytes, worst case) 
+- [ ] number [141]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
+- [ ] scalar_byte [142]: The vector is a byte multiple of an above constant vector (Takes 3 bytes)
+- [ ] scalar_char [143]: The vector is a char multiple of an above constant vector (Takes 4 bytes)
+- [ ] scalar_three_byte [144]: The vector is a three_byte multiple of an above constant vector (Takes 5 bytes)
+- [ ] scalar_float [145]: The vector is a float multiple of an above constant vector (Takes 6 bytes)
+- [ ] scalar_number [146]: The vector is a constant multiple of an above constant vector (Takes 3 to 4 bytes)
 - [ ] UNKNOWN [147]: An approach that may be used in the future.
 - [ ] UNKNOWN [148]: An approach that may be used in the future.
+- [ ] UNKNOWN [149]: An approach that may be used in the future.
 
 `table` [**Subject to change**]  
 Definition of array used: An array is a list of elements from index 1 to n where there exist no gaps between the integers 1 and n.  
 The arraySize variable represents the amount of bytes used to store all of the values within the array part.  The minimum value for arraySize is arrayLen, but such an occurance is highly unlikely.  
 The dictSize variable represents the amount of bytes used to store all of the keys and values within the dictionary part.  The minimum value for dictSize is dictLen * 2, but such an occurance is highly unlikely.
 
-- [ ] empty table [178]: The constant ```{}```
-- [ ] table [179]: A mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
-
-Useful to allow for tables to store themselves.
-- [ ] equal_to_parent [180]: The table is equivalent in reference to the parent table
-
-Useful to deduplicate.
-- [ ] equal_to_existing_value [181]: Two bytes of similar values (Takes 3 bytes)
+- [ ] empty table [186]: The constant ```{}```
+- [ ] table [187]: A mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
+- [ ] equal_to_parent [188]: The table is equivalent in reference to the parent table
+- [ ] equal_to_existing_value [189]: Two bytes of similar values (Takes 3 bytes)
+- [ ] UNKNOWN [190]: An approach that may be used in the future.
+- [ ] UNKNOWN [191]: An approach that may be used in the future.
+- [ ] UNKNOWN [192]: An approach that may be used in the future.
+- [ ] UNKNOWN [193]: An approach that may be used in the future.
