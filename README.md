@@ -131,36 +131,10 @@ The arraySize variable represents the amount of bytes used to store all of the v
 The dictSize variable represents the amount of bytes used to store all of the keys and values within the dictionary part.  The minimum value for dictSize is dictLen * 2, but such an occurance is highly unlikely.
 
 - [ ] empty table [178]: The constant ```{}```
-- [ ] array_one [179]: An array whose length can be represented in a byte (Takes 2 + arraySize bytes)
-- [ ] array_two [180]: An array whose length can be represented in a char (Takes 3 + arraySize bytes)
-- [ ] array_three [181]: An array whose length can be represented in three bytes (Takes 4 + arraySize bytes)
-- [ ] dict_one [182]: A dictionary whose length can be represented in a byte (Takes 2 + dictSize bytes)
-- [ ] dict_two [183]: A dictionary whose length can be represented in a char (Takes 3 + dictSize bytes)
-- [ ] dict_three [184]: A dictionary whose length can be represented in three bytes (Takes 4 + dictSize bytes)
-
-The below are ONLY worth it to save space in the buffer by bypassing the array indeces.
-- [ ] a1d1 [185]: A mixed table whose array part can be represented using a byte and dictionary part using another byte (Takes 3 + arraySize + dictSize bytes)
-- [ ] a1d2 [186]: A mixed table whose array part can be represented using a byte and dictionary part using another char (Takes 4 + arraySize + dictSize bytes)
-- [ ] a1d3 [187]: A mixed table whose array part can be represented using a byte and dictionary part using another three bytes (Takes 5 + arraySize + dictSize bytes)
-- [ ] a2d1 [188]: A mixed table whose array part can be represented using a char and dictionary part using another byte (Takes 4 + arraySize + dictSize bytes)
-- [ ] a2d2 [189]: A mixed table whose array part can be represented using a char and dictionary part using another char (Takes 5 + arraySize + dictSize bytes)
-- [ ] a2d3 [190]: A mixed table whose array part can be represented using a char and dictionary part using another three bytes (Takes 6 + arraySize + dictSize bytes)
-- [ ] a3d1 [191]: A mixed table whose array part can be represented using three bytes and dictionary part using another byte (Takes 5 + arraySize + dictSize bytes)
-- [ ] a3d2 [192]: A mixed table whose array part can be represented using three bytes and dictionary part using another char (Takes 6 + arraySize + dictSize bytes)
-- [ ] a3d3 [193]: A mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
+- [ ] table [179]: A mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
 
 Useful to allow for tables to store themselves.
-- [ ] equal_to_parent [194]: The table is equivalent in reference to the parent table
+- [ ] equal_to_parent [180]: The table is equivalent in reference to the parent table
 
 Useful to deduplicate.
-- [ ] equal_to_existing_value [195]: Two bytes of similar values (Takes 3 bytes)
-- [ ] UNKNOWN [196]: An approach that may be used in the future.
-- [ ] UNKNOWN [197]: An approach that may be used in the future.
-- [ ] UNKNOWN [198]: An approach that may be used in the future.
-- [ ] UNKNOWN [199]: An approach that may be used in the future.
-- [ ] UNKNOWN [200]: An approach that may be used in the future.
-- [ ] UNKNOWN [201]: An approach that may be used in the future.
-- [ ] UNKNOWN [202]: An approach that may be used in the future.
-- [ ] UNKNOWN [203]: An approach that may be used in the future.
-- [ ] UNKNOWN [204]: An approach that may be used in the future.
-- [ ] UNKNOWN [205]: An approach that may be used in the future.
+- [ ] equal_to_existing_value [181]: Two bytes of similar values (Takes 3 bytes)
