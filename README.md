@@ -101,32 +101,44 @@ All approaches that take more than one byte are specified, alongside how many by
 - [ ] UNKNOWN [98]: An approach that may be used in the future.
 - [ ] UNKNOWN [99]: An approach that may be used in the future.
 
-`vector`: (X, Y, Z), All of which are floats.
-- [ ] constant [136]: Next byte represents an identity vector (Takes 2 bytes) [(0,0,0), (0,0,1)..., (1,1,1)]
-- [ ] byte [137]: All three values are bytes (Takes 4 bytes)
-- [ ] char [138]: All three values are chars (Takes 4 to 7 bytes)
-- [ ] three_byte [139]: All three values are three_bytes (Takes 4 to 10 bytes)
-- [ ] float [140]: All three values are floats (Takes 4 to 13 bytes, worst case) 
-- [ ] number [141]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
-- [ ] scalar_byte [142]: The vector is a byte multiple of an above constant vector (Takes 3 bytes)
-- [ ] scalar_char [143]: The vector is a char multiple of an above constant vector (Takes 4 bytes)
-- [ ] scalar_three_byte [144]: The vector is a three_byte multiple of an above constant vector (Takes 5 bytes)
-- [ ] scalar_float [145]: The vector is a float multiple of an above constant vector (Takes 6 bytes)
-- [ ] scalar_number [146]: The vector is a constant multiple of an above constant vector (Takes 3 to 4 bytes)
-- [ ] UNKNOWN [147]: An approach that may be used in the future.
-- [ ] UNKNOWN [148]: An approach that may be used in the future.
-- [ ] UNKNOWN [149]: An approach that may be used in the future.
+`vector`: (X, Y, Z), All of which are floats (vector is immutable!).
+- [ ] zero [136]: The constant `(0,0,0)`
+- [ ] one [137]: The constant `(1,1,1)`
+- [ ] x_axis [138]: The constant `(1,0,0)`
+- [ ] y_axis [139]: The constant `(0,1,0)`
+- [ ] z_axis [140]: The constant `(0,0,1)`
+- [ ] xy_axis [141]: The constant `(1,1,0)`
+- [ ] xz_axis [142]: The constant `(1,0,1)`
+- [ ] yz_axis [143]: The constant `(0,1,1)`
+- [ ] byte [144]: All three values are bytes (Takes 4 bytes)
+- [ ] char [145]: All three values are chars (Takes 4 to 7 bytes)
+- [ ] three_byte [146]: All three values are three_bytes (Takes 4 to 10 bytes)
+- [ ] float [147]: All three values are floats (Takes 4 to 13 bytes, worst case) 
+- [ ] number [148]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
+- [ ] scalar_byte [149]: The vector is a byte multiple of an above constant vector (Takes 3 bytes)
+- [ ] scalar_char [150]: The vector is a char multiple of an above constant vector (Takes 4 bytes)
+- [ ] scalar_three_byte [151]: The vector is a three_byte multiple of an above constant vector (Takes 5 bytes)
+- [ ] scalar_float [152]: The vector is a float multiple of an above constant vector (Takes 6 bytes)
+- [ ] scalar_number [153]: The vector is a constant multiple of an above constant vector (Takes 3 to 4 bytes)
+- [ ] UNKNOWN [154]: An approach that may be used in the future.
+- [ ] UNKNOWN [155]: An approach that may be used in the future.
+- [ ] UNKNOWN [156]: An approach that may be used in the future.
+- [ ] UNKNOWN [157]: An approach that may be used in the future.
 
-`table` [**Subject to change**]  
+`table`  
 Definition of array used: An array is a list of elements from index 1 to n where there exist no gaps between the integers 1 and n.  
 The arraySize variable represents the amount of bytes used to store all of the values within the array part.  The minimum value for arraySize is arrayLen, but such an occurance is highly unlikely.  
 The dictSize variable represents the amount of bytes used to store all of the keys and values within the dictionary part.  The minimum value for dictSize is dictLen * 2, but such an occurance is highly unlikely.
 
-- [ ] empty table [186]: The constant ```{}```
-- [ ] table [187]: A mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
-- [ ] equal_to_parent [188]: The table is equivalent in reference to the parent table
-- [ ] equal_to_existing_value [189]: Two bytes of similar values (Takes 3 bytes)
-- [ ] UNKNOWN [190]: An approach that may be used in the future.
-- [ ] UNKNOWN [191]: An approach that may be used in the future.
-- [ ] UNKNOWN [192]: An approach that may be used in the future.
-- [ ] UNKNOWN [193]: An approach that may be used in the future.
+- [ ] empty table [194]: The constant ```{}```
+- [ ] table [195]: A mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
+- [ ] equal_to_parent [196]: The table is equivalent in reference to the parent table
+- [ ] equal_to_existing_value [197]: Two bytes of similar values (Takes 3 bytes)
+- [ ] UNKNOWN [198]: An approach that may be used in the future.
+- [ ] UNKNOWN [199]: An approach that may be used in the future.
+- [ ] UNKNOWN [200]: An approach that may be used in the future.
+- [ ] UNKNOWN [201]: An approach that may be used in the future.
+
+`userdata`
+- [ ] custom [202]: A user-defined function is used to read/write the information associated with the userdata (Takes 1+custom bytes)
+- [ ] UNKNOWN [203]: An approach that may be used in the future.
