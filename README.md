@@ -7,6 +7,7 @@
 - [Requirements](#requirements)
 - [Usage Cases](#usage-cases)
 - [Example](#example)
+- [Performance](#performance)
 - [Constant Amount Supported](#constant-amount-supported)
 - [Technical Details](#technical-details)
 
@@ -41,6 +42,30 @@ local input = BufferSerialize.deserialize(output)
 
 print(`Initial Data: {data}, Final Data: {input}`)
 ```
+
+## Performance
+
+Tests were performed comparing Roblox's JSONEncode/Decode and BufferSerializer.  [LibDeflate](https://github.com/safeteeWow/LibDeflate) is used to compare whether using BufferSerializer is comparable to using JSONEncode/Decode.  The tests can be located [here](#unknown). (not currently setup)
+
+Expected results from small sample tests:  
+ - serialize produces a smaller size but takes longer than JSONEncode
+ - compress w/ serialize takes less time than compress w/ JSONEncode and produces cheaper
+ - deserialize takes longer than JSONEncode
+ - decompress w/ deserialize takes longer than decompress w/ JSONDecode
+
+| **Type** | Time (s) | Memory (kB) | Size (b) |
+| ---- | ---- | ---- | ---- |
+| JSONEncode | UNKNOWN | ERR: Runs in C++ so memory usage is unknown | UNKNOWN |
+| serialize | UNKNOWN | UNKNOWN | UNKNOWN |
+| compress w/ JSONEncode | UNKNOWN | UNKNOWN | UNKNOWN |
+| compress w/ serialize | UNKNOWN | UNKNOWN | UNKNOWN |
+|  |  |  |  |
+| JSONDecode | UNKNOWN | UNKNOWN | UNKNOWN |
+| deserialize | UNKNOWN | UNKNOWN | UNKNOWN |
+| decompress w/ JSONDecode | UNKNOWN | UNKNOWN | UNKNOWN |
+| decompress w/ deserialize | UNKNOWN | UNKNOWN | UNKNOWN |
+
+
 
 ## Constant Amount Supported
 | **Type** | **Amount** | **Cost** |
