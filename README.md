@@ -106,9 +106,9 @@ All approaches that take more than one byte are specified, alongside how many by
 - [X] char [11]: A string has a length that can be represented as a char (Takes 3 + strLen bytes)
 - [X] three_byte [12]: A string has a length that can be represented in 3 bytes (Takes 4 + strLen bytes)
 - [X] int [13]: A string has a length that can be represented as an int (Takes 5 + strLen bytes)
-- [ ] concatcn [14]: Concatenation of a constant and a number (Takes 3-5 bytes, 32- chars)
-- [ ] concatnc [15]: Concatenation of a number and a constant (Takes 3-5 bytes, 32- chars)
-- [ ] UNKNOWN [16]: An approach that may be used in the future.
+- [X] concatcn [14]: Concatenation of a constant and a positive integer (Takes 3-5 bytes, 32- chars)
+- [X] concatnc [15]: Concatenation of a positive integer and a constant (Takes 3-5 bytes, 32- chars)
+- [X] num [16]: The string can be converted to a positive integer (Takes 2-6 bytes, 32- chars).
 - [ ] UNKNOWN [17]: An approach that may be used in the future.
 - [ ] UNKNOWN [18]: An approach that may be used in the future.
 
@@ -127,24 +127,24 @@ All approaches that take more than one byte are specified, alongside how many by
 - [ ] UNKNOWN [99]: An approach that may be used in the future.
 
 `vector`: (X, Y, Z), All of which are floats (vector is immutable!).
-- [ ] zero [136]: The constant `(0,0,0)`
-- [ ] one [137]: The constant `(1,1,1)`
-- [ ] x_axis [138]: The constant `(1,0,0)`
-- [ ] y_axis [139]: The constant `(0,1,0)`
-- [ ] z_axis [140]: The constant `(0,0,1)`
-- [ ] xy_axis [141]: The constant `(1,1,0)`
-- [ ] xz_axis [142]: The constant `(1,0,1)`
-- [ ] yz_axis [143]: The constant `(0,1,1)`
-- [ ] byte [144]: All three values are bytes (Takes 4 bytes)
-- [ ] char [145]: All three values are chars (Takes 4 to 7 bytes)
-- [ ] three_byte [146]: All three values are three_bytes (Takes 4 to 10 bytes)
-- [ ] float [147]: All three values are floats (Takes 4 to 13 bytes, worst case) 
-- [ ] number [148]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
-- [ ] scalar_byte [149]: The vector is a byte multiple of an above constant vector (Takes 3 bytes)
-- [ ] scalar_char [150]: The vector is a char multiple of an above constant vector (Takes 4 bytes)
-- [ ] scalar_three_byte [151]: The vector is a three_byte multiple of an above constant vector (Takes 5 bytes)
-- [ ] scalar_float [152]: The vector is a float multiple of an above constant vector (Takes 6 bytes)
-- [ ] scalar_number [153]: The vector is a constant multiple of an above constant vector (Takes 3 to 4 bytes)
+- [X] zero [136]: The constant `(0,0,0)`
+- [X] one [137]: The constant `(1,1,1)`
+- [X] x_axis [138]: The constant `(1,0,0)`
+- [X] y_axis [139]: The constant `(0,1,0)`
+- [X] z_axis [140]: The constant `(0,0,1)`
+- [X] xy_axis [141]: The constant `(1,1,0)`
+- [X] xz_axis [142]: The constant `(1,0,1)`
+- [X] yz_axis [143]: The constant `(0,1,1)`
+- [X] byte [144]: All three values are bytes (Takes 4 bytes)
+- [X] char [145]: All three values are chars (Takes 7 bytes)
+- [X] three_byte [146]: All three values are three_bytes (Takes 10 bytes)
+- [X] float [147]: All three values are floats (Takes 13 bytes, worst case) 
+- [X] number [148]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
+- [X] scalar_number [149]: The vector is a multiple of an above constant vector (Takes 3 to 7 bytes)
+- [ ] UNKNOWN [150]: An approach that may be used in the future.
+- [ ] UNKNOWN [151]: An approach that may be used in the future.
+- [ ] UNKNOWN [152]: An approach that may be used in the future.
+- [ ] UNKNOWN [153]: An approach that may be used in the future.
 - [ ] UNKNOWN [154]: An approach that may be used in the future.
 - [ ] UNKNOWN [155]: An approach that may be used in the future.
 - [ ] UNKNOWN [156]: An approach that may be used in the future.
@@ -155,15 +155,14 @@ Definition of array used: An array is a list of elements from index 1 to n where
 The arraySize variable represents the amount of bytes used to store all of the values within the array part.  The minimum value for arraySize is arrayLen, but such an occurance is highly unlikely.  
 The dictSize variable represents the amount of bytes used to store all of the keys and values within the dictionary part.  The minimum value for dictSize is dictLen * 2, but such an occurance is highly unlikely.
 
-- [ ] empty table [194]: The constant ```{}```
-- [ ] table [195]: A mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
-- [ ] equal_to_parent [196]: The table is equivalent in reference to the parent table
-- [ ] equal_to_existing_value [197]: Two bytes of similar values (Takes 3 bytes)
+- [X] empty table [194]: The constant ```{}```
+- [X] table [195]: A mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
+- [X] equal_to_existing_value [196]: Two bytes of similar values (Takes 3 bytes)
 - [ ] UNKNOWN [198]: An approach that may be used in the future.
 - [ ] UNKNOWN [199]: An approach that may be used in the future.
 - [ ] UNKNOWN [200]: An approach that may be used in the future.
 - [ ] UNKNOWN [201]: An approach that may be used in the future.
 
 `userdata`
-- [ ] custom [202]: A user-defined function is used to read/write the information associated with the userdata (Takes 1+custom bytes)
+- [X] custom [202]: A user-defined function is used to read/write the information associated with the userdata (Takes 1+custom bytes)
 - [ ] UNKNOWN [203]: An approach that may be used in the future.
