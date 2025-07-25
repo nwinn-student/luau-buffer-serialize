@@ -45,25 +45,32 @@ print(`Initial Data: {data}, Final Data: {input}`)
 
 ## Performance
 
-Tests were performed comparing Roblox's JSONEncode/Decode and BufferSerializer.  [LibDeflate](https://github.com/safeteeWow/LibDeflate) is used to compare whether using BufferSerializer is comparable to using JSONEncode/Decode.  The tests can be located [here](#unknown). (not currently setup)
+Tests were performed comparing Roblox's JSONEncode/Decode and BufferSerializer.  [LibDeflate](https://github.com/safeteeWow/LibDeflate) is used to compare whether using BufferSerializer is comparable to using JSONEncode/Decode.  Cheating serialize showcases how serialize will perform when all of the values tested are constant.  The tests can be located [here](#unknown). (not currently setup)
 
 Expected results from small sample tests:  
  - serialize produces a smaller size but takes longer than JSONEncode
  - compress w/ serialize takes less time than compress w/ JSONEncode and produces cheaper
  - deserialize takes longer than JSONEncode
  - decompress w/ deserialize takes longer than decompress w/ JSONDecode
+Actual results:
+ - serialize may produce a smaller size, but takes longer than JSONEncode
+ - compress w/ serialize usually takes around the same amount of time and usually produces cheaper, it is on a per-case basis though
+ - BufferSerializer produces no tangible benefit for smaller structures or those that heavily use tables
+ - deserialize has yet to be implemented
 
 | **Type** | Time (s) | Memory (kB) | Size (b) |
 | ---- | ---- | ---- | ---- |
-| JSONEncode | UNKNOWN | ERR: Runs in C++ so memory usage is unknown | UNKNOWN |
-| serialize | UNKNOWN | UNKNOWN | UNKNOWN |
-| compress w/ JSONEncode | UNKNOWN | UNKNOWN | UNKNOWN |
-| compress w/ serialize | UNKNOWN | UNKNOWN | UNKNOWN |
+| JSONEncode | 1.4e-5 | ERR: Runs in C++ so memory usage is unknown | 865 |
+| serialize | 4e-5 | 3 | 655 |
+| cheating-serialize | 4e-5 | 1.2 | 223 |
+| compress w/ JSONEncode | 1.3e-3 | 43 | 25 |
+| compress w/ serialize | 1.25e-3 | 41 | 38 |
+| compress w/ cheating-serialize | 2e-4 | 27 | 15 |
 |  |  |  |  |
-| JSONDecode | UNKNOWN | UNKNOWN | UNKNOWN |
-| deserialize | UNKNOWN | UNKNOWN | UNKNOWN |
-| decompress w/ JSONDecode | UNKNOWN | UNKNOWN | UNKNOWN |
-| decompress w/ deserialize | UNKNOWN | UNKNOWN | UNKNOWN |
+| JSONDecode | 3.5e-5 | 3.4 | --- |
+| deserialize | UNKNOWN | UNKNOWN | --- |
+| decompress w/ JSONDecode | 8e-5 | 19 | --- |
+| decompress w/ deserialize | UNKNOWN | UNKNOWN | --- |
 
 
 
