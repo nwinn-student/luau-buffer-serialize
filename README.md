@@ -55,17 +55,16 @@ Expected results from small sample tests:
 Actual results:
  - serialize may produce a smaller size, but takes longer than JSONEncode
  - compress w/ serialize usually takes around the same amount of time and usually produces cheaper, it is on a per-case basis though
- - BufferSerializer produces no tangible benefit for smaller structures or those that heavily use tables
  - deserialize has yet to be implemented
 
 | **Type** | Time (s) | Memory (kB) | Size (b) |
 | ---- | ---- | ---- | ---- |
 | JSONEncode | 1.4e-5 | ERR: Runs in C++ so memory usage is unknown | 865 |
-| serialize | 4e-5 | 3 | 655 |
-| cheating-serialize | 4e-5 | 1.2 | 223 |
+| serialize | 4e-5 | 3.2 | 650 |
+| cheating-serialize | 4e-5 | 1.3 | 218 |
 | compress w/ JSONEncode | 1.3e-3 | 43 | 25 |
-| compress w/ serialize | 1.25e-3 | 41 | 38 |
-| compress w/ cheating-serialize | 2e-4 | 27 | 15 |
+| compress w/ serialize | 1.17e-3 | 40 | 35 |
+| compress w/ cheating-serialize | 2.4e-4 | 26 | 13 |
 |  |  |  |  |
 | JSONDecode | 3.5e-5 | 3.4 | --- |
 | deserialize | UNKNOWN | UNKNOWN | --- |
@@ -163,11 +162,12 @@ The arraySize variable represents the amount of bytes used to store all of the v
 The dictSize variable represents the amount of bytes used to store all of the keys and values within the dictionary part.  The minimum value for dictSize is dictLen * 2, but such an occurance is highly unlikely.
 
 - [X] empty table [194]: The constant ```{}```
-- [X] table [195]: A mixed table whose array part can be represented using three bytes and dictionary part using another three bytes (Takes 7 + arraySize + dictSize bytes)
+- [X] table [195]: A mixed table that contains both arrayend and tableend to terminate. (Takes 3 + arraySize + dictSize bytes)
 - [X] equal_to_existing_value [196]: Two bytes of similar values (Takes 3 bytes)
-- [ ] UNKNOWN [198]: An approach that may be used in the future.
-- [ ] UNKNOWN [199]: An approach that may be used in the future.
-- [ ] UNKNOWN [200]: An approach that may be used in the future.
+- [X] array [197]: An array that uses tableend to terminate (Takes 2 + arraySize bytes)
+- [X] dict [198]: A dictionary that uses tableend to terminate (Takes 2 + dictSize bytes) 
+- [X] arrayend [199]: Used to terminate the array portion of a table
+- [X] tableend [200]: Used to terminate a table
 - [ ] UNKNOWN [201]: An approach that may be used in the future.
 
 `userdata`
