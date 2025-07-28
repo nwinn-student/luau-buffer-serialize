@@ -63,13 +63,15 @@ Actual results:
 | serialize | 4e-5 | 3.2 | 650 |
 | cheating-serialize | 4e-5 | 1.3 | 218 |
 | compress w/ JSONEncode | 1.3e-3 | 43 | 25 |
-| compress w/ serialize | 1.17e-3 | 40 | 35 |
+| compress w/ serialize | 1.17e-3 | 43 | 36 |
 | compress w/ cheating-serialize | 2.4e-4 | 26 | 13 |
 |  |  |  |  |
 | JSONDecode | 3.5e-5 | 3.4 | --- |
-| deserialize | UNKNOWN | UNKNOWN | --- |
-| decompress w/ JSONDecode | 8e-5 | 19 | --- |
-| decompress w/ deserialize | UNKNOWN | UNKNOWN | --- |
+| deserialize | 3.7e-5 | 4.2 | --- |
+| cheating-deserialize | 5.5e-5 | 4.1 | --- |
+| decompress w/ JSONDecode | 5.5e-5 | 19 | --- |
+| decompress w/ deserialize | 7.5e-5 | 18 | --- |
+| decompress w/ cheating-deserialize | 3.8e-5 | 5.3 | --- |
 
 
 
@@ -90,6 +92,8 @@ Actual results:
 ## Technical Details
 
 All approaches that take more than one byte are specified, alongside how many bytes they may take.
+Corrupted data will be returned as nil, if the data is in a collection then the aspect will become 0 if in 
+vector and nil if in table (so not added).
 
 `nil`
 - [X] nil [0]: The constant `nil` or unsupported types, such as `function` and `thread`
