@@ -53,12 +53,14 @@ Serialize.deserialize = function(value: buffer)
 	
 	local PositionData = {Position = 0}
 	
-	local mod = modules[pointer]
-	if mod then
-		return mod.deserialize(value, PositionData)
+	local deserial = modules[pointer]
+	if deserial then
+		return deserial(value, PositionData)
 	end
-	modules[pointer] = require(`./internal/{enumerator[pointer]}`)
-	return modules[pointer].deserialize(value, PositionData)
+	
+	deserial = require(`./internal/{enumerator[pointer]}`).deserialize
+	modules[pointer] = deserial
+	return deserial(value, PositionData)
 end
 
 return Serialize
