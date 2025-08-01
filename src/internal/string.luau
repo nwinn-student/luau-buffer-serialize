@@ -80,8 +80,8 @@ local function strSerializer(value: string, data: BufferData)
 			-- in those cases.. it can become much slower
 			buf = grow(buf, data, 1)
 			buffer.writeu8(buf, pos, CONCAT_NUM_STR)
-			numSerializer(tonumber(string.sub(value, 1, start-1)), data)
-			strSerializer(string.sub(value, start), data)
+			numSerializer(tonumber(string.sub(value, 1, finish)), data)
+			strSerializer(string.sub(value, finish + 1), data)
 			return
 		end
 	end
