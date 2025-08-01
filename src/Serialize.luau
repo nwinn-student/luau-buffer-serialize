@@ -7,9 +7,6 @@ local trim = enumerator.Methods.trim
 local Serialize = {}
 local modules = {}
 
-local dataCache = {}
-local lenCache = 0
-
 --[[
 	Returns the value as a buffer
 ]]--
@@ -19,14 +16,7 @@ Serialize.serialize = function(value: any)
 		typeValue = "nil"
 	end
 	
-	local Data
-	if lenCache > 0 then
-		Data = dataCache[lenCache]
-		Data.Position = 0
-		lenCache -= 1
-	else
-		Data = {Position=0, Data=nil, Size=nil}
-	end
+	local Data = {Position=0, Data=nil, Size=nil}
 	
 	local serial = modules[typeValue]
 	if not serial then
@@ -36,13 +26,7 @@ Serialize.serialize = function(value: any)
 	serial(value, Data)
 	trim(Data)
 	
-	local retData = Data.Data
-	if lenCache < 10 then
-		dataCache[lenCache + 1] = Data
-		table.clear(Data)
-		lenCache += 1
-	end
-	return retData
+	return Data.Data
 end
 
 Serialize.deserialize = function(value: buffer)
