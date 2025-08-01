@@ -29,7 +29,6 @@ local MIN_INT = -2^31
 local MAX_INT = 2^31-1
 
 local MAX_FLOAT = 2^127
-local FLOAT_ELIPSON = 2^-29
 
 local READ = {}
 local WRITE = {} -- 1 to 1087
@@ -80,8 +79,9 @@ local function numSerializer(value: number, data: BufferData)
 		end
 
 		-- Ensures that the output WILL be the same as the input
+		-- even if it results in a slower path
 		buffer.writef32(FLOAT_BUFFER, 0, value)
-		if math.abs(buffer.readf32(FLOAT_BUFFER, 0) - value) < FLOAT_ELIPSON then
+		if buffer.readf32(FLOAT_BUFFER, 0) - value == 0 then
 			buf = grow(buf, data, 5)
 			buffer.writeu8(buf, pos, FLOAT)
 			buffer.writef32(buf, pos+1, value)
@@ -143,7 +143,11 @@ local function numDeserializer(buf: buffer, data: PositionData)
 		return buffer.readi16(buf, pos + 1)
 	elseif id == THREE_BYTE then
 		data.Position += 4
-		return MIN_THREE + buffer.readbits(buf, (pos + 1)*8, 24)
+		local val = buffer.readbits(buf, (pos + 1)*8, 24)
+		if val >= 2^23 then
+			return (-2^24) + val
+		end
+		return val
 	elseif id == INT then
 		data.Position += 5
 		return buffer.readi32(buf, pos + 1)
