@@ -54,7 +54,6 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 	local endArray = false
 	
 	for i,v in value do
-		print(existing)
 		lastIndex += 1
 		local isInArray = lastIndex == i
 
@@ -247,7 +246,7 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 		tempPos = ttp
 	end
 	
-	if not isDict or endArray then
+	if not isDict and not endArray then
 		buffer.writeu8(buf, pos, ARRAY)
 	end
 	buf = grow(buf, data, 1)
@@ -355,7 +354,7 @@ local function tabDeserialize(buf: buffer, data: PositionData, parExisting: {Dat
 	end
 	
 	while true do
-		print(existing)
+		--print(existing)
 		local valId = buffer.readu8(buf, pos)
 		pos += 1
 		if valId == TABLE_END then
@@ -405,7 +404,7 @@ local function tabDeserialize(buf: buffer, data: PositionData, parExisting: {Dat
 		local newPos = data.Position
 		
 		if newPos - 1 > pos then
-			print(newPos, pos, key)
+			--print(newPos, pos, key)
 			existing[existingIndex] = key
 			existingIndex += 1
 		end
