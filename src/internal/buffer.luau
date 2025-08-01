@@ -81,7 +81,7 @@ return {
 		end
 
 		local value = buffer.create(len) -- verify!!
-		buffer.copy(value, 0, buf, pos, pos + len)
+		buffer.copy(value, 0, buf, pos, len)
 		data.Position += len + lenSize + 1
 		return value
 	end
