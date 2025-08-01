@@ -1,6 +1,9 @@
 --!optimize 2
 local enumerator = require("./internal/pointer/Enumerator")
 
+local support = enumerator.support
+local trim = enumerator.Methods.trim
+
 local Serialize = {}
 local modules = {}
 
@@ -8,20 +11,20 @@ local modules = {}
 	Returns the value as a buffer
 ]]--
 Serialize.serialize = function(value: any)
-	-- we must pass position as 0, always
-	local pointer = enumerator.Support[type(value)]
-		or enumerator.Support["nil"]
+	local typeValue = type(value)
+	if typeValue == "function" or typeValue == "thread" then
+		typeValue = "nil"
+	end
 	
 	local Data = {Position=0, Data=nil, Size=nil}
 	
-	local mod = modules[pointer]
+	local mod = modules[typeValue]
 	if not mod then
-		print(enumerator[pointer])
-		mod = require(`./internal/{enumerator[pointer]}`)
-		modules[pointer] = mod
+		mod = require(`./internal/{typeValue}`)
+		modules[typeValue] = mod
 	end
 	mod.serialize(value, Data)
-	enumerator.Methods.trim(Data)
+	trim(Data)
 	return Data.Data
 end
 
