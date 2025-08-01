@@ -7,6 +7,9 @@ local trim = enumerator.Methods.trim
 local Serialize = {}
 local modules = {}
 
+local dataCache = {}
+local lenCache = 0
+
 --[[
 	Returns the value as a buffer
 ]]--
@@ -16,16 +19,30 @@ Serialize.serialize = function(value: any)
 		typeValue = "nil"
 	end
 	
-	local Data = {Position=0, Data=nil, Size=nil}
-	
-	local mod = modules[typeValue]
-	if not mod then
-		mod = require(`./internal/{typeValue}`)
-		modules[typeValue] = mod
+	local Data
+	if lenCache > 0 then
+		Data = dataCache[lenCache]
+		Data.Position = 0
+		lenCache -= 1
+	else
+		Data = {Position=0, Data=nil, Size=nil}
 	end
-	mod.serialize(value, Data)
+	
+	local serial = modules[typeValue]
+	if not serial then
+		serial = require(`./internal/{typeValue}`).serialize
+		modules[typeValue] = serial
+	end
+	serial(value, Data)
 	trim(Data)
-	return Data.Data
+	
+	local retData = Data.Data
+	if lenCache < 10 then
+		dataCache[lenCache + 1] = Data
+		table.clear(Data)
+		lenCache += 1
+	end
+	return retData
 end
 
 Serialize.deserialize = function(value: buffer)
