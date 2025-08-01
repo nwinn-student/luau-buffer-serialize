@@ -132,9 +132,9 @@ local function vecSerializer(value: vector, data: BufferData)
 	local typeY = getType(valueY)
 	local typeZ = getType(valueZ)
 
-	local constX = Number.WRITE[valueX]
-	local constY = Number.WRITE[valueY]
-	local constZ = Number.WRITE[valueZ]
+	local constX = Number.Write[valueX]
+	local constY = Number.Write[valueY]
+	local constZ = Number.Write[valueZ]
 
 	local isNumber = constX or constY or constZ
 
@@ -147,7 +147,7 @@ local function vecSerializer(value: vector, data: BufferData)
 		return
 	end
 
-	local newSize = typeX - 140
+	local newSize = 3 * (typeX - 143) + 1
 	buf = grow(buf, data, newSize) -- 4, 7, 10, 13
 	buffer.writeu8(buf, pos, typeX)
 
@@ -161,8 +161,8 @@ local function vecSerializer(value: vector, data: BufferData)
 		buffer.writei16(buf, pos + 5, valueZ)
 	elseif typeX == THREE_BYTE then
 		buffer.writebits(buf, (pos + 1)*8, 24, valueX)
-		buffer.writebits(buf, (pos + 4)*8, 24, valueX)
-		buffer.writebits(buf, (pos + 7)*8, 24, valueX)
+		buffer.writebits(buf, (pos + 4)*8, 24, valueY)
+		buffer.writebits(buf, (pos + 7)*8, 24, valueZ)
 	else
 		buffer.writef32(buf, pos + 1, valueX)
 		buffer.writef32(buf, pos + 5, valueY)
@@ -234,10 +234,14 @@ local function vecDeserializer(buf: buffer, data: PositionData)
 		)
 	elseif id == THREE_BYTE then
 		data.Position += 10
+		local xVal = buffer.readbits(buf, (pos + 1)*8, 24)
+		local yVal = buffer.readbits(buf, (pos + 4)*8, 24)
+		local zVal = buffer.readbits(buf, (pos + 7)*8, 24)
+		
 		return vector.create(
-			MIN_THREE + buffer.readbits(buf, (pos + 1)*8, 24), 
-			MIN_THREE + buffer.readbits(buf, (pos + 4)*8, 24),
-			MIN_THREE + buffer.readbits(buf, (pos + 7)*8, 24)
+			xVal >= 2^23 and (-2^24) + xVal or xVal, 
+			yVal >= 2^23 and (-2^24) + yVal or yVal,
+			zVal >= 2^23 and (-2^24) + zVal or zVal
 		)
 	elseif id == FLOAT then
 		data.Position += 13
@@ -245,6 +249,13 @@ local function vecDeserializer(buf: buffer, data: PositionData)
 			buffer.readf32(buf, pos + 1), 
 			buffer.readf32(buf, pos + 5),
 			buffer.readf32(buf, pos + 9)
+		)
+	elseif id == NUMBER then
+		data.Position += 1
+		return vector.create(
+			Number.deserialize(buf, data),
+			Number.deserialize(buf, data),
+			Number.deserialize(buf, data)
 		)
 	else
 		data.Position += 1
