@@ -1,6 +1,10 @@
 --!optimize 2
 local enumerator = require("./internal/pointer/Enumerator")
 
+do
+	require("./internal/table") -- ensures the rest are loaded
+end
+
 local support = enumerator.support
 local trim = enumerator.Methods.trim
 
@@ -15,9 +19,9 @@ Serialize.serialize = function(value: any)
 	if typeValue == "function" or typeValue == "thread" then
 		typeValue = "nil"
 	end
-	
+
 	local Data = {Position=0, Data=nil, Size=nil}
-	
+
 	local serial = modules[typeValue]
 	if not serial then
 		serial = require(`./internal/{typeValue}`).serialize
@@ -25,7 +29,7 @@ Serialize.serialize = function(value: any)
 	end
 	serial(value, Data)
 	trim(Data)
-	
+
 	return Data.Data
 end
 
@@ -50,14 +54,14 @@ Serialize.deserialize = function(value: buffer)
 			7 -- userdata
 			else 0 -- add more if statements if needed for future
 	end
-	
+
 	local PositionData = {Position = 0}
-	
+
 	local deserial = modules[pointer]
 	if deserial then
 		return deserial(value, PositionData)
 	end
-	
+
 	deserial = require(`./internal/{enumerator[pointer]}`).deserialize
 	modules[pointer] = deserial
 	return deserial(value, PositionData)

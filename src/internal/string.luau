@@ -69,20 +69,22 @@ local function strSerializer(value: string, data: BufferData)
 			buf = grow(buf, data, 1)
 			buffer.writeu8(buf, pos, NUM)
 			numSerializer(tonumber(value), data)
-		elseif start ~= 1 and finish == len then -- <str><num>
-			buf = grow(buf, data, 1)
-			buffer.writeu8(buf, pos, CONCAT_STR_NUM)
-			strSerializer(string.sub(value, 1, start-1), data)
-			numSerializer(tonumber(string.sub(value, start)), data)
-			return
-		elseif start == 1 and finish ~= len then -- <num><str>
-			-- there exist cases where it could be <num><str><num>
-			-- in those cases.. it can become much slower
-			buf = grow(buf, data, 1)
-			buffer.writeu8(buf, pos, CONCAT_NUM_STR)
-			numSerializer(tonumber(string.sub(value, 1, finish)), data)
-			strSerializer(string.sub(value, finish + 1), data)
-			return
+		elseif start and finish and finish - start > 1 then
+			if start ~= 1 and finish == len then -- <str><num>
+				buf = grow(buf, data, 1)
+				buffer.writeu8(buf, pos, CONCAT_STR_NUM)
+				strSerializer(string.sub(value, 1, start-1), data)
+				numSerializer(tonumber(string.sub(value, start)), data)
+				return
+			elseif start == 1 and finish ~= len then -- <num><str>
+				-- there exist cases where it could be <num><str><num>
+				-- in those cases.. it can become much slower
+				buf = grow(buf, data, 1)
+				buffer.writeu8(buf, pos, CONCAT_NUM_STR)
+				numSerializer(tonumber(string.sub(value, 1, finish)), data)
+				strSerializer(string.sub(value, finish + 1), data)
+				return
+			end
 		end
 	end
 
@@ -168,7 +170,7 @@ local function strDeserializer(buf: buffer, data: PositionData)
 		data.Position += 1
 		return nil -- for future version
 	end
-	
+
 	data.Position += len + lenSize + 1
 	return buffer.readstring(buf, pos + lenSize + 1, len)
 end
@@ -176,7 +178,7 @@ end
 local String = {
 	Read = READ,
 	Write = WRITE,
-	
+
 	serialize = strSerializer,
 	deserialize = strDeserializer
 }
