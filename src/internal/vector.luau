@@ -87,7 +87,11 @@ local function vecSerializer(value: vector, data: BufferData)
 
 		return
 	end
-
+	
+	-- what if nan is in any?!
+	-- i cannot force 1-2 bytes for vectors with nans it isn't possible
+	-- we could check if the value == itself?
+	
 	-- now we check scalar
 	local valueX = value.x
 	local valueY = value.y
@@ -136,7 +140,10 @@ local function vecSerializer(value: vector, data: BufferData)
 	local constY = Number.Write[valueY]
 	local constZ = Number.Write[valueZ]
 
-	local isNumber = constX or constY or constZ
+	local isNumber = valueX ~= valueX 
+		or valueY ~= valueY 
+		or valueZ ~= valueZ 
+		or constX or constY or constZ
 
 	if typeX ~= typeY or typeY ~= typeZ or isNumber then
 		buf = grow(buf, data, 1)
@@ -237,7 +244,7 @@ local function vecDeserializer(buf: buffer, data: PositionData)
 		local xVal = buffer.readbits(buf, (pos + 1)*8, 24)
 		local yVal = buffer.readbits(buf, (pos + 4)*8, 24)
 		local zVal = buffer.readbits(buf, (pos + 7)*8, 24)
-		
+
 		return vector.create(
 			xVal >= 2^23 and (-2^24) + xVal or xVal, 
 			yVal >= 2^23 and (-2^24) + yVal or yVal,
