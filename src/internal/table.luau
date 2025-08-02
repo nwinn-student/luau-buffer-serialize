@@ -110,8 +110,8 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 				one_byte_existing[v] = buffer.readu8(buf, tempPos)
 			elseif ttp - tempPos == 2 then
 				two_byte_existing[v] = buffer.readu16(buf, tempPos)
-			else
-				-- cache for rest
+			elseif existingIndex ~= 65_535 then
+				-- cache for rest (only 65_536 values we can cache!!)
 				existing[v] = existingIndex
 				existingIndex += 1
 			end
@@ -181,8 +181,8 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 				one_byte_existing[i] = buffer.readu8(buf, tempPos)
 			elseif ttp - tempPos == 2 then
 				two_byte_existing[i] = buffer.readu16(buf, tempPos)
-			else
-				-- cache for rest
+			elseif existingIndex ~= 65_535 then
+				-- cache for rest (only 65_536 values we can cache)
 				existing[i] = existingIndex
 				existingIndex += 1
 			end
@@ -238,8 +238,8 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 			one_byte_existing[v] = buffer.readu8(buf, tempPos)
 		elseif ttp - tempPos == 2 then
 			two_byte_existing[v] = buffer.readu16(buf, tempPos)
-		else
-			-- cache for rest
+		elseif existingIndex ~= 65_535 then
+			-- cache for rest (only 65_536 values we can cache)
 			existing[v] = existingIndex
 			existingIndex += 1 -- ??
 		end
