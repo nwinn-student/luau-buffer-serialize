@@ -38,12 +38,12 @@ local function strSerializer(value: string, data: BufferData)
 		buffer.writeu8(buf, pos, EMPTY)
 		return
 	end
-
+	
 	local cachedConstant: number? = WRITE[value]
 	if cachedConstant then
 		local newSize = if cachedConstant <= 64 then 1
 			else 2
-
+		
 		buf = grow(buf, data, newSize)
 
 		if newSize == 1 then
@@ -65,10 +65,12 @@ local function strSerializer(value: string, data: BufferData)
 		--								<-123.521> <e-53>
 		-- we just want positive integers (it is 2+x faster than above)
 		local start, finish = string.find(value, "%d+")
+
 		if start == 1 and finish == len then -- <num>
 			buf = grow(buf, data, 1)
 			buffer.writeu8(buf, pos, NUM)
 			numSerializer(tonumber(value), data)
+			return
 		elseif start and finish and finish - start > 1 then
 			if start ~= 1 and finish == len then -- <str><num>
 				buf = grow(buf, data, 1)
@@ -85,7 +87,51 @@ local function strSerializer(value: string, data: BufferData)
 				strSerializer(string.sub(value, finish + 1), data)
 				return
 			end
+		else
+			-- str MUST be a constant for any value
+			if start ~= 1 and finish == len then -- <str><num>
+				local str = string.sub(value, 1, start-1)
+				local cachedConstant = WRITE[str]
+				if cachedConstant then
+					local newSize = if cachedConstant <= 64 then 2
+						else 3
+					buf = grow(buf, data, newSize)
+					buffer.writeu8(buf, pos, CONCAT_STR_NUM)
+
+					if newSize == 1 then
+						buffer.writeu8(buf, pos + 1, cachedConstant + 18)
+					else
+						local constVal = cachedConstant - 64
+						buffer.writeu8(buf, pos + 1, 83 + (constVal // 256) )
+						buffer.writeu8(buf, pos + 2, constVal)
+					end
+					numSerializer(tonumber(string.sub(value, start)), data)
+					return
+				end
+			elseif start == 1 and finish ~= len then -- <num><str>
+				local str = string.sub(value, finish + 1)
+				local cachedConstant = WRITE[str]
+				if cachedConstant then
+					buf = grow(buf, data, 1)
+					buffer.writeu8(buf, pos, CONCAT_NUM_STR)
+					numSerializer(tonumber(string.sub(value, 1, finish)), data)
+					pos = data.Position
+					local newSize = if cachedConstant <= 64 then 1
+						else 2
+					buf = grow(buf, data, newSize)
+					
+					if newSize == 1 then
+						buffer.writeu8(buf, pos + 1, cachedConstant + 18)
+					else
+						local constVal = cachedConstant - 64
+						buffer.writeu8(buf, pos + 1, 83 + (constVal // 256) )
+						buffer.writeu8(buf, pos + 2, constVal)
+					end
+					return
+				end
+			end
 		end
+		
 	end
 
 	local newSize = if len < 256 then 2
