@@ -15,6 +15,7 @@ local THREE_BYTE = 92
 local INT = 93
 local FLOAT = 94
 local DOUBLE = 95
+local NAN = 96
 
 local MIN_BYTE = -2^7
 local MAX_BYTE = 2^7-1
@@ -47,6 +48,10 @@ local function numSerializer(value: number, data: BufferData)
 	elseif value == 1 then
 		buf = grow(buf, data, 1)
 		buffer.writeu8(buf, pos, ONE)
+		return
+	elseif value ~= value then
+		buf = grow(buf, data, 1)
+		buffer.writeu8(buf, pos, NAN)
 		return
 	end
 
@@ -124,6 +129,9 @@ local function numDeserializer(buf: buffer, data: PositionData)
 	elseif id == ONE then
 		data.Position += 1
 		return 1
+	elseif id == NAN then
+		data.Position += 1
+		return 0/0
 	end
 
 	local cachedId = if id > 131 then (id - 131) * 256 + 64
@@ -166,7 +174,7 @@ end
 local Number = {
 	Read = READ,
 	Write = WRITE,
-	
+
 	serialize = numSerializer,
 	deserialize = numDeserializer,
 }

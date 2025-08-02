@@ -16,7 +16,7 @@
 
 BufferSerializer is a serializer for complex data structures with the capability to compress known constants whose goal tredges the line of speed and effective output size.  
   
-The currently supported types are `nil`, `string`, `boolean`, `buffer`, `number`, `vector`, `table`, and `userdata`.
+The currently supported types are `nil`, `string`, `boolean`, `buffer`, `number`, `vector`, `table`, and `userdata`.  `thread` and `functions` are also supported, but they are immediately converted to `nil`.  They can be used to save output size in array structures with potential gaps `{1, 2, 3, fn, 4, 5}`.
 
 ## Requirements
 [Luau 0.670+](https://github.com/luau-lang/luau/releases)
@@ -45,7 +45,7 @@ print(`Initial Data: {data}, Final Data: {input}`)
 
 ## Performance
 
-Tests were performed comparing Roblox's JSONEncode/Decode and BufferSerializer.  [LibDeflate](https://github.com/safeteeWow/LibDeflate) is used to compare whether using BufferSerializer is comparable to using JSONEncode/Decode.  Cheating serialize showcases how serialize will perform when all of the values tested are constant.  The tests can be located [here](#unknown). (not currently setup)
+Tests were performed comparing Roblox's JSONEncode/Decode and BufferSerializer.  [LibDeflate](https://github.com/safeteeWow/LibDeflate) is used to compare whether using BufferSerializer is comparable to using JSONEncode/Decode.  Cheating serialize showcases how serialize will perform when all of the values tested are constant.  The tests can be located [here](https://github.com/nwinn-student/luau-bench/tree/main/bench).
 
 Expected results from small sample tests:  
  - serialize produces a smaller size but takes longer than JSONEncode
@@ -55,25 +55,6 @@ Expected results from small sample tests:
 Actual results:
  - serialize may produce a smaller size, but takes longer than JSONEncode
  - compress w/ serialize usually takes around the same amount of time and usually produces cheaper, it is on a per-case basis though
- - deserialize has yet to be implemented
-
-| **Type** | Time (s) | Memory (kB) | Size (b) |
-| ---- | ---- | ---- | ---- |
-| JSONEncode | 1.4e-5 | ERR: Runs in C++ so memory usage is unknown | 865 |
-| serialize | 4e-5 | 3.2 | 650 |
-| cheating-serialize | 4e-5 | 1.3 | 218 |
-| compress w/ JSONEncode | 1.3e-3 | 43 | 25 |
-| compress w/ serialize | 1.17e-3 | 43 | 36 |
-| compress w/ cheating-serialize | 2.4e-4 | 26 | 13 |
-|  |  |  |  |
-| JSONDecode | 3.5e-5 | 3.4 | --- |
-| deserialize | 3.7e-5 | 4.2 | --- |
-| cheating-deserialize | 5.5e-5 | 4.1 | --- |
-| decompress w/ JSONDecode | 5.5e-5 | 19 | --- |
-| decompress w/ deserialize | 7.5e-5 | 18 | --- |
-| decompress w/ cheating-deserialize | 3.8e-5 | 5.3 | --- |
-
-
 
 ## Constant Amount Supported
 | **Type** | **Amount** | **Cost** |
@@ -131,9 +112,9 @@ vector and nil if in table (so not added).
 - [X] int [93]: The number is an int (4 bytes) (Takes 5 byte)
 - [X] float [94]: The number is a float (4 bytes) (Takes 5 byte)
 - [X] double [95]: The number is a double (8 bytes) (Takes 9 byte)
-- [ ] UNKNOWN [96]: An approach that may be used in the future, maybe five_byte.
-- [ ] UNKNOWN [97]: An approach that may be used in the future, maybe six_byte.
-- [ ] UNKNOWN [98]: An approach that may be used in the future.
+- [X] nan [96]: The constant nan, only present to ensure nan does error table's existingIndex.
+- [ ] UNKNOWN [97]: An approach that may be used in the future, maybe five_byte.
+- [ ] UNKNOWN [98]: An approach that may be used in the future, maybe six_byte.
 - [ ] UNKNOWN [99]: An approach that may be used in the future.
 
 `vector`: (X, Y, Z), All of which are floats (vector is immutable!).
