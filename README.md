@@ -14,9 +14,9 @@
 
 ## Purpose
 
-BufferSerializer is a serializer for complex data structures with the capability to compress known constants whose goal tredges the line of speed and effective output size.  
+BufferSerializer is a general-purpose serializer for complex data structures with the capability to compress known constants whose goal tredges the line of speed and effective output size.
   
-The currently supported types are `nil`, `string`, `boolean`, `buffer`, `number`, `vector`, `table`, and `userdata`.  `thread` and `functions` are also supported, but they are immediately converted to `nil`.  They can be used to save output size in array structures with potential gaps `{1, 2, 3, fn, 4, 5}`.
+The currently supported types are `nil`, `string`, `boolean`, `buffer`, `number`, `vector`, `table`, and `userdata`.  `thread` and `functions` are also supported, but they are immediately converted to `nil`.  They can be used to save output size in array structures with potential gaps `{1, 2, 3, fn, 4, 5}`.  The user must define their own serialization / deserialization approach for `userdata`, examples are provided in [examples](./examples).
 
 ## Requirements
 [Luau 0.670+](https://github.com/luau-lang/luau/releases)
@@ -45,16 +45,9 @@ print(`Initial Data: {data}, Final Data: {input}`)
 
 ## Performance
 
-Tests were performed comparing Roblox's JSONEncode/Decode and BufferSerializer.  [LibDeflate](https://github.com/safeteeWow/LibDeflate) is used to compare whether using BufferSerializer is comparable to using JSONEncode/Decode.  Cheating serialize showcases how serialize will perform when all of the values tested are constant.  The tests can be located [here](https://github.com/nwinn-student/luau-bench/tree/main/bench).
+Tests were performed comparing Roblox's JSONEncode/Decode, cipharius's MessagePack, and BufferSerializer.  [LibDeflate](https://github.com/safeteeWow/LibDeflate) is used to compare whether using BufferSerializer is comparable to using JSONEncode/Decode / MessagePack.  The test code can be located [here](./bench/compare.luau) and personal results [here](./bench/results.txt).
 
-Expected results from small sample tests:  
- - serialize produces a smaller size but takes longer than JSONEncode
- - compress w/ serialize takes less time than compress w/ JSONEncode and produces cheaper
- - deserialize takes longer than JSONEncode
- - decompress w/ deserialize takes longer than decompress w/ JSONDecode
-Actual results:
- - serialize may produce a smaller size, but takes longer than JSONEncode
- - compress w/ serialize usually takes around the same amount of time and usually produces cheaper, it is on a per-case basis though
+The most important result would be the output size when comparing the different libraries as the speed can easily be improved upon, BufferSerializer outputs a roughly 50% smaller size than JSONEncode and 40% smaller size than MessagePack.  However, BufferSerializer is less compressable than JSONEncode / MessagePack, so the end resulting output size will be roughly the same.
 
 ## Constant Amount Supported
 | **Type** | **Amount** | **Cost** |
