@@ -1,7 +1,5 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
-type BufferData = enumerator.BufferData
-type PositionData = enumerator.PositionData
 
 local grow = enumerator.Methods.grow
 
@@ -16,15 +14,13 @@ local INT = 7
 local EMPTY_BUFFER = buffer.create(0)
 
 return {
-	serialize = function(value: buffer, data: BufferData)
+	serialize = function(value: buffer, buf: buffer, pos: number)
 		local len = buffer.len(value)
-		local buf = data.Data
-		local pos = data.Position or 0
-
+		
 		if len == 0 then
-			buf = grow(buf, data, 1)
+			buf = grow(buf, pos, 1)
 			buffer.writeu8(buf, pos, EMPTY)
-			return
+			return buf, pos + 1
 		end
 
 		local newSize = if len < 256 then 2
@@ -32,7 +28,7 @@ return {
 			elseif len < 16_777_216 then 4
 			else 5
 
-		buf = grow(buf, data, len + newSize)
+		buf = grow(buf, pos, len + newSize)
 		buffer.writeu8(buf, pos, 2 + newSize)
 
 		if len < 256 then
@@ -46,14 +42,13 @@ return {
 		end
 
 		buffer.copy(buf, pos + newSize, value)
+		return buf, pos + newSize + len
 	end,
-	deserialize = function(buf: buffer, data: PositionData)
-		local pos = data.Position
+	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
 		
 		if id == EMPTY then
-			data.Position += 1
-			return EMPTY_BUFFER
+			return EMPTY_BUFFER, pos + 1
 		end
 		
 		pos += 1
@@ -78,7 +73,6 @@ return {
 
 		local value = buffer.create(len)
 		buffer.copy(value, 0, buf, pos, len)
-		data.Position += len + lenSize + 1
-		return value
+		return value, pos + len
 	end
 }

@@ -1,7 +1,5 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
-type BufferData = enumerator.BufferData
-type PositionData = enumerator.PositionData
 
 local numSerializer
 local numDeserializer
@@ -29,14 +27,12 @@ local READ = {}
 local WRITE = {} -- 1 to 1343
 
 @native
-local function strSerializer(value: string, data: BufferData)
-	local buf = data.Data
-	local pos = data.Position or 0
+local function strSerializer(value: string, buf: buffer, pos :number)
 
 	if value == "" then
-		buf = grow(buf, data, 1)
+		buf = grow(buf, pos, 1)
 		buffer.writeu8(buf, pos, EMPTY)
-		return
+		return buf, pos + 1
 	end
 	
 	local cachedConstant: number? = WRITE[value]
@@ -44,7 +40,7 @@ local function strSerializer(value: string, data: BufferData)
 		local newSize = if cachedConstant <= 64 then 1
 			else 2
 		
-		buf = grow(buf, data, newSize)
+		buf = grow(buf, pos, newSize)
 
 		if newSize == 1 then
 			buffer.writeu8(buf, pos, cachedConstant + 18)
@@ -54,7 +50,7 @@ local function strSerializer(value: string, data: BufferData)
 			buffer.writeu8(buf, pos+1, constVal)
 		end
 
-		return
+		return buf, pos + newSize
 	end
 
 	local len = #value
@@ -67,25 +63,24 @@ local function strSerializer(value: string, data: BufferData)
 		local start, finish = string.find(value, "%d+")
 
 		if start == 1 and finish == len then -- <num>
-			buf = grow(buf, data, 1)
+			buf = grow(buf, pos, 1)
 			buffer.writeu8(buf, pos, NUM)
-			numSerializer(tonumber(value), data)
-			return
+			return numSerializer(tonumber(value), buf, pos + 1)
 		elseif start and finish and finish - start > 1 then
 			if start ~= 1 and finish == len then -- <str><num>
-				buf = grow(buf, data, 1)
+				buf = grow(buf, pos, 1)
 				buffer.writeu8(buf, pos, CONCAT_STR_NUM)
-				strSerializer(string.sub(value, 1, start-1), data)
-				numSerializer(tonumber(string.sub(value, start)), data)
-				return
+				return numSerializer(tonumber(string.sub(value, start)), 
+					strSerializer(string.sub(value, 1, start-1), buf, pos + 1)
+				)
 			elseif start == 1 and finish ~= len then -- <num><str>
 				-- there exist cases where it could be <num><str><num>
 				-- in those cases.. it can become much slower
-				buf = grow(buf, data, 1)
+				buf = grow(buf, pos, 1)
 				buffer.writeu8(buf, pos, CONCAT_NUM_STR)
-				numSerializer(tonumber(string.sub(value, 1, finish)), data)
-				strSerializer(string.sub(value, finish + 1), data)
-				return
+				return strSerializer(string.sub(value, finish + 1), 
+					numSerializer(tonumber(string.sub(value, 1, finish)), buf, pos + 1)
+				)
 			end
 		else
 			-- str MUST be a constant for any value
@@ -95,7 +90,7 @@ local function strSerializer(value: string, data: BufferData)
 				if cachedConstant then
 					local newSize = if cachedConstant <= 64 then 2
 						else 3
-					buf = grow(buf, data, newSize)
+					buf = grow(buf, pos, newSize)
 					buffer.writeu8(buf, pos, CONCAT_STR_NUM)
 
 					if newSize == 1 then
@@ -105,20 +100,18 @@ local function strSerializer(value: string, data: BufferData)
 						buffer.writeu8(buf, pos + 1, 83 + (constVal // 256) )
 						buffer.writeu8(buf, pos + 2, constVal)
 					end
-					numSerializer(tonumber(string.sub(value, start)), data)
-					return
+					return numSerializer(tonumber(string.sub(value, start)), buf, pos + newSize)
 				end
 			elseif start == 1 and finish ~= len then -- <num><str>
 				local str = string.sub(value, finish + 1)
 				local cachedConstant = WRITE[str]
 				if cachedConstant then
-					buf = grow(buf, data, 1)
+					buf = grow(buf, pos, 1)
 					buffer.writeu8(buf, pos, CONCAT_NUM_STR)
-					numSerializer(tonumber(string.sub(value, 1, finish)), data)
-					pos = data.Position
+					buf, pos = numSerializer(tonumber(string.sub(value, 1, finish)), buf, pos + 1)
 					local newSize = if cachedConstant <= 64 then 1
 						else 2
-					buf = grow(buf, data, newSize)
+					buf = grow(buf, pos, newSize)
 					
 					if newSize == 1 then
 						buffer.writeu8(buf, pos + 1, cachedConstant + 18)
@@ -127,7 +120,7 @@ local function strSerializer(value: string, data: BufferData)
 						buffer.writeu8(buf, pos + 1, 83 + (constVal // 256) )
 						buffer.writeu8(buf, pos + 2, constVal)
 					end
-					return
+					return buf, pos + newSize
 				end
 			end
 		end
@@ -153,16 +146,15 @@ local function strSerializer(value: string, data: BufferData)
 	end
 
 	buffer.writestring(buf, pos + newSize, value, len)
+	return buf, pos + newSize + len
 end
 
 @native
-local function strDeserializer(buf: buffer, data: PositionData)
-	local pos = data.Position
+local function strDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == EMPTY then
-		data.Position += 1
-		return ''
+		return '', pos + 1
 	end
 
 	local cachedId = if id > 82 then (id - 82) * 256 + 64
@@ -170,33 +162,29 @@ local function strDeserializer(buf: buffer, data: PositionData)
 
 	local cachedConstant = READ[cachedId]
 	if cachedConstant then
-		data.Position += if cachedId > 64 then 2 else 1
-		return cachedConstant
+		return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
 	end
 
 	if id == CONCAT_NUM_STR then
-		data.Position += 1
-		local numVal = numDeserializer(buf, data)
-		local strVal = strDeserializer(buf, data)
+		local numVal, pos = numDeserializer(buf, pos + 1)
+		local strVal, pos = strDeserializer(buf, pos)
 		if numVal and strVal then
-			return numVal .. strVal
+			return numVal .. strVal, pos
 		end
-		return nil -- data corrupted
+		return nil, pos + 1 -- data corrupted
 	elseif id == CONCAT_STR_NUM then
-		data.Position += 1
-		local strVal = strDeserializer(buf, data)
-		local numVal = numDeserializer(buf, data)
+		local strVal, pos = strDeserializer(buf, pos + 1)
+		local numVal, pos = numDeserializer(buf, pos)
 		if numVal and strVal then
-			return strVal .. numVal
+			return strVal .. numVal, pos
 		end
-		return nil -- data corrupted
+		return nil + 1 -- data corrupted
 	elseif id == NUM then
-		data.Position += 1
-		local numVal = numDeserializer(buf, data)
+		local numVal, pos = numDeserializer(buf, pos + 1)
 		if numVal then
-			return tostring(numVal)
+			return tostring(numVal), pos
 		end
-		return nil -- data corrupted
+		return nil, pos + 1 -- data corrupted
 	end
 
 	local lenSize = id - EMPTY
@@ -213,12 +201,10 @@ local function strDeserializer(buf: buffer, data: PositionData)
 		len = buffer.readu32(buf, pos + 1)
 	else
 		-- DATA CORRUPTED (for now)
-		data.Position += 1
-		return nil -- for future version
+		return nil, pos + 1 -- for future version
 	end
 
-	data.Position += len + lenSize + 1
-	return buffer.readstring(buf, pos + lenSize + 1, len)
+	return buffer.readstring(buf, pos + lenSize + 1, len), pos + len + 1 + lenSize
 end
 
 local String = {

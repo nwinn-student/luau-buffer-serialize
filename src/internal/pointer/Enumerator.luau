@@ -13,15 +13,6 @@ local enumerator = {
 
 local methods = {}
 
-type Variant = number
-
-export type BufferData = {
-	Position: Variant,
-	Data: buffer,
-	Size: Variant
-}
-export type PositionData = {Position: Variant}
-
 --[[
 	Inflates the buffer size to be at least the new position.
 ]]--

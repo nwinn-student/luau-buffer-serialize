@@ -1,7 +1,5 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
-type BufferData = enumerator.BufferData
-type PositionData = enumerator.PositionData
 
 local grow = enumerator.Methods.grow
 
@@ -37,22 +35,20 @@ local WRITE = {} -- 1 to 1087
 local FLOAT_BUFFER = buffer.create(4)
 
 @native
-local function numSerializer(value: number, data: BufferData)
-	local buf = data.Data
-	local pos = data.Position or 0
-
+local function numSerializer(value: number, buf: buffer, pos: number)
+	
 	if value == 0 then
-		buf = grow(buf, data, 1)
+		buf = grow(buf, pos, 1)
 		buffer.writeu8(buf, pos, ZERO)
-		return
+		return buf, pos + 1
 	elseif value == 1 then
-		buf = grow(buf, data, 1)
+		buf = grow(buf, pos, 1)
 		buffer.writeu8(buf, pos, ONE)
-		return
+		return buf, pos + 1
 	elseif value ~= value then
-		buf = grow(buf, data, 1)
+		buf = grow(buf, pos, 1)
 		buffer.writeu8(buf, pos, NAN)
-		return
+		return buf, pos + 1
 	end
 
 	local cachedConstant: number? = WRITE[value]
@@ -60,7 +56,7 @@ local function numSerializer(value: number, data: BufferData)
 		local newSize = if cachedConstant <= 32 then 1
 			else 2
 
-		buf = grow(buf, data, newSize)
+		buf = grow(buf, pos, newSize)
 
 		if newSize == 1 then
 			buffer.writeu8(buf, pos, cachedConstant + 99)
@@ -70,33 +66,33 @@ local function numSerializer(value: number, data: BufferData)
 			buffer.writeu8(buf, pos+1, constVal)
 		end
 
-		return
+		return buf, pos + newSize
 	end
 
 	-- Floating points
 	if value % 1 ~= 0 or value > MAX_INT or value < MIN_INT then
 
 		if MAX_FLOAT < value or value < -MAX_FLOAT then
-			buf = grow(buf, data, 9)
+			buf = grow(buf, pos, 9)
 			buffer.writeu8(buf, pos, DOUBLE)
 			buffer.writef64(buf, pos+1, value)
-			return
+			return buf, pos + 9
 		end
 
 		-- Ensures that the output WILL be the same as the input
 		-- even if it results in a slower path
 		buffer.writef32(FLOAT_BUFFER, 0, value)
 		if buffer.readf32(FLOAT_BUFFER, 0) - value == 0 then
-			buf = grow(buf, data, 5)
+			buf = grow(buf, pos, 5)
 			buffer.writeu8(buf, pos, FLOAT)
 			buffer.writef32(buf, pos+1, value)
-			return
+			return buf, pos + 5
 		end
 
-		buf = grow(buf, data, 9)
+		buf = grow(buf, pos, 9)
 		buffer.writeu8(buf, pos, DOUBLE)
 		buffer.writef64(buf, pos+1, value)
-		return
+		return buf, pos + 9
 	end
 
 	local newSize = if MAX_BYTE >= value and value >= MIN_BYTE then 2
@@ -104,7 +100,7 @@ local function numSerializer(value: number, data: BufferData)
 		elseif MAX_THREE >= value and value >= MIN_THREE then 4
 		else 5
 
-	buf = grow(buf, data, newSize)
+	buf = grow(buf, pos, newSize)
 	buffer.writeu8(buf, pos, ZERO + newSize)
 
 	if newSize == 2 then
@@ -116,22 +112,19 @@ local function numSerializer(value: number, data: BufferData)
 	else
 		buffer.writei32(buf, pos+1, value)
 	end
+	return buf, pos + newSize
 end
 
 @native
-local function numDeserializer(buf: buffer, data: PositionData)
-	local pos = data.Position
+local function numDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then
-		data.Position += 1
-		return 0
+		return 0, pos + 1
 	elseif id == ONE then
-		data.Position += 1
-		return 1
+		return 1, pos + 1
 	elseif id == NAN then
-		data.Position += 1
-		return 0/0
+		return 0/0, pos + 1
 	end
 
 	local cachedId = if id > 131 then (id - 131) * 256 + 64
@@ -139,35 +132,27 @@ local function numDeserializer(buf: buffer, data: PositionData)
 
 	local cachedConstant = READ[cachedId]
 	if cachedConstant then
-		data.Position += if cachedId > 64 then 2 else 1
-		return cachedConstant
+		return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
 	end
 
 	if id == BYTE then
-		data.Position += 2
-		return buffer.readi8(buf, pos + 1)
+		return buffer.readi8(buf, pos + 1), pos + 2
 	elseif id == CHAR then
-		data.Position += 3
-		return buffer.readi16(buf, pos + 1)
+		return buffer.readi16(buf, pos + 1), pos + 3
 	elseif id == THREE_BYTE then
-		data.Position += 4
 		local val = buffer.readbits(buf, (pos + 1)*8, 24)
 		if val >= 2^23 then
-			return (-2^24) + val
+			return (-2^24) + val, pos + 4
 		end
-		return val
+		return val, pos + 4
 	elseif id == INT then
-		data.Position += 5
-		return buffer.readi32(buf, pos + 1)
+		return buffer.readi32(buf, pos + 1), pos + 5
 	elseif id == FLOAT then
-		data.Position += 5
-		return buffer.readf32(buf, pos + 1)
+		return buffer.readf32(buf, pos + 1), pos + 5
 	elseif id == DOUBLE then
-		data.Position += 9
-		return buffer.readf64(buf, pos + 1)
+		return buffer.readf64(buf, pos + 1), pos + 9
 	else
-		data.Position += 1
-		return nil -- data corruption
+		return nil, pos + 1 -- data corruption
 	end
 end 
 
