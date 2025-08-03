@@ -2,100 +2,178 @@
 
 > Design Stage: In Progress
 
-Compression results are limited to the data format, so it must be optimized prior to any compression (to both save bytes and time).  Buffer Serializer is a first pass compressor for numbers, vectors, booleans, and collections thereof, with the intention to perform as a precursor lossless compression approach that prepares the data for a more thorough compression algorithm.  Lossless compression module like Deflate/zlib serve as the more thorough algorithms suited for a second pass.  Custom types are permitted, and approaches can be added to suit usage cases.
+#### Table of Contents
+- [Purpose](#purpose)
+- [Requirements](#requirements)
+- [Usage Cases](#usage-cases)
+- [Example](#example)
+- [Performance](#performance)
+- [Constant Amount Supported](#constant-amount-supported)
+- [Technical Details](#technical-details)
 
-There are 8 types that can be defined and 32 approaches for each type.  An approach can be a type, but it is usually a constant or it defines how to serialize the data.  The currently added types are `string`, `boolean`, `number`, `vector`, `table`, and `userdata`.  Where `userdata` is used to point to custom types.  The two leftover slots can be used to define more custom types, but it will require manually modifying the modules.
 
-# Requirements
-Luau 0.670+
+## Purpose
 
-# Usage Cases
-Storing data in a database, transmitting data to a shared source, preparing the data for masking, encryption, or further compression.
+BufferSerializer is a serializer for complex data structures with the capability to compress known constants whose goal tredges the line of speed and effective output size.  
+  
+The currently supported types are `nil`, `string`, `boolean`, `buffer`, `number`, `vector`, `table`, and `userdata`.
 
-# Example Inputs/Outputs
-100 is a byte, so we can say it is numberType, byteApproach, 100.  Which totals 1+1=2 bytes (100 -> '100' is 3 bytes, so we save one).
+## Requirements
+[Luau 0.670+](https://github.com/luau-lang/luau/releases)
 
-15.5 is a float, so we can say it is numberType, floatApproach, 15.5.  Which totals 1+4=5 bytes (15.5 -> '15.5' is 4 bytes, so we lose one).
+## Usage Cases
+A user may need to prepare data for storing in a database, they will use BufferSerializer to convert the table with the data into a buffer, then passing the buffer to a lossless compressor module such as [LibDeflate](https://github.com/safeteeWow/LibDeflate) and storing the value.
 
-(0,1,5) is a vector, so we can say it is vectorType, byteApproach, 0, 1, 5.  Which totals 1+1+1+1=4 bytes ((0,1,5) -> '(0,1,5)' is 7 bytes, so we save three).
+Another user may need to pass data from one server to another, they will use BufferSerializer to convert the data into a buffer, then a string, passing the Luau string to the other server to be deserialized and understood.
 
-(1.5, 2.5, 0.5) is a vector, so we can say it is vectorType, floatApproach, 1.5, 2.5, 0.5.  Which totals 1+4+4+4=13 bytes ((1.5,2.5,0.5) -> '(1.5,2.5,0.5)' is 13 bytes, so we save none).
+Another user may need to serialize a table that contains itself, as they wish to pass classes and objects across the network.  BufferSerializer can be used to convert the table into a buffer, which is then converted into a string and passed across the network.
 
-# Technical Details
-`boolean`
-- [X] truthy: The constant `true` (Takes 1 byte)
-- [X] falsy: The constant `false` (Takes 1 byte)
+A user with an extension of Luau may wish to have their userdata objects specially handled, using BufferSerializer, they create a function to handle userdata objects that are not constants and use BufferSerializer to convert the userdata's information into understandable information.  When reading the information, another specified function is called to specially read the userdata.
 
-`number`
-- [X] zero: The constant `0` (Takes 1 byte)
-- [X] one: The constant `1` (Takes 1 byte)
-- [X] byte: Represents that the number is a byte (Takes 2 byte)
-- [X] char: Represents that the number is a char (2 bytes) (Takes 3 byte)
-- [X] three_byte: Represents that the number is 3 bytes (Takes 4 byte)
-- [X] int: Represents that the number is an int (4 bytes) (Takes 5 byte)
-- [X] float: Represents that the number is a float (4 bytes) (Takes 5 byte)
-- [X] double: Represents that the number is a double (8 bytes) (Takes 9 byte)
 
-Uses 5 bits to represent the size of the number in bits (0 size means 0 and 1 size means 1) (May not be used in `number`, but in `vector`, `collection`, `string`, uncertain.)
-- [ ] bit_pos_int: Says to look at the next X bits for a positive integer (Takes 1+0.625+0.25 = 1.875 to 1+0.625+4 = 5.625 bytes)
-- [ ] bit_neg_int: Says to look at the next X bits for a negative integer (Takes 1.875 to 5.625 bytes)
-- [ ] bit_int: Uses an extra bit to determine pos/neg (Takes 1+0.75+0.25 = 2 to 1+0.75+4 = 5.75 bytes)
-
-`vector`: (X, Y, Z), All of which are floats.
- - [X] zero: The constant `(0,0,0)` (Takes 1 byte)
- - [X] one: The constant `(1,1,1)` (Takes 1 byte)
- - [X] x_axis: The constant `(1,0,0)` (Takes 1 byte)
- - [X] y_axis: The constant `(0,1,0)` (Takes 1 byte)
- - [X] z_axis: The constant `(0,0,1)` (Takes 1 byte)
- - [X] xy_axis: The constant `(1,1,0)` (Takes 1 byte)
- - [X] yz_axis: The constant `(0,1,1)` (Takes 1 byte)
- - [X] byte: Represents that all three values are bytes (Takes 4 byte)
- - [X] char: Represents that all three values are chars (Takes 7 byte)
- - [X] three_byte: Represents that all three values are three_bytes (Takes 10 byte)
- - [X] float: Represents that all three values are floats (Takes 13 byte, worst case)
- - [X] number: Represents that at least one of the values is of a different type (Takes 1+1+1+2 = 5 to 1+5+5+4 = 15 bytes)
- - [X] scalar_byte: Represents that the vector is a byte multiple of one of the constants (Takes 1+1+1 = 3 bytes)
- - [X] scalar_char: Represents that the vector is a char multiple of one of the constants (Takes 1+2+1 = 4 bytes)
- - [X] scalar_three_byte: Represents that the vector is a three_byte multiple of one of the constants (Takes 1+3+1 = 5 bytes)
- - [X] scalar_float: Represents that the vector is a float multiple of one of the constants (Takes 1+4+1 = 6 bytes)
-
-Operations, so (x, x+a, x+a+b), if a=b then just plus, else plus_2
- - [X] plus: TODO (Takes 1+1+1 = 3 to 1+5+5 = 11 bytes)
- - [X] times: TODO (Takes 3 to 11 bytes)
- - [X] divide: TODO (Takes 3 to 11 bytes)
- - [X] plus_2: TODO (Takes 1+1+1+1 = 4 to 1+5+5+5 = 16 bytes)
- - [X] times_2: TODO (Takes 4 to 16 bytes)
- - [X] divide_2: TODO (Takes 4 to 16 bytes)
- - [ ] dot: TODO (not dot product) ()
- - [ ] to_byte: TODO ()
- - [ ] to_char: TODO ()
- - [ ] bit_number: TODO ()
-
+## Example
 ```luau
--- Used for string and table since they have variable sizes
-size = 0.625 + math.log(n, 2) / 8
+-- Serialize
+local data = "Hello World!"
+local output = BufferSerialize.serialize(data)
+
+-- Deserialize
+local input = BufferSerialize.deserialize(output)
+
+print(`Initial Data: {data}, Final Data: {input}`)
 ```
 
-`string`
- - [ ] empty: The constant `""` (Takes 1 bytes)
- - [ ] normal: Represents a string of length n (Takes 1+n+size = 1.625 + n + log_2(n)/8 bytes)
+## Performance
 
-`table`
- - [ ] truthy: An array of length n with only true values. (Takes 1+size bytes)
- - [ ] falsey: An array of length n with only false values.  (Takes 1+size bytes)
- - [ ] boolean: An array of length n with only boolean values.  (Takes 1+n/8+size bytes)
- - [ ] zero: An array of length n with only zero values.  (Takes 1+size bytes)
- - [ ] one: An array of length n with only one values.  (Takes 1+size bytes)
- - [ ] byte: An array of length n with only byte values.  (Takes 1+n+size bytes)
- - [ ] char: An array of length n with only char values.  (Takes 1+2n+size bytes)
- - [ ] tbyte: An array of length n with only tbyte values.  (Takes 1+3n+size bytes)
- - [ ] int: An array of length n with only int values.  (Takes 1+4n+size bytes)
- - [ ] float: An array of length n with only float values.  (Takes 1+4n+size bytes)
- - [ ] double: An array of length n with only double values.  (Takes 1+8n+size bytes)
- - [ ] number: An array of length n with only mixed number values.  (Takes 1+size+(n to 9n) bytes)
- - [ ] bit_number: TODO
- - [ ] vector: TODO
- - [ ] string: TODO
- - [ ] dictionary: A dictionary of length n with any key/value pairs.  (Takes 1+size+TODO bytes)
- - [ ] table: An array of length n with only table values.  (Takes 1+size+tableBytes bytes)
- - [ ] any: An mixed table of length n with any key/value pairs.  (Takes 1+size+TODO bytes)
+Tests were performed comparing Roblox's JSONEncode/Decode and BufferSerializer.  [LibDeflate](https://github.com/safeteeWow/LibDeflate) is used to compare whether using BufferSerializer is comparable to using JSONEncode/Decode.  Cheating serialize showcases how serialize will perform when all of the values tested are constant.  The tests can be located [here](#unknown). (not currently setup)
+
+Expected results from small sample tests:  
+ - serialize produces a smaller size but takes longer than JSONEncode
+ - compress w/ serialize takes less time than compress w/ JSONEncode and produces cheaper
+ - deserialize takes longer than JSONEncode
+ - decompress w/ deserialize takes longer than decompress w/ JSONDecode
+Actual results:
+ - serialize may produce a smaller size, but takes longer than JSONEncode
+ - compress w/ serialize usually takes around the same amount of time and usually produces cheaper, it is on a per-case basis though
+ - deserialize has yet to be implemented
+
+| **Type** | Time (s) | Memory (kB) | Size (b) |
+| ---- | ---- | ---- | ---- |
+| JSONEncode | 1.4e-5 | ERR: Runs in C++ so memory usage is unknown | 865 |
+| serialize | 4e-5 | 3.2 | 650 |
+| cheating-serialize | 4e-5 | 1.3 | 218 |
+| compress w/ JSONEncode | 1.3e-3 | 43 | 25 |
+| compress w/ serialize | 1.17e-3 | 43 | 36 |
+| compress w/ cheating-serialize | 2.4e-4 | 26 | 13 |
+|  |  |  |  |
+| JSONDecode | 3.5e-5 | 3.4 | --- |
+| deserialize | 3.7e-5 | 4.2 | --- |
+| cheating-deserialize | 5.5e-5 | 4.1 | --- |
+| decompress w/ JSONDecode | 5.5e-5 | 19 | --- |
+| decompress w/ deserialize | 7.5e-5 | 18 | --- |
+| decompress w/ cheating-deserialize | 3.8e-5 | 5.3 | --- |
+
+
+
+## Constant Amount Supported
+| **Type** | **Amount** | **Cost** |
+| ---- | ---- | ---- |
+| `string` | 64 | 1 byte |
+| `number` | 32 | 1 byte |
+| `vector` | 32 | 1 byte |
+| `userdata` | 16 | 1 byte |
+|  |  |  |
+| `string` | 1280 | 2 bytes |
+| `number` | 1024 | 2 bytes |
+| `vector` | 1024 | 2 bytes |
+| `userdata` | 1024 | 2 bytes |
+
+
+## Technical Details
+
+All approaches that take more than one byte are specified, alongside how many bytes they may take.
+Corrupted data will be returned as nil, if the data is in a collection then the aspect will become 0 if in 
+vector and nil if in table (so not added).
+
+`nil`
+- [X] nil [0]: The constant `nil` or unsupported types, such as `function` and `thread`
+
+`boolean`
+- [X] truthy [1]: The constant `true`
+- [X] falsy [2]: The constant `false`
+
+`buffer`
+- [X] empty [3]: The empty buffer
+- [X] byte [4]: A buffer has a length that can be represented as a byte (Takes 2 + bufferLen bytes)
+- [X] char [5]: A buffer has a length that can be represented as a char (Takes 3 + bufferLen bytes)
+- [X] three_byte [6]: A buffer has a length that can be represented in 3 bytes (Takes 4 + bufferLen bytes)
+- [X] int [7]: A buffer has a length that can be represented as an int (Takes 5 + bufferLen bytes)
+- [ ] UNKNOWN [8]: An approach that may be used in the future.
+
+`string`
+- [X] empty [9]: The constant `""`
+- [X] byte [10]: A string has a length that can be represented as a byte (Takes 2 + strLen bytes)
+- [X] char [11]: A string has a length that can be represented as a char (Takes 3 + strLen bytes)
+- [X] three_byte [12]: A string has a length that can be represented in 3 bytes (Takes 4 + strLen bytes)
+- [X] int [13]: A string has a length that can be represented as an int (Takes 5 + strLen bytes)
+- [X] concatcn [14]: Concatenation of a constant and a positive integer (Takes 3-5 bytes, 32- chars)
+- [X] concatnc [15]: Concatenation of a positive integer and a constant (Takes 3-5 bytes, 32- chars)
+- [X] num [16]: The string can be converted to a positive integer (Takes 2-6 bytes, 32- chars).
+- [ ] UNKNOWN [17]: An approach that may be used in the future.
+- [ ] UNKNOWN [18]: An approach that may be used in the future.
+
+`number`
+- [X] zero [88]: The constant `0`
+- [X] one [89]: The constant `1`
+- [X] byte [90]: The number is a byte (Takes 2 byte)
+- [X] char [91]: The number is a char (2 bytes) (Takes 3 byte)
+- [X] three_byte [92]: The number is 3 bytes (Takes 4 byte)
+- [X] int [93]: The number is an int (4 bytes) (Takes 5 byte)
+- [X] float [94]: The number is a float (4 bytes) (Takes 5 byte)
+- [X] double [95]: The number is a double (8 bytes) (Takes 9 byte)
+- [ ] UNKNOWN [96]: An approach that may be used in the future, maybe five_byte.
+- [ ] UNKNOWN [97]: An approach that may be used in the future, maybe six_byte.
+- [ ] UNKNOWN [98]: An approach that may be used in the future.
+- [ ] UNKNOWN [99]: An approach that may be used in the future.
+
+`vector`: (X, Y, Z), All of which are floats (vector is immutable!).
+- [X] zero [136]: The constant `(0,0,0)`
+- [X] one [137]: The constant `(1,1,1)`
+- [X] x_axis [138]: The constant `(1,0,0)`
+- [X] y_axis [139]: The constant `(0,1,0)`
+- [X] z_axis [140]: The constant `(0,0,1)`
+- [X] xy_axis [141]: The constant `(1,1,0)`
+- [X] xz_axis [142]: The constant `(1,0,1)`
+- [X] yz_axis [143]: The constant `(0,1,1)`
+- [X] byte [144]: All three values are bytes (Takes 4 bytes)
+- [X] char [145]: All three values are chars (Takes 7 bytes)
+- [X] three_byte [146]: All three values are three_bytes (Takes 10 bytes)
+- [X] float [147]: All three values are floats (Takes 13 bytes, worst case) 
+- [X] number [148]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
+- [X] scalar_number [149]: The vector is a multiple of an above constant vector (Takes 3 to 7 bytes)
+- [ ] UNKNOWN [150]: An approach that may be used in the future.
+- [ ] UNKNOWN [151]: An approach that may be used in the future.
+- [ ] UNKNOWN [152]: An approach that may be used in the future.
+- [ ] UNKNOWN [153]: An approach that may be used in the future.
+- [ ] UNKNOWN [154]: An approach that may be used in the future.
+- [ ] UNKNOWN [155]: An approach that may be used in the future.
+- [ ] UNKNOWN [156]: An approach that may be used in the future.
+- [ ] UNKNOWN [157]: An approach that may be used in the future.
+
+`table`  
+Definition of array used: An array is a list of elements from index 1 to n where there exist no gaps between the integers 1 and n.  
+The arraySize variable represents the amount of bytes used to store all of the values within the array part.  The minimum value for arraySize is arrayLen, but such an occurance is highly unlikely.  
+The dictSize variable represents the amount of bytes used to store all of the keys and values within the dictionary part.  The minimum value for dictSize is dictLen * 2, but such an occurance is highly unlikely.
+
+- [X] empty table [194]: The constant ```{}```
+- [X] table [195]: A mixed table that contains both arrayend and tableend to terminate. (Takes 3 + arraySize + dictSize bytes)
+- [X] equal_to_existing_value [196]: Two bytes of similar values (Takes 3 bytes)
+- [X] array [197]: An array that uses tableend to terminate (Takes 2 + arraySize bytes)
+- [X] dict [198]: A dictionary that uses tableend to terminate (Takes 2 + dictSize bytes) 
+- [X] arrayend [199]: Used to terminate the array portion of a table
+- [X] tableend [200]: Used to terminate a table
+- [ ] UNKNOWN [201]: An approach that may be used in the future.
+
+`userdata`
+- [X] custom [202]: A user-defined function is used to read/write the information associated with the userdata (Takes 1+custom bytes)
+- [ ] UNKNOWN [203]: An approach that may be used in the future.
