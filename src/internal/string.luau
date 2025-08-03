@@ -132,7 +132,7 @@ local function strSerializer(value: string, buf: buffer, pos :number)
 		elseif len < 16_777_216 then 4
 		else 5
 
-	buf = grow(buf, data, len + newSize)
+	buf = grow(buf, pos, len + newSize)
 	buffer.writeu8(buf, pos, 8 + newSize)
 
 	if len < 256 then

@@ -1,7 +1,5 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
-type BufferData = enumerator.BufferData
-type PositionData = enumerator.PositionData
 
 local Nil = require("./nil")
 local Boolean = require("./boolean")
@@ -24,14 +22,12 @@ local ARRAY_END = 199
 local TABLE_END = 200
 
 @native
-local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: {Data: {[any]:any}, Index: number}?)
-	local buf = data.Data
-	local pos = data.Position or 0
+local function tabSerialize(value: {[any]: any}, buf: buffer, pos: number, parExisting: {Data: {[any]:any}, Index: number}?)
 
 	if next(value) == nil then
-		buf = grow(buf, data, 1)
+		buf = grow(buf, pos, 1)
 		buffer.writeu8(buf, pos, EMPTY)
-		return
+		return buf, pos + 1
 	end
 
 	local lastIndex = 0
@@ -47,7 +43,7 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 	local two_byte_existing = {} -- for speed
 
 	local isDict = #value == 0
-	buf = grow(buf, data, 1) -- 1 to say table
+	buf = grow(buf, pos, 1) -- 1 to say table
 	buffer.writeu8(buf, pos, if isDict then DICT else TABLE)
 
 	local tempPos = pos + 1
@@ -61,7 +57,7 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 			-- fast paths
 			local cached = existing[v]
 			if cached then
-				buf = grow(buf, data, 3)
+				buf = grow(buf, tempPos, 3)
 				buffer.writeu8(buf, tempPos, EQ_EXISTING)
 				buffer.writeu16(buf, tempPos + 1, cached)
 				tempPos += 3
@@ -70,45 +66,45 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 			-- check 1 and 2 byte caches
 			cached = two_byte_existing[v]
 			if cached then
-				buf = grow(buf, data, 2)
+				buf = grow(buf, tempPos, 2)
 				buffer.writeu16(buf, tempPos, cached)
 				tempPos += 2
 				continue
 			end
 			cached = one_byte_existing[v]
 			if cached then
-				buf = grow(buf, data, 1)
+				buf = grow(buf, tempPos, 1)
 				buffer.writeu8(buf, tempPos, cached)
 				tempPos += 1
 				continue
 			end
-
+			
+			local oldPos = tempPos
+			
 			local typeV = type(v)
 			if typeV == "nil" or typeV == "function" or typeV == "thread" then
-				Nil.serialize(v, data)
+				buf, tempPos = Nil.serialize(v, buf, tempPos)
 			elseif typeV == "boolean" then
-				Boolean.serialize(v, data)
+				buf, tempPos = Boolean.serialize(v, buf, tempPos)
 			elseif typeV == "buffer" then
-				Buffer.serialize(v, data)
+				buf, tempPos = Buffer.serialize(v, buf, tempPos)
 			elseif typeV == "string" then
-				String.serialize(v, data)
+				buf, tempPos = String.serialize(v, buf, tempPos)
 			elseif typeV == "number" then
-				Number.serialize(v, data)
+				buf, tempPos = Number.serialize(v, buf, tempPos)
 			elseif typeV == "vector" then
-				Vector.serialize(v, data)
+				buf, tempPos = Vector.serialize(v, buf, tempPos)
 			elseif typeV == "userdata" then
-				Userdata.serialize(v, data)
+				buf, tempPos = Userdata.serialize(v, buf, tempPos)
 			elseif typeV == "table" then
 				parExisting.Index = existingIndex
-				tabSerialize(v, data, parExisting)
+				buf, tempPos = tabSerialize(v, buf, tempPos, parExisting)
 				existingIndex = parExisting.Index
 			end
-			buf = data.Data
 
-			local ttp = data.Position
-			if ttp - tempPos == 1 then
+			if tempPos - oldPos == 1 then
 				one_byte_existing[v] = buffer.readu8(buf, tempPos)
-			elseif ttp - tempPos == 2 then
+			elseif tempPos - oldPos == 2 then
 				two_byte_existing[v] = buffer.readu16(buf, tempPos)
 			elseif existingIndex ~= 65_535 and v == v then
 				-- cache for rest (only 65_536 values we can cache!!)
@@ -116,12 +112,11 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 				existing[v] = existingIndex
 				existingIndex += 1
 			end
-			tempPos = ttp
 			continue
 		end
 		if not endArray and not isDict then
 			endArray = true
-			buf = grow(buf, data, 1)
+			buf = grow(buf, tempPos, 1)
 			buffer.writeu8(buf, tempPos, ARRAY_END)
 			tempPos += 1
 		end
@@ -137,7 +132,7 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 
 		local keyCached = existing[i]
 		if keyCached then
-			buf = grow(buf, data, 3)
+			buf = grow(buf, tempPos, 3)
 			buffer.writeu8(buf, tempPos, EQ_EXISTING)
 			buffer.writeu16(buf, tempPos + 1, keyCached)
 			tempPos += 3
@@ -145,54 +140,53 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 		-- check 1 and 2 byte caches
 		local twoKeyCached = not keyCached and two_byte_existing[i]
 		if twoKeyCached then
-			buf = grow(buf, data, 2)
+			buf = grow(buf, tempPos, 2)
 			buffer.writeu16(buf, tempPos, twoKeyCached)
 			tempPos += 2
 		end
 		local threeKeyCached = not keyCached and not twoKeyCached and one_byte_existing[i]
 		if threeKeyCached then
-			buf = grow(buf, data, 1)
+			buf = grow(buf, tempPos, 1)
 			buffer.writeu8(buf, tempPos, threeKeyCached)
 			tempPos += 1
 		end
-
+		
+		local oldPos = tempPos
+		
 		-- store i
 		if not keyCached and not twoKeyCached and not threeKeyCached then
 			if typeI == "boolean" then
-				Boolean.serialize(i, data)
+				buf, tempPos = Boolean.serialize(i, buf, tempPos)
 			elseif typeI == "buffer" then
-				Buffer.serialize(i, data)
+				buf, tempPos = Buffer.serialize(i, buf, tempPos)
 			elseif typeI == "string" then
-				String.serialize(i, data)
+				buf, tempPos = String.serialize(i, buf, tempPos)
 			elseif typeI == "number" then
-				Number.serialize(i, data)
+				buf, tempPos = Number.serialize(i, buf, tempPos)
 			elseif typeI == "vector" then
-				Vector.serialize(i, data)
+				buf, tempPos = Vector.serialize(i, buf, tempPos)
 			elseif typeI == "userdata" then
-				Userdata.serialize(i, data)
+				buf, tempPos = Userdata.serialize(i, buf, tempPos)
 			elseif typeI == "table" then
 				parExisting.Index = existingIndex
-				tabSerialize(i, data, parExisting)
+				buf, tempPos = tabSerialize(i, buf, tempPos, parExisting)
 				existingIndex = parExisting.Index
 			end
-			buf = data.Data
 
-			local ttp = data.Position
-			if ttp - tempPos == 1 then
+			if tempPos - oldPos == 1 then
 				one_byte_existing[i] = buffer.readu8(buf, tempPos)
-			elseif ttp - tempPos == 2 then
+			elseif tempPos - oldPos == 2 then
 				two_byte_existing[i] = buffer.readu16(buf, tempPos)
 			elseif existingIndex ~= 65_535 then
 				-- cache for rest (only 65_536 values we can cache)
 				existing[i] = existingIndex
 				existingIndex += 1
 			end
-			tempPos = ttp
 		end
 
 		local valueCached = existing[v]
 		if valueCached then
-			buf = grow(buf, data, 3)
+			buf = grow(buf, tempPos, 3)
 			buffer.writeu8(buf, tempPos, EQ_EXISTING)
 			buffer.writeu16(buf, tempPos + 1, valueCached)
 			tempPos += 3
@@ -201,43 +195,43 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 		-- check 1 and 2 byte caches
 		valueCached = two_byte_existing[v]
 		if valueCached then
-			buf = grow(buf, data, 2)
+			buf = grow(buf, tempPos, 2)
 			buffer.writeu16(buf, tempPos, valueCached)
 			tempPos += 2
 			continue
 		end
 		valueCached = one_byte_existing[v]
 		if valueCached then
-			buf = grow(buf, data, 1)
+			buf = grow(buf, tempPos, 1)
 			buffer.writeu8(buf, tempPos, valueCached)
 			tempPos += 1
 			continue
 		end
-
+		
+		local oldPos = tempPos
+		
 		-- store v
 		if typeV == "boolean" then
-			Boolean.serialize(v, data)
+			buf, tempPos = Boolean.serialize(v, buf, tempPos)
 		elseif typeV == "buffer" then
-			Buffer.serialize(v, data)
+			buf, tempPos = Buffer.serialize(v, buf, tempPos)
 		elseif typeV == "string" then
-			String.serialize(v, data)
+			buf, tempPos = String.serialize(v, buf, tempPos)
 		elseif typeV == "number" then
-			Number.serialize(v, data)
+			buf, tempPos = Number.serialize(v, buf, tempPos)
 		elseif typeV == "vector" then
-			Vector.serialize(v, data)
+			buf, tempPos = Vector.serialize(v, buf, tempPos)
 		elseif typeV == "userdata" then
-			Userdata.serialize(v, data)
+			buf, tempPos = Userdata.serialize(v, buf, tempPos)
 		elseif typeV == "table" then
 			parExisting.Index = existingIndex
-			tabSerialize(v, data, parExisting)
+			buf, tempPos = tabSerialize(v, buf, tempPos, parExisting)
 			existingIndex = parExisting.Index
 		end
-		buf = data.Data
 
-		local ttp = data.Position
-		if ttp - tempPos == 1 then
+		if tempPos - oldPos == 1 then
 			one_byte_existing[v] = buffer.readu8(buf, tempPos)
-		elseif ttp - tempPos == 2 then
+		elseif tempPos - oldPos == 2 then
 			two_byte_existing[v] = buffer.readu16(buf, tempPos)
 		elseif existingIndex ~= 65_535 and v == v then
 			-- cache for rest (only 65_536 values we can cache)
@@ -245,7 +239,6 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 			existing[v] = existingIndex
 			existingIndex += 1
 		end
-		tempPos = ttp
 	end
 	
 	if parExisting then
@@ -255,20 +248,19 @@ local function tabSerialize(value: {[any]: any}, data: BufferData, parExisting: 
 	if not isDict and not endArray then
 		buffer.writeu8(buf, pos, ARRAY)
 	end
-	buf = grow(buf, data, 1)
+	buf = grow(buf, tempPos, 1)
 	buffer.writeu8(buf, tempPos, TABLE_END)
+	return buf, tempPos + 1
 end
 
 @native
-local function tabDeserialize(buf: buffer, data: PositionData, parExisting: {Data: {[any]:any}, Index: number}?)
-	local pos = data.Position
+local function tabDeserialize(buf: buffer, pos: number, parExisting: {Data: {[any]:any}, Index: number}?)
 	local id = buffer.readu8(buf, pos)
 
-	data.Position += 1
 	pos += 1
 
 	if id == EMPTY then
-		return {}
+		return {}, pos
 	end
 
 	local returnedTab = {}
@@ -284,7 +276,7 @@ local function tabDeserialize(buf: buffer, data: PositionData, parExisting: {Dat
 	local hasArray = id == ARRAY or id == TABLE
 
 	if id ~= ARRAY and id ~= TABLE and id ~= DICT then
-		return nil -- data corruption
+		return nil, pos -- data corruption
 	end
 
 	if hasArray then
@@ -297,179 +289,164 @@ local function tabDeserialize(buf: buffer, data: PositionData, parExisting: {Dat
 				break -- if there is no end, it will error!
 			end
 			if valId == TABLE_END then
-				data.Position += 1
 				parExisting.Index = existingIndex
-				return returnedTab -- for ARRAY
+				return returnedTab, pos + 1 -- for ARRAY
 			end
 
 			index += 1
 			if valId == 0 then
-				data.Position += 1 -- I don't wanna bother calling nil
 				continue
 			end
 
 			-- check if existing
 			if valId == EQ_EXISTING then
-				data.Position += 1
 				local value = existing[buffer.readu16(buf, pos)]
 				if value == nil then
 					parExisting.Index = existingIndex
-					return nil -- data corrupted
+					return nil, pos -- data corrupted
 				end
 				pos += 2
-				data.Position += 2 -- ??
 				returnedTab[index] = value
 				continue
 			end
 
 			local value: any = nil
+			local oldPos = pos
 			if valId <= 2 then -- boolean
-				value = Boolean.deserialize(buf, data)
+				value, pos = Boolean.deserialize(buf, pos)
 			elseif valId <= 8 then -- buffer
-				value = Buffer.deserialize(buf, data) 
+				value, pos = Buffer.deserialize(buf, pos) 
 			elseif valId <= 87 then -- string
-				value = String.deserialize(buf, data)
+				value, pos = String.deserialize(buf, pos)
 			elseif valId <= 135 then -- number
-				value = Number.deserialize(buf, data)
+				value, pos = Number.deserialize(buf, pos)
 			elseif valId <= 193 then -- vector
-				value = Vector.deserialize(buf, data)
+				value, pos = Vector.deserialize(buf, pos)
 			elseif valId <= 201 then -- table
 				parExisting.Index = existingIndex
-				value = tabDeserialize(buf, data, parExisting)
+				value, pos = tabDeserialize(buf, pos, parExisting)
 				existingIndex = parExisting.Index
 			elseif valId <= 223 then -- userdata
-				value = Userdata.deserialize(buf, data)
+				value, pos = Userdata.deserialize(buf, data)
 			else 
-				data.Position += 1 -- ... data corrupted
+				pos += 1 -- ... data corrupted
 			end
 
 			if value == nil then
 				parExisting.Index = existingIndex
-				return nil -- data corrupted
+				return nil, pos -- data corrupted
 			end
 
-			-- add to existing if pos changed 3+ bytes
-			local newPos = data.Position
-
-			if newPos - 1 > pos then
+			if pos - 1 > oldPos then
 				existing[existingIndex] = value
 				existingIndex += 1
 			end
 
-			pos = newPos
 			returnedTab[index] = value
 		end
-		data.Position = pos -- ??
 	end
 
 	while true do
 		local valId = buffer.readu8(buf, pos)
 		pos += 1
 		if valId == TABLE_END then
-			data.Position += 1
 			parExisting.Index = existingIndex
-			return returnedTab
+			return returnedTab, pos
 		end
 
 		local key, value
 
 		-- check if existing
 		if valId == EQ_EXISTING then
-			data.Position += 1
 			key = existing[buffer.readu16(buf, pos)]
 			if key == nil then
 				parExisting.Index = existingIndex
-				return nil -- data corrupted
+				return nil, pos -- data corrupted
 			end
 			pos += 2
-			data.Position += 2 -- ??
 		end
+		
+		local oldPos = pos
+		
 		if key == nil then
 			if valId <= 2 then -- boolean
-				key = Boolean.deserialize(buf, data)
+				key, pos = Boolean.deserialize(buf, pos)
 			elseif valId <= 8 then -- buffer
-				key = Buffer.deserialize(buf, data) 
+				key, pos = Buffer.deserialize(buf, pos) 
 			elseif valId <= 87 then -- string
-				key = String.deserialize(buf, data)
+				key, pos = String.deserialize(buf, pos)
 			elseif valId <= 135 then -- number
-				key = Number.deserialize(buf, data)
+				key, pos = Number.deserialize(buf, pos)
 			elseif valId <= 193 then -- vector
-				key = Vector.deserialize(buf, data)
+				key, pos = Vector.deserialize(buf, pos)
 			elseif valId <= 201 then -- table
 				parExisting.Index = existingIndex
-				key = tabDeserialize(buf, data, parExisting)
+				key, pos = tabDeserialize(buf, pos, parExisting)
 				existingIndex = parExisting.Index
 			elseif valId <= 223 then -- userdata
-				key = Userdata.deserialize(buf, data)
+				key, pos = Userdata.deserialize(buf, pos)
 			else 
-				data.Position += 1 -- ... data corrupted
+				pos += 1 -- ... data corrupted
 			end
 
 			if key == nil then
 				parExisting.Index = existingIndex
-				return nil -- data corrupted
+				return nil, pos -- data corrupted
 			end
 		end
 
-		-- add to existing if pos changed 3+ bytes
-		local newPos = data.Position
-
-		if newPos - 1 > pos then
+		if pos - 1 > oldPos then
 			existing[existingIndex] = key
 			existingIndex += 1
 		end
 
-		pos = newPos
 		valId = buffer.readu8(buf, pos)
 		pos += 1
 
 		-- check if existing
 		if valId == EQ_EXISTING then
-			data.Position += 1
 			value = existing[buffer.readu16(buf, pos)]
 			if value == nil then
 				parExisting.Index = existingIndex
-				return nil -- data corrupted
+				return nil, pos -- data corrupted
 			end
 			pos += 3
-			data.Position += 2 -- ??
 		end
+		
+		local oldPos = pos
+		
 		if value == nil then
 			if valId <= 2 then -- boolean
-				value = Boolean.deserialize(buf, data)
+				value, pos = Boolean.deserialize(buf, pos)
 			elseif valId <= 8 then -- buffer
-				value = Buffer.deserialize(buf, data) 
+				value, pos = Buffer.deserialize(buf, pos) 
 			elseif valId <= 87 then -- string
-				value = String.deserialize(buf, data)
+				value, pos = String.deserialize(buf, pos)
 			elseif valId <= 135 then -- number
-				value = Number.deserialize(buf, data)
+				value, pos = Number.deserialize(buf, pos)
 			elseif valId <= 193 then -- vector
-				value = Vector.deserialize(buf, data)
+				value, pos = Vector.deserialize(buf, pos)
 			elseif valId <= 201 then -- table
 				parExisting.Index = existingIndex
-				value = tabDeserialize(buf, data, parExisting)
+				value, pos = tabDeserialize(buf, pos, parExisting)
 				existingIndex = parExisting.Index
 			elseif valId <= 223 then -- userdata
-				value = Userdata.deserialize(buf, data)
+				value, pos = Userdata.deserialize(buf, pos)
 			else 
-				data.Position += 1 -- ... data corrupted
+				pos += 1 -- ... data corrupted
 			end
 
 			if value == nil then
 				parExisting.Index = existingIndex
-				return nil -- data corrupted
+				return nil, pos -- data corrupted
 			end
 		end
 
-		-- add to existing if pos changed 3+ bytes
-		newPos = data.Position
-
-		if newPos - 1 > pos then
+		if pos - 1 > oldPos then
 			existing[existingIndex] = value
 			existingIndex += 1
 		end
 
-		pos = newPos
 		returnedTab[key] = value
 	end
 end
