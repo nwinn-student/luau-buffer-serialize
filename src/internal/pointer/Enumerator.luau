@@ -8,23 +8,7 @@ local enumerator = {
 	'number',
 	'vector',
 	'table',
-	'userdata',
-
-	-- For support modules
-	Support = {
-		-- Luau Types
-		['nil'] = 0,
-		boolean = 1,
-		buffer = 2,
-		string = 3,
-		number = 4,
-		vector = 5,
-		table = 6,
-		userdata = 7,
-
-		thread = 0,
-		['function'] = 0,
-	}
+	'userdata'
 }
 
 local methods = {}
@@ -93,7 +77,7 @@ methods.trim = function(data: BufferData)
 	local newBuf = buffer.create(pos)
 	buffer.copy(newBuf, 0, buf, 0, pos)
 	data.Data = newBuf
-	return buf
+	return newBuf
 end
 
 enumerator.Methods = methods
