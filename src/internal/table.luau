@@ -78,7 +78,6 @@ local function tabSerialize(value: {[any]: any}, buf: buffer, pos: number, parEx
 				tempPos += 1
 				continue
 			end
-			
 			local oldPos = tempPos
 			
 			local typeV = type(v)

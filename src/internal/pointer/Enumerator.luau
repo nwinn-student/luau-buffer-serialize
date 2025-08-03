@@ -17,8 +17,7 @@ local methods = {}
 	Inflates the buffer size to be at least the new position.
 ]]--
 @native
-function inflateBuffer(data: buffer, pos: number, size: number)
-	local oldSize = buffer.len(data)
+function inflateBuffer(data: buffer, pos: number, size: number, oldSize: number)
 	local currSize = oldSize
 	
 	local minSize = pos + size
@@ -36,6 +35,10 @@ function inflateBuffer(data: buffer, pos: number, size: number)
 end
 methods.inflateBuffer = inflateBuffer
 
+
+local tempBuf = nil
+local tempBufLen = 0
+
 --[[
 	Alters the first byte to be the specified value.
 	
@@ -49,7 +52,18 @@ function methods.grow(data: buffer, pos: number, size: number)
 	if not data then
 		return buffer.create(size)
 	end
-	return inflateBuffer(data, pos, size)
+	local bufLen
+	if data == tempBuf then
+		bufLen = tempBufLen
+	else
+		tempBuf = data
+		tempBufLen = buffer.len(data) -- this is much slower than data.Size
+		bufLen = tempBufLen
+	end
+	if pos + size > bufLen then
+		return inflateBuffer(data, pos, size, bufLen)
+	end
+	return data
 end
 
 methods.trim = function(data: buffer, pos: number)
