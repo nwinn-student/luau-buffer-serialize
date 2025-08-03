@@ -24,8 +24,6 @@ return {
 	deserialize = function(buf: buffer, data: PositionData)
 		local value = buffer.readu8(buf, data.Position)
 		data.Position += 1
-		return if value == 1 then true 
-			elseif value == 2 then false
-			else nil -- data corrupted
+		return value == 1
 	end,
 }

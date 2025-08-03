@@ -74,13 +74,9 @@ return {
 		elseif id == INT then
 			len = buffer.readu32(buf, pos)
 			pos += lenSize
-		else
-			-- DATA CORRUPTED (for now)
-			data.Position += 1
-			return nil -- for future version
 		end
 
-		local value = buffer.create(len) -- verify!!
+		local value = buffer.create(len)
 		buffer.copy(value, 0, buf, pos, len)
 		data.Position += len + lenSize + 1
 		return value
