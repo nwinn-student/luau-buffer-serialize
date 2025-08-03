@@ -26,21 +26,22 @@ export type PositionData = {Position: Variant}
 	Inflates the buffer size to be at least the new position.
 ]]--
 @native
-function inflateBuffer(data: BufferData)
-	local currPos = data.Position
-	local currSize = data.Size
-	local oldSize = data.Size
-	local currBuf = data.Data
+function inflateBuffer(data: buffer, pos: number, size: number)
+	local oldSize = buffer.len(data)
+	local currSize = oldSize
+	
+	local minSize = pos + size
 
-	while currPos > currSize do
+	while minSize > currSize do
 		currSize *= 2
 	end
-	if currSize ~= oldSize then
-		local temp = buffer.create(currSize)
-		buffer.copy(temp, 0, currBuf) -- , 0, currPos
-		data.Data = temp
-		data.Size = currSize -- ??
+	
+	if currSize == oldSize then
+		return data
 	end
+	local temp = buffer.create(currSize)
+	buffer.copy(temp, 0, data, 0, pos)
+	return temp
 end
 methods.inflateBuffer = inflateBuffer
 
@@ -53,30 +54,19 @@ methods.inflateBuffer = inflateBuffer
 	@return the buffer with the first byte set to the value
 ]]--
 @native
-function methods.grow(buf: buffer, data: BufferData, size: number, value: number)
-	if not buf then
-		buf = buffer.create(size)
-		data.Data = buf
-		data.Size = size
+function methods.grow(data: buffer, pos: number, size: number)
+	if not data then
+		return buffer.create(size)
 	end
-	data.Position += size
-	if data.Position > data.Size then
-		inflateBuffer(data)
-	end
-	return data.Data
+	return inflateBuffer(data, pos, size)
 end
 
-methods.trim = function(data: BufferData)
-	local size = data.Size
-	local pos = data.Position
-	local buf = data.Data
-
-	if size == pos then
-		return buf
+methods.trim = function(data: buffer, pos: number)
+	if buffer.len(data) == pos then
+		return data
 	end
 	local newBuf = buffer.create(pos)
-	buffer.copy(newBuf, 0, buf, 0, pos)
-	data.Data = newBuf
+	buffer.copy(newBuf, 0, data, 0, pos)
 	return newBuf
 end
 

@@ -20,17 +20,13 @@ Serialize.serialize = function(value: any)
 		typeValue = "nil"
 	end
 
-	local Data = {Position=0, Data=nil, Size=nil}
-
 	local serial = modules[typeValue]
 	if not serial then
 		serial = require(`./internal/{typeValue}`).serialize
 		modules[typeValue] = serial
 	end
-	serial(value, Data)
-	trim(Data)
-
-	return Data.Data
+	
+	return trim(serial(value, nil, 0))
 end
 
 Serialize.deserialize = function(value: buffer)
