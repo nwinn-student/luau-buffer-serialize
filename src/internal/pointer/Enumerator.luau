@@ -31,7 +31,7 @@ function inflateBuffer(data: buffer, pos: number, size: number)
 		return data
 	end
 	local temp = buffer.create(currSize)
-	buffer.copy(temp, 0, data, 0, pos)
+	buffer.copy(temp, 0, data)
 	return temp
 end
 methods.inflateBuffer = inflateBuffer
