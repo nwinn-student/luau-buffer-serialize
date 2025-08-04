@@ -102,9 +102,9 @@ local function tabSerialize(value: {[any]: any}, buf: buffer, pos: number, parEx
 			end
 
 			if tempPos - oldPos == 1 then
-				one_byte_existing[v] = buffer.readu8(buf, tempPos)
+				one_byte_existing[v] = buffer.readu8(buf, oldPos)
 			elseif tempPos - oldPos == 2 then
-				two_byte_existing[v] = buffer.readu16(buf, tempPos)
+				two_byte_existing[v] = buffer.readu16(buf, oldPos)
 			elseif existingIndex ~= 65_535 and v == v then
 				-- cache for rest (only 65_536 values we can cache!!)
 				-- v == v checks for nans :>
@@ -173,9 +173,9 @@ local function tabSerialize(value: {[any]: any}, buf: buffer, pos: number, parEx
 			end
 
 			if tempPos - oldPos == 1 then
-				one_byte_existing[i] = buffer.readu8(buf, tempPos)
+				one_byte_existing[i] = buffer.readu8(buf, oldPos)
 			elseif tempPos - oldPos == 2 then
-				two_byte_existing[i] = buffer.readu16(buf, tempPos)
+				two_byte_existing[i] = buffer.readu16(buf, oldPos)
 			elseif existingIndex ~= 65_535 then
 				-- cache for rest (only 65_536 values we can cache)
 				existing[i] = existingIndex
@@ -229,9 +229,9 @@ local function tabSerialize(value: {[any]: any}, buf: buffer, pos: number, parEx
 		end
 
 		if tempPos - oldPos == 1 then
-			one_byte_existing[v] = buffer.readu8(buf, tempPos)
+			one_byte_existing[v] = buffer.readu8(buf, oldPos)
 		elseif tempPos - oldPos == 2 then
-			two_byte_existing[v] = buffer.readu16(buf, tempPos)
+			two_byte_existing[v] = buffer.readu16(buf, oldPos)
 		elseif existingIndex ~= 65_535 and v == v then
 			-- cache for rest (only 65_536 values we can cache)
 			-- v == v checks for nans :>
@@ -326,7 +326,7 @@ local function tabDeserialize(buf: buffer, pos: number, parExisting: {Data: {[an
 				value, pos = tabDeserialize(buf, pos, parExisting)
 				existingIndex = parExisting.Index
 			elseif valId <= 223 then -- userdata
-				value, pos = Userdata.deserialize(buf, data)
+				value, pos = Userdata.deserialize(buf, pos)
 			else 
 				pos += 1 -- ... data corrupted
 			end

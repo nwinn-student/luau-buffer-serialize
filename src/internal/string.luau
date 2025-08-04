@@ -178,7 +178,7 @@ local function strDeserializer(buf: buffer, pos: number)
 		if numVal and strVal then
 			return strVal .. numVal, pos
 		end
-		return nil + 1 -- data corrupted
+		return nil, pos + 1 -- data corrupted
 	elseif id == NUM then
 		local numVal, pos = numDeserializer(buf, pos + 1)
 		if numVal then
