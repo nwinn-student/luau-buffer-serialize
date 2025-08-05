@@ -1,7 +1,7 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
 
-local grow = enumerator.Methods.grow
+local inflate = enumerator.Methods.inflateBuffer
 
 enumerator = nil
 
@@ -18,14 +18,18 @@ return {
 	Write = WRITE,
 	-- Need a way to set the approaches for serial and deserial
 
-	serialize = function(value: unknown, buf: buffer, pos: number)
+	serialize = function(value: unknown, buf: buffer, pos: number, size: number)
 
 		local cachedConstant: number? = WRITE[value]
 		if cachedConstant then
 			local newSize = if cachedConstant <= 16 then 1
 				else 2
-
-			buf = grow(buf, pos, newSize)
+			
+			if not buf then
+				buf, size = buffer.create(newSize), newSize
+			elseif pos + newSize > size then
+				buf, size = inflate(buf, pos + newSize, size)
+			end
 
 			if newSize == 1 then
 				buffer.writeu8(buf, pos, cachedConstant + 203)
@@ -35,26 +39,34 @@ return {
 				buffer.writeu8(buf, pos+1, constVal)
 			end
 
-			return buf, pos + newSize
+			return buf, pos + newSize, size
 		end
-		
+
 		-- wrong!!!
 		if Writer then
-			buf = grow(buf, pos, 1)
+			if not buf then
+				buf, size = buffer.create(1), 1
+			elseif pos + 1 > size then
+				buf, size = inflate(buf, pos + 1, size)
+			end
 			buffer.writeu8(buf, pos, CUSTOM)
 			local tempPos = pos + 1
-			buf, pos = Writer(value, buf, pos + 1)
+			buf, pos, size = Writer(value, buf, pos + 1, size)
 			if tempPos ~= pos then
-				return buf, pos
+				return buf, pos, size
 			end
 		end
-		buf = grow(buf, pos, 1)
+		if not buf then
+			buf, size = buffer.create(1), 1
+		elseif pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 		buffer.writeu8(buf, pos, NIL)
-		return buf, pos + 1
+		return buf, pos + 1, size
 	end,
 	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
-		
+
 		local cachedId = if id > 219 then (id - 219) * 256 + 64
 			else id - 203
 
@@ -62,8 +74,8 @@ return {
 		if cachedConstant then
 			return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
 		end
-		
-		
+
+
 		-- wrong!!!
 		if Reader then
 			return Reader(buf, pos + 1)

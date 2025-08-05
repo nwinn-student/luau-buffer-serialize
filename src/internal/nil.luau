@@ -1,7 +1,7 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
 
-local grow = enumerator.Methods.grow
+local inflate = enumerator.Methods.inflateBuffer
 
 enumerator = nil
 
@@ -11,11 +11,15 @@ enumerator = nil
 	Deserializes a buffer into a nil value if applicable
 ]]--
 return {
-	serialize = function(value: nil, buf: buffer, pos: number)
-		buf = grow(buf, pos, 1)
+	serialize = function(value: nil, buf: buffer, pos: number, size: number)
+		if not buf then
+			buf, size = buffer.create(1), 1
+		elseif pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 
 		buffer.writeu8(buf, pos, 0)
-		return buf, pos + 1
+		return buf, pos + 1, size
 	end,
 	deserialize = function(buf: buffer, pos: number): nil
 		return nil, pos + 1

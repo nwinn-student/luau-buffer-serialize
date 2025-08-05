@@ -1,16 +1,10 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
 
-local numSerializer
-local numDeserializer
+local numSerializer = require("./number").serialize
+local numDeserializer = require("./number").deserialize
 
-do
-	local num = require("./number")
-	numSerializer = num.serialize
-	numDeserializer = num.deserialize
-end
-
-local grow = enumerator.Methods.grow
+local inflate = enumerator.Methods.inflateBuffer
 
 enumerator = nil
 
@@ -27,20 +21,28 @@ local READ = {}
 local WRITE = {} -- 1 to 1343
 
 @native
-local function strSerializer(value: string, buf: buffer, pos :number)
+local function strSerializer(value: string, buf: buffer, pos :number, size: number)
 
 	if value == "" then
-		buf = grow(buf, pos, 1)
+		if not buf then
+			buf, size = buffer.create(1), 1
+		elseif pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 		buffer.writeu8(buf, pos, EMPTY)
-		return buf, pos + 1
+		return buf, pos + 1, size
 	end
-	
+
 	local cachedConstant: number? = WRITE[value]
 	if cachedConstant then
 		local newSize = if cachedConstant <= 64 then 1
 			else 2
 		
-		buf = grow(buf, pos, newSize)
+		if not buf then
+			buf, size = buffer.create(newSize), newSize
+		elseif pos + newSize > size then
+			buf, size = inflate(buf, pos + newSize, size)
+		end
 
 		if newSize == 1 then
 			buffer.writeu8(buf, pos, cachedConstant + 18)
@@ -50,7 +52,7 @@ local function strSerializer(value: string, buf: buffer, pos :number)
 			buffer.writeu8(buf, pos+1, constVal)
 		end
 
-		return buf, pos + newSize
+		return buf, pos + newSize, size
 	end
 
 	local len = #value
@@ -63,23 +65,35 @@ local function strSerializer(value: string, buf: buffer, pos :number)
 		local start, finish = string.find(value, "%d+")
 
 		if start == 1 and finish == len then -- <num>
-			buf = grow(buf, pos, 1)
+			if not buf then
+				buf, size = buffer.create(1), 1
+			elseif pos + 1 > size then
+				buf, size = inflate(buf, pos + 1, size)
+			end
 			buffer.writeu8(buf, pos, NUM)
-			return numSerializer(tonumber(value), buf, pos + 1)
+			return numSerializer(tonumber(value), buf, pos + 1, size)
 		elseif start and finish and finish - start > 1 then
 			if start ~= 1 and finish == len then -- <str><num>
-				buf = grow(buf, pos, 1)
+				if not buf then
+					buf, size = buffer.create(1), 1
+				elseif pos + 1 > size then
+					buf, size = inflate(buf, pos + 1, size)
+				end
 				buffer.writeu8(buf, pos, CONCAT_STR_NUM)
 				return numSerializer(tonumber(string.sub(value, start)), 
-					strSerializer(string.sub(value, 1, start-1), buf, pos + 1)
+					strSerializer(string.sub(value, 1, start-1), buf, pos + 1, size)
 				)
 			elseif start == 1 and finish ~= len then -- <num><str>
 				-- there exist cases where it could be <num><str><num>
 				-- in those cases.. it can become much slower
-				buf = grow(buf, pos, 1)
+				if not buf then
+					buf, size = buffer.create(1), 1
+				elseif pos + 1 > size then
+					buf, size = inflate(buf, pos + 1, size)
+				end
 				buffer.writeu8(buf, pos, CONCAT_NUM_STR)
 				return strSerializer(string.sub(value, finish + 1), 
-					numSerializer(tonumber(string.sub(value, 1, finish)), buf, pos + 1)
+					numSerializer(tonumber(string.sub(value, 1, finish)), buf, pos + 1, size)
 				)
 			end
 		else
@@ -90,7 +104,11 @@ local function strSerializer(value: string, buf: buffer, pos :number)
 				if cachedConstant then
 					local newSize = if cachedConstant <= 64 then 2
 						else 3
-					buf = grow(buf, pos, newSize)
+					if not buf then
+						buf, size = buffer.create(newSize), newSize
+					elseif pos + newSize > size then
+						buf, size = inflate(buf, pos + newSize, size)
+					end
 					buffer.writeu8(buf, pos, CONCAT_STR_NUM)
 
 					if newSize == 1 then
@@ -100,19 +118,25 @@ local function strSerializer(value: string, buf: buffer, pos :number)
 						buffer.writeu8(buf, pos + 1, 83 + (constVal // 256) )
 						buffer.writeu8(buf, pos + 2, constVal)
 					end
-					return numSerializer(tonumber(string.sub(value, start)), buf, pos + newSize)
+					return numSerializer(tonumber(string.sub(value, start)), buf, pos + newSize, size)
 				end
 			elseif start == 1 and finish ~= len then -- <num><str>
 				local str = string.sub(value, finish + 1)
 				local cachedConstant = WRITE[str]
 				if cachedConstant then
-					buf = grow(buf, pos, 1)
+					if not buf then
+						buf, size = buffer.create(1), 1
+					elseif pos + 1 > size then
+						buf, size = inflate(buf, pos + 1, size)
+					end
 					buffer.writeu8(buf, pos, CONCAT_NUM_STR)
-					buf, pos = numSerializer(tonumber(string.sub(value, 1, finish)), buf, pos + 1)
+					buf, pos = numSerializer(tonumber(string.sub(value, 1, finish)), buf, pos + 1, size)
 					local newSize = if cachedConstant <= 64 then 1
 						else 2
-					buf = grow(buf, pos, newSize)
-					
+					if pos + newSize > size then
+						buf, size = inflate(buf, pos + newSize, size)
+					end
+
 					if newSize == 1 then
 						buffer.writeu8(buf, pos + 1, cachedConstant + 18)
 					else
@@ -120,19 +144,23 @@ local function strSerializer(value: string, buf: buffer, pos :number)
 						buffer.writeu8(buf, pos + 1, 83 + (constVal // 256) )
 						buffer.writeu8(buf, pos + 2, constVal)
 					end
-					return buf, pos + newSize
+					return buf, pos + newSize, size
 				end
 			end
 		end
-		
+
 	end
 
 	local newSize = if len < 256 then 2
 		elseif len < 65_536 then 3
 		elseif len < 16_777_216 then 4
 		else 5
-
-	buf = grow(buf, pos, len + newSize)
+	
+	if not buf then
+		buf, size = buffer.create(len + newSize), len + newSize
+	elseif pos + len + newSize > size then
+		buf, size = inflate(buf, pos + len + newSize, size)
+	end
 	buffer.writeu8(buf, pos, 8 + newSize)
 
 	if len < 256 then
@@ -146,7 +174,7 @@ local function strSerializer(value: string, buf: buffer, pos :number)
 	end
 
 	buffer.writestring(buf, pos + newSize, value, len)
-	return buf, pos + newSize + len
+	return buf, pos + newSize + len, size
 end
 
 @native

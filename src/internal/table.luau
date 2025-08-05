@@ -1,15 +1,29 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
 
-local Nil = require("./nil")
-local Boolean = require("./boolean")
-local Buffer = require("./buffer")
-local String = require("./string")
-local Number = require("./number")
-local Vector = require("./vector")
-local Userdata = require("./userdata")
+-- all
+local nilSerializer = require("./nil").serialize
+local nilDeserializer = require("./nil").deserialize
 
-local grow = enumerator.Methods.grow
+local boolSerializer = require("./boolean").serialize
+local boolDeserializer = require("./boolean").deserialize
+
+local bufSerializer = require("./buffer").serialize
+local bufDeserializer = require("./buffer").deserialize
+
+local strSerializer = require("./string").serialize
+local strDeserializer = require("./string").deserialize
+
+local numSerializer = require("./number").serialize
+local numDeserializer = require("./number").deserialize
+
+local vecSerializer = require("./vector").serialize
+local vecDeserializer = require("./vector").deserialize
+
+local userSerializer = require("./userdata").serialize
+local userDeserializer = require("./userdata").deserialize
+
+local inflate = enumerator.Methods.inflateBuffer
 
 enumerator = nil
 
@@ -21,239 +35,166 @@ local DICT = 198
 local ARRAY_END = 199
 local TABLE_END = 200
 
-@native
-local function tabSerialize(value: {[any]: any}, buf: buffer, pos: number, parExisting: {Data: {[any]:any}, Index: number}?)
+type ExistingData = {
+	Data: {[any]: number},
+	Index: number,
+	One: {[any]: number},
+	Two: {[any]: number}
+}
 
-	if next(value) == nil then
-		buf = grow(buf, pos, 1)
-		buffer.writeu8(buf, pos, EMPTY)
-		return buf, pos + 1
+@native
+local function serialCache(data: any, buf: buffer, pos: number, size: number, existing: ExistingData, existingIndex: number)
+	local cached = existing.Data[data]
+	if cached then
+		if pos + 3 > size then
+			buf, size = inflate(buf, pos + 3, size)
+		end
+		-- writebits is not faster
+		buffer.writeu8(buf, pos, EQ_EXISTING)
+		buffer.writeu16(buf, pos + 1, cached)
+		return buf, pos + 3, size, existingIndex
+	end
+	-- check 1 and 2 byte caches
+	cached = existing.Two[data]
+	if cached then
+		if pos + 2 > size then
+			buf, size = inflate(buf, pos + 2, size)
+		end
+		buffer.writeu16(buf, pos, cached)
+		return buf, pos + 2, size, existingIndex
+	end
+	cached = existing.One[data]
+	if cached then
+		if pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
+		buffer.writeu8(buf, pos, cached)
+		return buf, pos + 1, size, existingIndex
+	end
+	
+	local typeV = type(data)
+	local oldPos = pos
+	if typeV == "function" or typeV == "thread" then
+		buf, pos, size = nilSerializer(data, buf, pos, size)
+	elseif typeV == "boolean" then
+		buf, pos, size = boolSerializer(data, buf, pos, size)
+	elseif typeV == "buffer" then
+		buf, pos, size = bufSerializer(data, buf, pos, size)
+	elseif typeV == "string" then
+		buf, pos, size = strSerializer(data, buf, pos, size)
+	elseif typeV == "number" then
+		buf, pos, size = numSerializer(data, buf, pos, size)
+	elseif typeV == "vector" then
+		buf, pos, size = vecSerializer(data, buf, pos, size)
+	elseif typeV == "userdata" then
+		buf, pos, size = userSerializer(data, buf, pos, size)
+	elseif typeV == "table" then
+		existing.Index = existingIndex
+		buf, pos, size = tabSerializer(data, buf, pos, size, existing)
+		existingIndex = existing.Index
 	end
 
-	local lastIndex = 0
+	if pos - oldPos == 1 then
+		existing.One[data] = buffer.readu8(buf, oldPos)
+	elseif pos - oldPos == 2 then
+		existing.Two[data] = buffer.readu16(buf, oldPos)
+	elseif existingIndex ~= 65_535 and data == data then
+		-- cache for rest (only 65_536 values we can cache!!)
+		-- v == v checks for nans :>
+		existing.Data[data] = existingIndex
+		existingIndex += 1
+	end
+	return buf, pos, size, existingIndex
+end
+
+@native
+function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: number, parExisting: ExistingData?)
+
+	if next(value) == nil then
+		if not buf then
+			buf, size = buffer.create(1), 1
+		elseif pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
+		buffer.writeu8(buf, pos, EMPTY)
+		return buf, pos + 1, size
+	end
+
+	local lastIndex = 1
 	local existingIndex = parExisting and parExisting.Index or 1
 	local existing = parExisting and parExisting.Data or {  -- MASSIVE TABLE
 		[value] = 0
 	}
+	local one_byte_existing = parExisting and parExisting.One or {} -- for speed
+	local two_byte_existing = parExisting and parExisting.Two or {} -- for speed
 	if not parExisting then
-		parExisting = {Data = existing, Index = existingIndex}
+		parExisting = {
+			Data = existing, 
+			Index = existingIndex,
+			One = one_byte_existing,
+			Two = two_byte_existing
+		}
 	end
 
-	local one_byte_existing = {} -- for speed
-	local two_byte_existing = {} -- for speed
-
 	local isDict = #value == 0
-	buf = grow(buf, pos, 1) -- 1 to say table
+	if not buf then
+		-- reduces inflate
+		buf, size = buffer.create(64), 64
+	elseif pos + 1 > size then
+		buf, size = inflate(buf, pos + 1, size)
+	end
 	buffer.writeu8(buf, pos, if isDict then DICT else TABLE)
 
 	local tempPos = pos + 1
 	local endArray = false
 
 	for i,v in value do
-		lastIndex += 1
-		local isInArray = lastIndex == i
-
-		if isInArray then
-			-- fast paths
-			local cached = existing[v]
-			if cached then
-				buf = grow(buf, tempPos, 3)
-				buffer.writeu8(buf, tempPos, EQ_EXISTING)
-				buffer.writeu16(buf, tempPos + 1, cached)
-				tempPos += 3
-				continue
-			end
-			-- check 1 and 2 byte caches
-			cached = two_byte_existing[v]
-			if cached then
-				buf = grow(buf, tempPos, 2)
-				buffer.writeu16(buf, tempPos, cached)
-				tempPos += 2
-				continue
-			end
-			cached = one_byte_existing[v]
-			if cached then
-				buf = grow(buf, tempPos, 1)
-				buffer.writeu8(buf, tempPos, cached)
-				tempPos += 1
-				continue
-			end
-			local oldPos = tempPos
-			
-			local typeV = type(v)
-			if typeV == "nil" or typeV == "function" or typeV == "thread" then
-				buf, tempPos = Nil.serialize(v, buf, tempPos)
-			elseif typeV == "boolean" then
-				buf, tempPos = Boolean.serialize(v, buf, tempPos)
-			elseif typeV == "buffer" then
-				buf, tempPos = Buffer.serialize(v, buf, tempPos)
-			elseif typeV == "string" then
-				buf, tempPos = String.serialize(v, buf, tempPos)
-			elseif typeV == "number" then
-				buf, tempPos = Number.serialize(v, buf, tempPos)
-			elseif typeV == "vector" then
-				buf, tempPos = Vector.serialize(v, buf, tempPos)
-			elseif typeV == "userdata" then
-				buf, tempPos = Userdata.serialize(v, buf, tempPos)
-			elseif typeV == "table" then
-				parExisting.Index = existingIndex
-				buf, tempPos = tabSerialize(v, buf, tempPos, parExisting)
-				existingIndex = parExisting.Index
-			end
-
-			if tempPos - oldPos == 1 then
-				one_byte_existing[v] = buffer.readu8(buf, oldPos)
-			elseif tempPos - oldPos == 2 then
-				two_byte_existing[v] = buffer.readu16(buf, oldPos)
-			elseif existingIndex ~= 65_535 and v == v then
-				-- cache for rest (only 65_536 values we can cache!!)
-				-- v == v checks for nans :>
-				existing[v] = existingIndex
-				existingIndex += 1
-			end
+		-- Array portion
+		if lastIndex == i then
+			lastIndex += 1
+		
+			buf, tempPos, size, existingIndex = serialCache(v, buf, tempPos, size, parExisting, existingIndex)
 			continue
 		end
 		if not endArray and not isDict then
 			endArray = true
-			buf = grow(buf, tempPos, 1)
+			if tempPos + 1 > size then
+				buf, size = inflate(buf, tempPos + 1, size)
+			end
 			buffer.writeu8(buf, tempPos, ARRAY_END)
 			tempPos += 1
 		end
 
 		local typeI = type(i)
-		local typeV = type(v)
-
-		if typeI == "nil" or typeI == "function" or typeI == "thread"
-			or typeV == "nil" or typeV == "function" or typeV == "thread"
-		then
+		if typeI == "function" or typeI == "thread" then
 			continue
 		end
-
-		local keyCached = existing[i]
-		if keyCached then
-			buf = grow(buf, tempPos, 3)
-			buffer.writeu8(buf, tempPos, EQ_EXISTING)
-			buffer.writeu16(buf, tempPos + 1, keyCached)
-			tempPos += 3
-		end
-		-- check 1 and 2 byte caches
-		local twoKeyCached = not keyCached and two_byte_existing[i]
-		if twoKeyCached then
-			buf = grow(buf, tempPos, 2)
-			buffer.writeu16(buf, tempPos, twoKeyCached)
-			tempPos += 2
-		end
-		local threeKeyCached = not keyCached and not twoKeyCached and one_byte_existing[i]
-		if threeKeyCached then
-			buf = grow(buf, tempPos, 1)
-			buffer.writeu8(buf, tempPos, threeKeyCached)
-			tempPos += 1
-		end
 		
-		local oldPos = tempPos
+		local typeV = type(v)
+		if typeV == "function" or typeV == "thread" then
+			continue
+		end
 		
 		-- store i
-		if not keyCached and not twoKeyCached and not threeKeyCached then
-			if typeI == "boolean" then
-				buf, tempPos = Boolean.serialize(i, buf, tempPos)
-			elseif typeI == "buffer" then
-				buf, tempPos = Buffer.serialize(i, buf, tempPos)
-			elseif typeI == "string" then
-				buf, tempPos = String.serialize(i, buf, tempPos)
-			elseif typeI == "number" then
-				buf, tempPos = Number.serialize(i, buf, tempPos)
-			elseif typeI == "vector" then
-				buf, tempPos = Vector.serialize(i, buf, tempPos)
-			elseif typeI == "userdata" then
-				buf, tempPos = Userdata.serialize(i, buf, tempPos)
-			elseif typeI == "table" then
-				parExisting.Index = existingIndex
-				buf, tempPos = tabSerialize(i, buf, tempPos, parExisting)
-				existingIndex = parExisting.Index
-			end
-
-			if tempPos - oldPos == 1 then
-				one_byte_existing[i] = buffer.readu8(buf, oldPos)
-			elseif tempPos - oldPos == 2 then
-				two_byte_existing[i] = buffer.readu16(buf, oldPos)
-			elseif existingIndex ~= 65_535 then
-				-- cache for rest (only 65_536 values we can cache)
-				existing[i] = existingIndex
-				existingIndex += 1
-			end
-		end
-
-		local valueCached = existing[v]
-		if valueCached then
-			buf = grow(buf, tempPos, 3)
-			buffer.writeu8(buf, tempPos, EQ_EXISTING)
-			buffer.writeu16(buf, tempPos + 1, valueCached)
-			tempPos += 3
-			continue
-		end
-		-- check 1 and 2 byte caches
-		valueCached = two_byte_existing[v]
-		if valueCached then
-			buf = grow(buf, tempPos, 2)
-			buffer.writeu16(buf, tempPos, valueCached)
-			tempPos += 2
-			continue
-		end
-		valueCached = one_byte_existing[v]
-		if valueCached then
-			buf = grow(buf, tempPos, 1)
-			buffer.writeu8(buf, tempPos, valueCached)
-			tempPos += 1
-			continue
-		end
-		
-		local oldPos = tempPos
-		
+		buf, tempPos, size, existingIndex = serialCache(i, buf, tempPos, size, parExisting, existingIndex)
 		-- store v
-		if typeV == "boolean" then
-			buf, tempPos = Boolean.serialize(v, buf, tempPos)
-		elseif typeV == "buffer" then
-			buf, tempPos = Buffer.serialize(v, buf, tempPos)
-		elseif typeV == "string" then
-			buf, tempPos = String.serialize(v, buf, tempPos)
-		elseif typeV == "number" then
-			buf, tempPos = Number.serialize(v, buf, tempPos)
-		elseif typeV == "vector" then
-			buf, tempPos = Vector.serialize(v, buf, tempPos)
-		elseif typeV == "userdata" then
-			buf, tempPos = Userdata.serialize(v, buf, tempPos)
-		elseif typeV == "table" then
-			parExisting.Index = existingIndex
-			buf, tempPos = tabSerialize(v, buf, tempPos, parExisting)
-			existingIndex = parExisting.Index
-		end
+		buf, tempPos, size, existingIndex = serialCache(v, buf, tempPos, size, parExisting, existingIndex)
+	end
 
-		if tempPos - oldPos == 1 then
-			one_byte_existing[v] = buffer.readu8(buf, oldPos)
-		elseif tempPos - oldPos == 2 then
-			two_byte_existing[v] = buffer.readu16(buf, oldPos)
-		elseif existingIndex ~= 65_535 and v == v then
-			-- cache for rest (only 65_536 values we can cache)
-			-- v == v checks for nans :>
-			existing[v] = existingIndex
-			existingIndex += 1
-		end
-	end
-	
-	if parExisting then
-		parExisting.Index = existingIndex
-	end
-	
+	parExisting.Index = existingIndex
+
 	if not isDict and not endArray then
 		buffer.writeu8(buf, pos, ARRAY)
 	end
-	buf = grow(buf, tempPos, 1)
+	if tempPos + 1 > size then
+		buf, size = inflate(buf, tempPos + 1, size)
+	end
 	buffer.writeu8(buf, tempPos, TABLE_END)
-	return buf, tempPos + 1
+	return buf, tempPos + 1, size
 end
 
 @native
-local function tabDeserialize(buf: buffer, pos: number, parExisting: {Data: {[any]:any}, Index: number}?)
+local function tabDeserializer(buf: buffer, pos: number, parExisting: {Data: {[any]:any}, Index: number}?)
 	local id = buffer.readu8(buf, pos)
 
 	pos += 1
@@ -277,14 +218,14 @@ local function tabDeserialize(buf: buffer, pos: number, parExisting: {Data: {[an
 	if id ~= ARRAY and id ~= TABLE and id ~= DICT then
 		return nil, pos -- data corruption
 	end
-
+	
 	if hasArray then
 		local index = 0
 		while true do
 			local valId = buffer.readu8(buf, pos)
-
-			pos += 1
+			
 			if valId == ARRAY_END then
+				pos += 1
 				break -- if there is no end, it will error!
 			end
 			if valId == TABLE_END then
@@ -299,6 +240,7 @@ local function tabDeserialize(buf: buffer, pos: number, parExisting: {Data: {[an
 
 			-- check if existing
 			if valId == EQ_EXISTING then
+				pos += 1
 				local value = existing[buffer.readu16(buf, pos)]
 				if value == nil then
 					parExisting.Index = existingIndex
@@ -308,55 +250,55 @@ local function tabDeserialize(buf: buffer, pos: number, parExisting: {Data: {[an
 				returnedTab[index] = value
 				continue
 			end
-
+			
 			local value: any = nil
 			local oldPos = pos
 			if valId <= 2 then -- boolean
-				value, pos = Boolean.deserialize(buf, pos)
+				value, pos = boolDeserializer(buf, pos)
 			elseif valId <= 8 then -- buffer
-				value, pos = Buffer.deserialize(buf, pos) 
+				value, pos = bufDeserializer(buf, pos) 
 			elseif valId <= 87 then -- string
-				value, pos = String.deserialize(buf, pos)
+				value, pos = strDeserializer(buf, pos)
 			elseif valId <= 135 then -- number
-				value, pos = Number.deserialize(buf, pos)
+				value, pos = numDeserializer(buf, pos)
 			elseif valId <= 193 then -- vector
-				value, pos = Vector.deserialize(buf, pos)
+				value, pos = vecDeserializer(buf, pos)
 			elseif valId <= 201 then -- table
 				parExisting.Index = existingIndex
-				value, pos = tabDeserialize(buf, pos, parExisting)
+				value, pos = tabDeserializer(buf, pos, parExisting)
 				existingIndex = parExisting.Index
 			elseif valId <= 223 then -- userdata
-				value, pos = Userdata.deserialize(buf, pos)
+				value, pos = userDeserializer(buf, pos)
 			else 
 				pos += 1 -- ... data corrupted
 			end
-
+			
 			if value == nil then
 				parExisting.Index = existingIndex
 				return nil, pos -- data corrupted
 			end
-
+			
 			if pos - 1 > oldPos then
 				existing[existingIndex] = value
 				existingIndex += 1
 			end
-
+			
 			returnedTab[index] = value
 		end
 	end
-
+	
 	while true do
 		local valId = buffer.readu8(buf, pos)
-		pos += 1
 		if valId == TABLE_END then
 			parExisting.Index = existingIndex
-			return returnedTab, pos
+			return returnedTab, pos + 1
 		end
 
 		local key, value
 
 		-- check if existing
 		if valId == EQ_EXISTING then
+			pos += 1
 			key = existing[buffer.readu16(buf, pos)]
 			if key == nil then
 				parExisting.Index = existingIndex
@@ -364,30 +306,30 @@ local function tabDeserialize(buf: buffer, pos: number, parExisting: {Data: {[an
 			end
 			pos += 2
 		end
-		
+
 		local oldPos = pos
-		
+
 		if key == nil then
 			if valId <= 2 then -- boolean
-				key, pos = Boolean.deserialize(buf, pos)
+				key, pos = boolDeserializer(buf, pos)
 			elseif valId <= 8 then -- buffer
-				key, pos = Buffer.deserialize(buf, pos) 
+				key, pos = bufDeserializer(buf, pos) 
 			elseif valId <= 87 then -- string
-				key, pos = String.deserialize(buf, pos)
+				key, pos = strDeserializer(buf, pos)
 			elseif valId <= 135 then -- number
-				key, pos = Number.deserialize(buf, pos)
+				key, pos = numDeserializer(buf, pos)
 			elseif valId <= 193 then -- vector
-				key, pos = Vector.deserialize(buf, pos)
+				key, pos = vecDeserializer(buf, pos)
 			elseif valId <= 201 then -- table
 				parExisting.Index = existingIndex
-				key, pos = tabDeserialize(buf, pos, parExisting)
+				key, pos = tabDeserializer(buf, pos, parExisting)
 				existingIndex = parExisting.Index
 			elseif valId <= 223 then -- userdata
-				key, pos = Userdata.deserialize(buf, pos)
+				key, pos = userDeserializer(buf, pos)
 			else 
 				pos += 1 -- ... data corrupted
 			end
-
+			
 			if key == nil then
 				parExisting.Index = existingIndex
 				return nil, pos -- data corrupted
@@ -398,39 +340,39 @@ local function tabDeserialize(buf: buffer, pos: number, parExisting: {Data: {[an
 			existing[existingIndex] = key
 			existingIndex += 1
 		end
-
+		
 		valId = buffer.readu8(buf, pos)
-		pos += 1
-
+		
 		-- check if existing
 		if valId == EQ_EXISTING then
+			pos += 1
 			value = existing[buffer.readu16(buf, pos)]
 			if value == nil then
 				parExisting.Index = existingIndex
 				return nil, pos -- data corrupted
 			end
-			pos += 3
+			pos += 2
 		end
-		
+
 		local oldPos = pos
-		
+
 		if value == nil then
 			if valId <= 2 then -- boolean
-				value, pos = Boolean.deserialize(buf, pos)
+				value, pos = boolDeserializer(buf, pos)
 			elseif valId <= 8 then -- buffer
-				value, pos = Buffer.deserialize(buf, pos) 
+				value, pos = bufDeserializer(buf, pos) 
 			elseif valId <= 87 then -- string
-				value, pos = String.deserialize(buf, pos)
+				value, pos = strDeserializer(buf, pos)
 			elseif valId <= 135 then -- number
-				value, pos = Number.deserialize(buf, pos)
+				value, pos = numDeserializer(buf, pos)
 			elseif valId <= 193 then -- vector
-				value, pos = Vector.deserialize(buf, pos)
+				value, pos = vecDeserializer(buf, pos)
 			elseif valId <= 201 then -- table
 				parExisting.Index = existingIndex
-				value, pos = tabDeserialize(buf, pos, parExisting)
+				value, pos = tabDeserializer(buf, pos, parExisting)
 				existingIndex = parExisting.Index
 			elseif valId <= 223 then -- userdata
-				value, pos = Userdata.deserialize(buf, pos)
+				value, pos = userDeserializer(buf, pos)
 			else 
 				pos += 1 -- ... data corrupted
 			end
@@ -451,6 +393,6 @@ local function tabDeserialize(buf: buffer, pos: number, parExisting: {Data: {[an
 end
 
 return {
-	serialize = tabSerialize,
-	deserialize = tabDeserialize,
+	serialize = tabSerializer,
+	deserialize = tabDeserializer,
 }

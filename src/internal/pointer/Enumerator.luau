@@ -17,57 +17,21 @@ local methods = {}
 	Inflates the buffer size to be at least the new position.
 ]]--
 @native
-function inflateBuffer(data: buffer, pos: number, size: number, oldSize: number)
-	local currSize = oldSize
-	
-	local minSize = pos + size
+function inflateBuffer(data: buffer, minSize: number, oldSize: number)
 
-	while minSize > currSize do
-		currSize *= 2
+	while minSize > oldSize do
+		oldSize *= 2
 	end
-	
-	if currSize == oldSize then
-		return data
-	end
-	local temp = buffer.create(currSize)
+
+	local temp = buffer.create(oldSize)
 	buffer.copy(temp, 0, data)
-	return temp
+	return temp, oldSize
 end
 methods.inflateBuffer = inflateBuffer
 
 
-local tempBuf = nil
-local tempBufLen = 0
-
---[[
-	Alters the first byte to be the specified value.
-	
-	@param buf the buffer
-	@param variant the type of value being serialized
-	
-	@return the buffer with the first byte set to the value
-]]--
-@native
-function methods.grow(data: buffer, pos: number, size: number)
-	if not data then
-		return buffer.create(size)
-	end
-	local bufLen
-	if data == tempBuf then
-		bufLen = tempBufLen
-	else
-		tempBuf = data
-		tempBufLen = buffer.len(data) -- this is much slower than data.Size
-		bufLen = tempBufLen
-	end
-	if pos + size > bufLen then
-		return inflateBuffer(data, pos, size, bufLen)
-	end
-	return data
-end
-
-methods.trim = function(data: buffer, pos: number)
-	if buffer.len(data) == pos then
+methods.trim = function(data: buffer, pos: number, size: number)
+	if size == pos then
 		return data
 	end
 	local newBuf = buffer.create(pos)

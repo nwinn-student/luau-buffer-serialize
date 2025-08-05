@@ -1,7 +1,7 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
 
-local grow = enumerator.Methods.grow
+local inflate = enumerator.Methods.inflateBuffer
 
 enumerator = nil
 
@@ -35,28 +35,44 @@ local WRITE = {} -- 1 to 1087
 local FLOAT_BUFFER = buffer.create(4)
 
 @native
-local function numSerializer(value: number, buf: buffer, pos: number)
-	
+local function numSerializer(value: number, buf: buffer, pos: number, size: number)
+
 	if value == 0 then
-		buf = grow(buf, pos, 1)
+		if not buf then
+			buf, size = buffer.create(1), 1
+		elseif pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 		buffer.writeu8(buf, pos, ZERO)
-		return buf, pos + 1
+		return buf, pos + 1, size
 	elseif value == 1 then
-		buf = grow(buf, pos, 1)
+		if not buf then
+			buf, size = buffer.create(1), 1
+		elseif pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 		buffer.writeu8(buf, pos, ONE)
-		return buf, pos + 1
+		return buf, pos + 1, size
 	elseif value ~= value then
-		buf = grow(buf, pos, 1)
+		if not buf then
+			buf, size = buffer.create(1), 1
+		elseif pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 		buffer.writeu8(buf, pos, NAN)
-		return buf, pos + 1
+		return buf, pos + 1, size
 	end
 
 	local cachedConstant: number? = WRITE[value]
 	if cachedConstant then
 		local newSize = if cachedConstant <= 32 then 1
 			else 2
-
-		buf = grow(buf, pos, newSize)
+		
+		if not buf then
+			buf, size = buffer.create(newSize), newSize
+		elseif pos + newSize > size then
+			buf, size = inflate(buf, pos + newSize, size)
+		end
 
 		if newSize == 1 then
 			buffer.writeu8(buf, pos, cachedConstant + 99)
@@ -66,41 +82,57 @@ local function numSerializer(value: number, buf: buffer, pos: number)
 			buffer.writeu8(buf, pos+1, constVal)
 		end
 
-		return buf, pos + newSize
+		return buf, pos + newSize, size
 	end
 
 	-- Floating points
 	if value % 1 ~= 0 or value > MAX_INT or value < MIN_INT then
 
 		if MAX_FLOAT < value or value < -MAX_FLOAT then
-			buf = grow(buf, pos, 9)
+			if not buf then
+				buf, size = buffer.create(9), 9
+			elseif pos + 9 > size then
+				buf, size = inflate(buf, pos + 9, size)
+			end
 			buffer.writeu8(buf, pos, DOUBLE)
 			buffer.writef64(buf, pos+1, value)
-			return buf, pos + 9
+			return buf, pos + 9, size
 		end
 
 		-- Ensures that the output WILL be the same as the input
 		-- even if it results in a slower path
 		buffer.writef32(FLOAT_BUFFER, 0, value)
 		if buffer.readf32(FLOAT_BUFFER, 0) - value == 0 then
-			buf = grow(buf, pos, 5)
+			if not buf then
+				buf, size = buffer.create(5), 5
+			elseif pos + 5 > size then
+				buf, size = inflate(buf, pos + 5, size)
+			end
 			buffer.writeu8(buf, pos, FLOAT)
 			buffer.writef32(buf, pos+1, value)
-			return buf, pos + 5
+			return buf, pos + 5, size
 		end
-
-		buf = grow(buf, pos, 9)
+		
+		if not buf then
+			buf, size = buffer.create(9), 9
+		elseif pos + 9 > size then
+			buf, size = inflate(buf, pos + 9, size)
+		end
 		buffer.writeu8(buf, pos, DOUBLE)
 		buffer.writef64(buf, pos+1, value)
-		return buf, pos + 9
+		return buf, pos + 9, size
 	end
 
 	local newSize = if MAX_BYTE >= value and value >= MIN_BYTE then 2
 		elseif MAX_CHAR >= value and value >= MIN_CHAR then 3
 		elseif MAX_THREE >= value and value >= MIN_THREE then 4
 		else 5
-
-	buf = grow(buf, pos, newSize)
+	
+	if not buf then
+		buf, size = buffer.create(newSize), newSize
+	elseif pos + newSize > size then
+		buf, size = inflate(buf, pos + newSize, size)
+	end
 	buffer.writeu8(buf, pos, ZERO + newSize)
 
 	if newSize == 2 then
@@ -112,7 +144,7 @@ local function numSerializer(value: number, buf: buffer, pos: number)
 	else
 		buffer.writei32(buf, pos+1, value)
 	end
-	return buf, pos + newSize
+	return buf, pos + newSize, size
 end
 
 @native

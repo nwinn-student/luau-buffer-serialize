@@ -25,8 +25,7 @@ Serialize.serialize = function(value: any)
 		serial = require(`./internal/{typeValue}`).serialize
 		modules[typeValue] = serial
 	end
-	
-	return trim(serial(value, nil, 0))
+	return trim(serial(value, nil, 0, 0))
 end
 
 Serialize.deserialize = function(value: buffer)
@@ -51,16 +50,14 @@ Serialize.deserialize = function(value: buffer)
 			else 0 -- add more if statements if needed for future
 	end
 
-	local PositionData = {Position = 0}
-
 	local deserial = modules[pointer]
 	if deserial then
-		return deserial(value, PositionData)
+		return deserial(value, 0)
 	end
-
+	
 	deserial = require(`./internal/{enumerator[pointer]}`).deserialize
 	modules[pointer] = deserial
-	return deserial(value, PositionData)
+	return deserial(value, 0)
 end
 
 return Serialize

@@ -1,8 +1,11 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
-local Number = require("./number")
 
-local grow = enumerator.Methods.grow
+local numSerializer = require("./number").serialize
+local numDeserializer = require("./number").deserialize
+local numWrite = require("./number").Write
+
+local inflate = enumerator.Methods.inflateBuffer
 
 enumerator = nil
 
@@ -57,21 +60,29 @@ local function getType(value: number)
 end
 
 @native
-local function vecSerializer(value: vector, buf: buffer, pos: number)
+local function vecSerializer(value: vector, buf: buffer, pos: number, size: number)
 
 	local builtin: number? = builtinConst[value]
 	if builtin then
-		buf = grow(buf, pos, 1)
+		if not buf then
+			buf, size = buffer.create(1), 1
+		elseif pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 		buffer.writeu8(buf, pos, builtin)
-		return buf, pos + 1
+		return buf, pos + 1, size
 	end
 
 	local cachedConstant: number? = WRITE[value]
 	if cachedConstant then
 		local newSize = if cachedConstant <= 32 then 1
 			else 2
-
-		buf = grow(buf, pos, newSize)
+		
+		if not buf then
+			buf, size = buffer.create(newSize), newSize
+		elseif pos + newSize > size then
+			buf, size = inflate(buf, pos + newSize, size)
+		end
 
 		if newSize == 1 then
 			buffer.writeu8(buf, pos, cachedConstant + 157)
@@ -81,9 +92,9 @@ local function vecSerializer(value: vector, buf: buffer, pos: number)
 			buffer.writeu8(buf, pos+1, constVal)
 		end
 
-		return buf, pos + newSize
+		return buf, pos + newSize, size
 	end
-	
+
 	-- now we check scalar
 	local valueX = value.x
 	local valueY = value.y
@@ -102,7 +113,11 @@ local function vecSerializer(value: vector, buf: buffer, pos: number)
 			or isYAxis or isZAxis
 			or isXYAxis or isYZAxis
 		then
-			buf = grow(buf, pos, 2)
+			if not buf then
+				buf, size = buffer.create(2), 2
+			elseif pos + 2 > size then
+				buf, size = inflate(buf, pos + 2, size)
+			end
 			buffer.writeu8(buf, pos, SCALAR_NUMBER)
 
 			local var = if isOneValue then ONE
@@ -118,7 +133,7 @@ local function vecSerializer(value: vector, buf: buffer, pos: number)
 			local val = if isOneValue or isXAxis or isXYAxis or isXZAxis then valueX
 				elseif isYAxis or isYZAxis then valueY
 				else valueZ
-			return Number.serialize(val, buf, pos + 2)
+			return numSerializer(val, buf, pos + 2, size)
 		end
 	end
 
@@ -127,9 +142,9 @@ local function vecSerializer(value: vector, buf: buffer, pos: number)
 	local typeY = getType(valueY)
 	local typeZ = getType(valueZ)
 
-	local constX = Number.Write[valueX]
-	local constY = Number.Write[valueY]
-	local constZ = Number.Write[valueZ]
+	local constX = numWrite[valueX]
+	local constY = numWrite[valueY]
+	local constZ = numWrite[valueZ]
 
 	local isNumber = valueX ~= valueX 
 		or valueY ~= valueY 
@@ -137,15 +152,24 @@ local function vecSerializer(value: vector, buf: buffer, pos: number)
 		or constX or constY or constZ
 
 	if typeX ~= typeY or typeY ~= typeZ or isNumber then
-		buf = grow(buf, pos, 1)
+		if not buf then
+			buf, size = buffer.create(1), 1
+		elseif pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 		buffer.writeu8(buf, pos, NUMBER)
-		buf, pos = Number.serialize(valueX, buf, pos + 1)
-		buf, pos = Number.serialize(valueY, buf, pos)
-		return Number.serialize(valueZ, buf, pos)
+		buf, pos = numSerializer(valueX, buf, pos + 1, size)
+		buf, pos = numSerializer(valueY, buf, pos, size)
+		return numSerializer(valueZ, buf, pos, size)
 	end
 
 	local newSize = 3 * (typeX - 143) + 1
-	buf = grow(buf, pos, newSize) -- 4, 7, 10, 13
+	-- 4, 7, 10, 13
+	if not buf then
+		buf, size = buffer.create(newSize), newSize
+	elseif pos + newSize > size then
+		buf, size = inflate(buf, pos + newSize, size)
+	end
 	buffer.writeu8(buf, pos, typeX)
 
 	if typeX == BYTE then
@@ -165,7 +189,7 @@ local function vecSerializer(value: vector, buf: buffer, pos: number)
 		buffer.writef32(buf, pos + 5, valueY)
 		buffer.writef32(buf, pos + 9, valueZ)
 	end
-	return buf, pos + newSize
+	return buf, pos + newSize, size
 end
 
 @native
@@ -200,7 +224,7 @@ local function vecDeserializer(buf: buffer, pos: number)
 
 	if id == SCALAR_NUMBER then
 		local vecVal, pos = vecDeserializer(buf, pos + 1)
-		local numVal, pos = Number.deserialize(buf, pos)
+		local numVal, pos = numDeserializer(buf, pos)
 		if vecVal and numVal then
 			return numVal * vecVal, pos
 		end
@@ -234,9 +258,9 @@ local function vecDeserializer(buf: buffer, pos: number)
 			buffer.readf32(buf, pos + 9)
 		), pos + 13
 	elseif id == NUMBER then
-		local xVal, pos = Number.deserialize(buf, pos + 1)
-		local yVal, pos = Number.deserialize(buf, pos)
-		local zVal, pos = Number.deserialize(buf, pos)
+		local xVal, pos = numDeserializer(buf, pos + 1)
+		local yVal, pos = numDeserializer(buf, pos)
+		local zVal, pos = numDeserializer(buf, pos)
 		return vector.create(xVal, yVal, zVal), pos
 	else
 		return nil, pos + 1 -- data corrupted

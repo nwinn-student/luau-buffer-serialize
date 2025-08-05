@@ -1,7 +1,7 @@
 --!optimize 2
 local enumerator = require("./pointer/Enumerator")
 
-local grow = enumerator.Methods.grow
+local inflate = enumerator.Methods.inflateBuffer
 
 enumerator = nil
 
@@ -14,21 +14,29 @@ local INT = 7
 local EMPTY_BUFFER = buffer.create(0)
 
 return {
-	serialize = function(value: buffer, buf: buffer, pos: number)
+	serialize = function(value: buffer, buf: buffer, pos: number, size: number)
 		local len = buffer.len(value)
-		
+
 		if len == 0 then
-			buf = grow(buf, pos, 1)
+			if not buf then
+				buf, size = buffer.create(1), 1
+			elseif pos + 1 > size then
+				buf, size = inflate(buf, pos + 1, size)
+			end
 			buffer.writeu8(buf, pos, EMPTY)
-			return buf, pos + 1
+			return buf, pos + 1, size
 		end
 
 		local newSize = if len < 256 then 2
 			elseif len < 65_536 then 3
 			elseif len < 16_777_216 then 4
 			else 5
-
-		buf = grow(buf, pos, len + newSize)
+		
+		if not buf then
+			buf, size = buffer.create(len + newSize), len + newSize
+		elseif pos + len + newSize > size then
+			buf, size = inflate(buf, pos + len + newSize, size)
+		end
 		buffer.writeu8(buf, pos, 2 + newSize)
 
 		if len < 256 then
@@ -42,19 +50,19 @@ return {
 		end
 
 		buffer.copy(buf, pos + newSize, value)
-		return buf, pos + newSize + len
+		return buf, pos + newSize + len, size
 	end,
 	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
-		
+
 		if id == EMPTY then
 			return EMPTY_BUFFER, pos + 1
 		end
-		
+
 		pos += 1
-		
+
 		local lenSize = id - EMPTY
-		
+
 		local len: number
 		if id == BYTE then
 			len = buffer.readu8(buf, pos)
