@@ -193,8 +193,55 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	return buf, tempPos + 1, size
 end
 
+
+local function deserialCache(valId, buf, pos, existing, existingIndex)
+	-- check if existing
+	if valId == EQ_EXISTING then
+		pos += 1
+		local value = existing.Data[buffer.readu16(buf, pos)]
+		if value == nil then
+			return nil, pos, existingIndex -- data corrupted
+		end
+		pos += 2
+		return value, pos, existingIndex
+	end
+	
+	local value: any = nil
+	local oldPos = pos
+	if valId <= 2 then -- boolean
+		value, pos = boolDeserializer(buf, pos)
+	elseif valId <= 8 then -- buffer
+		value, pos = bufDeserializer(buf, pos) 
+	elseif valId <= 87 then -- string
+		value, pos = strDeserializer(buf, pos)
+	elseif valId <= 135 then -- number
+		value, pos = numDeserializer(buf, pos)
+	elseif valId <= 193 then -- vector
+		value, pos = vecDeserializer(buf, pos)
+	elseif valId <= 201 then -- table
+		existing.Index = existingIndex
+		value, pos = tabDeserializer(buf, pos, existing)
+		existingIndex = existing.Index
+	elseif valId <= 223 then -- userdata
+		value, pos = userDeserializer(buf, pos)
+	else 
+		pos += 1 -- ... data corrupted
+	end
+	
+	if value == nil then
+		existing.Index = existingIndex
+		return nil, pos -- data corrupted
+	end
+	
+	if pos - 1 > oldPos then
+		existing.Data[existingIndex] = value
+		existingIndex += 1
+	end
+	return value, pos, existingIndex
+end
+
 @native
-local function tabDeserializer(buf: buffer, pos: number, parExisting: {Data: {[any]:any}, Index: number}?)
+function tabDeserializer(buf: buffer, pos: number, parExisting: {Data: {[any]:any}, Index: number}?)
 	local id = buffer.readu8(buf, pos)
 
 	pos += 1
@@ -238,51 +285,11 @@ local function tabDeserializer(buf: buffer, pos: number, parExisting: {Data: {[a
 				continue
 			end
 
-			-- check if existing
-			if valId == EQ_EXISTING then
-				pos += 1
-				local value = existing[buffer.readu16(buf, pos)]
-				if value == nil then
-					parExisting.Index = existingIndex
-					return nil, pos -- data corrupted
-				end
-				pos += 2
-				returnedTab[index] = value
-				continue
-			end
-			
-			local value: any = nil
-			local oldPos = pos
-			if valId <= 2 then -- boolean
-				value, pos = boolDeserializer(buf, pos)
-			elseif valId <= 8 then -- buffer
-				value, pos = bufDeserializer(buf, pos) 
-			elseif valId <= 87 then -- string
-				value, pos = strDeserializer(buf, pos)
-			elseif valId <= 135 then -- number
-				value, pos = numDeserializer(buf, pos)
-			elseif valId <= 193 then -- vector
-				value, pos = vecDeserializer(buf, pos)
-			elseif valId <= 201 then -- table
-				parExisting.Index = existingIndex
-				value, pos = tabDeserializer(buf, pos, parExisting)
-				existingIndex = parExisting.Index
-			elseif valId <= 223 then -- userdata
-				value, pos = userDeserializer(buf, pos)
-			else 
-				pos += 1 -- ... data corrupted
-			end
-			
+			local value
+			value, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
 			if value == nil then
-				parExisting.Index = existingIndex
-				return nil, pos -- data corrupted
+				return nil, pos
 			end
-			
-			if pos - 1 > oldPos then
-				existing[existingIndex] = value
-				existingIndex += 1
-			end
-			
 			returnedTab[index] = value
 		end
 	end
@@ -295,99 +302,16 @@ local function tabDeserializer(buf: buffer, pos: number, parExisting: {Data: {[a
 		end
 
 		local key, value
-
-		-- check if existing
-		if valId == EQ_EXISTING then
-			pos += 1
-			key = existing[buffer.readu16(buf, pos)]
-			if key == nil then
-				parExisting.Index = existingIndex
-				return nil, pos -- data corrupted
-			end
-			pos += 2
-		end
-
-		local oldPos = pos
-
+		key, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
 		if key == nil then
-			if valId <= 2 then -- boolean
-				key, pos = boolDeserializer(buf, pos)
-			elseif valId <= 8 then -- buffer
-				key, pos = bufDeserializer(buf, pos) 
-			elseif valId <= 87 then -- string
-				key, pos = strDeserializer(buf, pos)
-			elseif valId <= 135 then -- number
-				key, pos = numDeserializer(buf, pos)
-			elseif valId <= 193 then -- vector
-				key, pos = vecDeserializer(buf, pos)
-			elseif valId <= 201 then -- table
-				parExisting.Index = existingIndex
-				key, pos = tabDeserializer(buf, pos, parExisting)
-				existingIndex = parExisting.Index
-			elseif valId <= 223 then -- userdata
-				key, pos = userDeserializer(buf, pos)
-			else 
-				pos += 1 -- ... data corrupted
-			end
-			
-			if key == nil then
-				parExisting.Index = existingIndex
-				return nil, pos -- data corrupted
-			end
+			return nil, pos
 		end
-
-		if pos - 1 > oldPos then
-			existing[existingIndex] = key
-			existingIndex += 1
-		end
-		
 		valId = buffer.readu8(buf, pos)
-		
-		-- check if existing
-		if valId == EQ_EXISTING then
-			pos += 1
-			value = existing[buffer.readu16(buf, pos)]
-			if value == nil then
-				parExisting.Index = existingIndex
-				return nil, pos -- data corrupted
-			end
-			pos += 2
-		end
-
-		local oldPos = pos
-
+		value, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
 		if value == nil then
-			if valId <= 2 then -- boolean
-				value, pos = boolDeserializer(buf, pos)
-			elseif valId <= 8 then -- buffer
-				value, pos = bufDeserializer(buf, pos) 
-			elseif valId <= 87 then -- string
-				value, pos = strDeserializer(buf, pos)
-			elseif valId <= 135 then -- number
-				value, pos = numDeserializer(buf, pos)
-			elseif valId <= 193 then -- vector
-				value, pos = vecDeserializer(buf, pos)
-			elseif valId <= 201 then -- table
-				parExisting.Index = existingIndex
-				value, pos = tabDeserializer(buf, pos, parExisting)
-				existingIndex = parExisting.Index
-			elseif valId <= 223 then -- userdata
-				value, pos = userDeserializer(buf, pos)
-			else 
-				pos += 1 -- ... data corrupted
-			end
-
-			if value == nil then
-				parExisting.Index = existingIndex
-				return nil, pos -- data corrupted
-			end
+			return nil, pos
 		end
-
-		if pos - 1 > oldPos then
-			existing[existingIndex] = value
-			existingIndex += 1
-		end
-
+		
 		returnedTab[key] = value
 	end
 end
