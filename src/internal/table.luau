@@ -127,7 +127,8 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	}
 	local one_byte_existing = parExisting and parExisting.One or {} -- for speed
 	local two_byte_existing = parExisting and parExisting.Two or {} -- for speed
-	if not parExisting then
+	local isFinal = not parExisting
+	if isFinal then
 		parExisting = {
 			Data = existing, 
 			Index = existingIndex,
@@ -180,8 +181,15 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 		-- store v
 		buf, tempPos, size, existingIndex = serialCache(v, buf, tempPos, size, parExisting, existingIndex)
 	end
-
-	parExisting.Index = existingIndex
+	
+	if not isFinal then
+		parExisting.Index = existingIndex
+	else
+		table.clear(parExisting.Data)
+		table.clear(parExisting.One)
+		table.clear(parExisting.Two)
+	end
+	
 
 	if not isDict and not endArray then
 		buffer.writeu8(buf, pos, ARRAY)

@@ -25,7 +25,7 @@ local NUMBER = 148
 local SCALAR_NUMBER = 149
 
 local READ = {}
-local WRITE = {} -- 1 to 1087
+local WRITE = {} -- 1 to 1055
 
 local builtinConst = {
 	[vector.zero] = ZERO,

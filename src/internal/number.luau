@@ -30,7 +30,7 @@ local MAX_INT = 2^31-1
 local MAX_FLOAT = 2^127
 
 local READ = {}
-local WRITE = {} -- 1 to 1087
+local WRITE = {} -- 1 to 1055
 
 local FLOAT_BUFFER = buffer.create(4)
 

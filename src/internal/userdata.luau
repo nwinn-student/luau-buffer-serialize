@@ -9,7 +9,7 @@ local CUSTOM = 202
 local NIL = 203
 
 local READ = {}
-local WRITE = {} -- 1 to 1087
+local WRITE = {} -- 1 to 1039
 local Reader
 local Writer
 
@@ -42,7 +42,6 @@ return {
 			return buf, pos + newSize, size
 		end
 
-		-- wrong!!!
 		if Writer then
 			if not buf then
 				buf, size = buffer.create(1), 1
@@ -75,17 +74,15 @@ return {
 			return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
 		end
 
-
-		-- wrong!!!
 		if Reader then
 			return Reader(buf, pos + 1)
 		end
 		return nil, pos + 1
 	end,
-	setReader = function(reader: (buf: buffer, data: PositionData)->(unknown))
+	setReader = function(reader: (buf: buffer, pos: number)->(unknown, number))
 		Reader = reader
 	end,
-	setWriter = function(writer: (value: unknown, data: BufferData)->())
+	setWriter = function(writer: (value: unknown, buf: buffer, pos: number, size: number)->(buffer, number, number))
 		Writer = writer
 	end
 }
