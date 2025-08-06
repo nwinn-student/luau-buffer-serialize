@@ -141,12 +141,12 @@ The dictSize variable represents the amount of bytes used to store all of the ke
 
 - [X] empty table [194]: The constant ```{}```
 - [X] table [195]: A mixed table that contains both arrayend and tableend to terminate. (Takes 3 + arraySize + dictSize bytes)
-- [X] equal_to_existing_value [196]: Two bytes of similar values (Takes 3 bytes)
+- [X] equal_to_existing_value [196]: Two bytes of unique values (Takes 3 bytes)
 - [X] array [197]: An array that uses tableend to terminate (Takes 2 + arraySize bytes)
 - [X] dict [198]: A dictionary that uses tableend to terminate (Takes 2 + dictSize bytes) 
 - [X] arrayend [199]: Used to terminate the array portion of a table
 - [X] tableend [200]: Used to terminate a table
-- [ ] UNKNOWN [201]: An approach that may be used in the future.
+- [ ] existing_cache [201]: One byte of unique values, cleared every 256 unique values (Takes 2 bytes).
 
 `userdata`
 - [X] custom [202]: A user-defined function is used to read/write the information associated with the userdata (Takes 1+custom bytes)
