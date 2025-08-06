@@ -98,8 +98,8 @@ end
 
 Serialize.setUserdata = function(read: (buf: buffer, pos: number)->(unknown, number), write: (value: unknown, buf: buffer, pos: number, size: number)->(buffer, number, number))
 	local ud = require("./internal/userdata")
-	ud.setReader = read
-	ud.setWriter = write
+	ud.setReader(read)
+	ud.setWriter(write)
 end
 
 return Serialize
