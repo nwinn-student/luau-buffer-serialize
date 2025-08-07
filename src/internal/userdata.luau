@@ -18,7 +18,7 @@ return {
 	Write = WRITE,
 	-- Need a way to set the approaches for serial and deserial
 
-	serialize = function(value: unknown, buf: buffer, pos: number, size: number)
+	serialize = function(value: any, buf: buffer, pos: number, size: number)
 
 		local cachedConstant: number? = WRITE[value]
 		if cachedConstant then

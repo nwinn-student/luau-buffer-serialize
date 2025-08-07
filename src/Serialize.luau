@@ -13,7 +13,7 @@ local modules = {}
 --[[
 	Returns the value as a buffer
 ]]--
-Serialize.serialize = function(value: any)
+Serialize.serialize = function(value: any): (buffer, number, number)
 	local typeValue = type(value)
 	if typeValue == "function" or typeValue == "thread" then
 		typeValue = "nil"
@@ -27,7 +27,7 @@ Serialize.serialize = function(value: any)
 	return trim(serial(value, nil, 0, 0))
 end
 
-Serialize.deserialize = function(value: buffer)
+Serialize.deserialize = function(value: buffer): (any, number)
 	local pointer = buffer.readu8(value, 0)
 	if pointer == 0 then return nil end
 
@@ -53,13 +53,13 @@ Serialize.deserialize = function(value: buffer)
 	if deserial then
 		return deserial(value, 0)
 	end
-	
+
 	deserial = require(`./internal/{enumerator[pointer]}`).deserialize
 	modules[pointer] = deserial
 	return deserial(value, 0)
 end
 
-Serialize.pair = function(id: number, value: any)
+Serialize.pair = function(id: number, value: any): nil
 	local typeV = type(value)
 	local maxId = if typeV == "string" then 1343
 		elseif typeV == "number" then 1055
