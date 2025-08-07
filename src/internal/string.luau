@@ -130,7 +130,7 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 						buf, size = inflate(buf, pos + 1, size)
 					end
 					buffer.writeu8(buf, pos, CONCAT_NUM_STR)
-					buf, pos = numSerializer(tonumber(string.sub(value, 1, finish)), buf, pos + 1, size)
+					buf, pos, size = numSerializer(tonumber(string.sub(value, 1, finish)), buf, pos + 1, size)
 					local newSize = if cachedConstant <= 64 then 1
 						else 2
 					if pos + newSize > size then

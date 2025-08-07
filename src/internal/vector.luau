@@ -158,8 +158,8 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 			buf, size = inflate(buf, pos + 1, size)
 		end
 		buffer.writeu8(buf, pos, NUMBER)
-		buf, pos = numSerializer(valueX, buf, pos + 1, size)
-		buf, pos = numSerializer(valueY, buf, pos, size)
+		buf, pos, size = numSerializer(valueX, buf, pos + 1, size)
+		buf, pos, size = numSerializer(valueY, buf, pos, size)
 		return numSerializer(valueZ, buf, pos, size)
 	end
 
