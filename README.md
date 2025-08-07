@@ -90,8 +90,8 @@ vector and nil if in table (so not added).
 - [X] char [11]: A string has a length that can be represented as a char (Takes 3 + strLen bytes)
 - [X] three_byte [12]: A string has a length that can be represented in 3 bytes (Takes 4 + strLen bytes)
 - [X] int [13]: A string has a length that can be represented as an int (Takes 5 + strLen bytes)
-- [X] concatcn [14]: Concatenation of a constant and a positive integer (Takes 3-5 bytes, 32- chars)
-- [X] concatnc [15]: Concatenation of a positive integer and a constant (Takes 3-5 bytes, 32- chars)
+- [X] concatcn [14]: Concatenation of a string and a positive integer (Takes 3-5 + n bytes, 32- chars)
+- [X] concatnc [15]: Concatenation of a positive integer and a string (Takes 3-5 + n bytes, 32- chars)
 - [X] num [16]: The string can be converted to a positive integer (Takes 2-6 bytes, 32- chars).
 - [ ] UNKNOWN [17]: An approach that may be used in the future.
 - [ ] UNKNOWN [18]: An approach that may be used in the future.
@@ -105,7 +105,7 @@ vector and nil if in table (so not added).
 - [X] int [93]: The number is an int (4 bytes) (Takes 5 byte)
 - [X] float [94]: The number is a float (4 bytes) (Takes 5 byte)
 - [X] double [95]: The number is a double (8 bytes) (Takes 9 byte)
-- [X] nan [96]: The constant nan, only present to ensure nan does error table's existingIndex.
+- [X] nan [96]: The constant `nan` or `0/0`.
 - [ ] UNKNOWN [97]: An approach that may be used in the future, maybe five_byte.
 - [ ] UNKNOWN [98]: An approach that may be used in the future, maybe six_byte.
 - [ ] UNKNOWN [99]: An approach that may be used in the future.
