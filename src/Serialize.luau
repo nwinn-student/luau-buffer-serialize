@@ -5,7 +5,6 @@ do
 	require("./internal/table") -- ensures the rest are loaded
 end
 
-local support = enumerator.support
 local trim = enumerator.Methods.trim
 
 local Serialize = {}
@@ -75,31 +74,6 @@ Serialize.pair = function(id: number, value: any)
 	local mod = require(`./internal/{typeV}`)
 	mod.Read[id] = value
 	mod.Write[value] = id
-end
-
-Serialize.batchPair = function(batch: {[number]: any})
-	for id, value in batch do
-		local typeV = type(value)
-		local maxId = if typeV == "string" then 1343
-			elseif typeV == "number" then 1055
-			elseif typeV == "vector" then 1055
-			elseif typeV == "userdata" then 1039
-			else 0
-
-		assert(type(id) == "number" and id % 1 == 0, `Invalid id {id} (must be integer)`)
-		assert(id >= 1 and id <= maxId, `Invalid id {id} (must be between 1 and {maxId})`)
-		assert(value == value, `Invalid value {value} (must be non-nan)`)
-
-		local mod = require(`./internal/{typeV}`)
-		mod.Read[id] = value
-		mod.Write[value] = id
-	end
-end
-
-Serialize.setUserdata = function(read: (buf: buffer, pos: number)->(unknown, number), write: (value: unknown, buf: buffer, pos: number, size: number)->(buffer, number, number))
-	local ud = require("./internal/userdata")
-	ud.setReader(read)
-	ud.setWriter(write)
 end
 
 return Serialize
