@@ -1,4 +1,5 @@
 local bufferSerial = require("./BufferSerializer/Serialize")
+local userdataSerial = require("./BufferSerializer/internal/userdata")
 local inflate = require("./BufferSerializer/internal/pointer/Enumerator").Methods.inflateBuffer
 
 local CFRAME = 5 -- assuming you want to have other userdata supported
@@ -35,7 +36,8 @@ local function cframeReader(buf: buffer, pos: number)
 	end
 end
 
-bufferSerial.setUserdata(cframeReader, cframeWriter)
+userdataSerial.setReader(cframeReader)
+userdataSerial.setWriter(cframeWriter)
 
 local data = CFrame.new()
 
