@@ -113,10 +113,11 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 			or isYAxis or isZAxis
 			or isXYAxis or isYZAxis
 		then
+			-- 3+ bytes
 			if not buf then
-				buf, size = buffer.create(2), 2
-			elseif pos + 2 > size then
-				buf, size = inflate(buf, pos + 2, size)
+				buf, size = buffer.create(3), 3
+			elseif pos + 3 > size then
+				buf, size = inflate(buf, pos + 3, size)
 			end
 			buffer.writeu8(buf, pos, SCALAR_NUMBER)
 
@@ -138,24 +139,37 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 	end
 
 	-- now we check types
-	local typeX = getType(valueX)
-	local typeY = getType(valueY)
-	local typeZ = getType(valueZ)
-
-	local constX = numWrite[valueX]
-	local constY = numWrite[valueY]
-	local constZ = numWrite[valueZ]
-
+	local typeX, typeY, typeZ
+	-- if nan (always better)
 	local isNumber = valueX ~= valueX 
 		or valueY ~= valueY 
-		or valueZ ~= valueZ 
-		or constX or constY or constZ
-
-	if typeX ~= typeY or typeY ~= typeZ or isNumber then
+		or valueZ ~= valueZ
+	
+	-- if num type differs
+	if not isNumber then
+		typeX = getType(valueX)
+		typeY = getType(valueY)
+		isNumber = typeX ~= typeY
+	end
+	if not isNumber then
+		typeZ = getType(valueZ)
+		isNumber = typeY ~= typeZ 
+	end
+	if not isNumber and typeX ~= BYTE then
+		-- if num is a constant and all types aren't byte
+		-- char/tryte COULD be cheaper (1 + 2 (const) + 5 (float) + 5 (float) is worst case)
+		-- the checks are VERY expensive (from a line perspective) though
+		isNumber = (
+			numWrite[valueX] or numWrite[valueY] or numWrite[valueZ]
+		)
+	end
+	
+	-- 4+ bytes (NOT intelligent, as a const byte will be more expensive)
+	if isNumber then
 		if not buf then
-			buf, size = buffer.create(1), 1
-		elseif pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
+			buf, size = buffer.create(4), 4
+		elseif pos + 4 > size then
+			buf, size = inflate(buf, pos + 4, size)
 		end
 		buffer.writeu8(buf, pos, NUMBER)
 		buf, pos, size = numSerializer(valueX, buf, pos + 1, size)
