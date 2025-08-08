@@ -99,8 +99,12 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 	local valueX = value.x
 	local valueY = value.y
 	local valueZ = value.z
+	-- if nan (always better)
+	local isNumber = valueX ~= valueX 
+		or valueY ~= valueY 
+		or valueZ ~= valueZ
 
-	do
+	if not isNumber then
 		local isOneValue = valueX == valueY and valueY == valueZ
 		local isXAxis = valueY == 0 and valueZ == 0
 		local isYAxis = valueX == 0 and valueZ == 0
@@ -140,10 +144,6 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 
 	-- now we check types
 	local typeX, typeY, typeZ
-	-- if nan (always better)
-	local isNumber = valueX ~= valueX 
-		or valueY ~= valueY 
-		or valueZ ~= valueZ
 	
 	-- if num type differs
 	if not isNumber then
