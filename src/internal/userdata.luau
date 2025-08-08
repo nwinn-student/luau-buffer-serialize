@@ -13,7 +13,7 @@ local WRITE = {} -- 1 to 1039
 local Reader
 local Writer
 
-return {
+local Userdata = {
 	Read = READ,
 	Write = WRITE,
 	-- Need a way to set the approaches for serial and deserial
@@ -86,3 +86,26 @@ return {
 		Writer = writer
 	end
 }
+
+--[[
+	Clears and replaces the read table
+	
+	@ Mainly used to reduce memory usage
+]]--
+function Userdata.resetRead()
+	table.clear(READ)
+	READ = {}
+	Userdata.Read = READ
+end
+--[[
+	Clears and replaces the write table
+	
+	@ Mainly used to reduce memory usage
+]]--
+function Userdata.resetWrite()
+	table.clear(WRITE)
+	WRITE = {}
+	Userdata.Write = WRITE
+end
+
+return Userdata

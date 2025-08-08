@@ -214,7 +214,7 @@ end
 function Number.resetWrite()
 	table.clear(WRITE)
 	WRITE = {}
-	Number.Read = WRITE
+	Number.Write = WRITE
 end
 
 return Number

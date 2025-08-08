@@ -293,7 +293,7 @@ end
 function Vector.resetWrite()
 	table.clear(WRITE)
 	WRITE = {}
-	Vector.Read = WRITE
+	Vector.Write = WRITE
 end
 
 return Vector

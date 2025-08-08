@@ -261,7 +261,7 @@ end
 function String.resetWrite()
 	table.clear(WRITE)
 	WRITE = {}
-	String.Read = WRITE
+	String.Write = WRITE
 end
 
 return String
