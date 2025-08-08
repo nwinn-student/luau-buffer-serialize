@@ -101,8 +101,9 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 
 		-- Ensures that the output WILL be the same as the input
 		-- even if it results in a slower path
+		-- we could potentially use buf as the buffer so we don't have to write twice
 		buffer.writef32(FLOAT_BUFFER, 0, value)
-		if buffer.readf32(FLOAT_BUFFER, 0) - value == 0 then
+		if buffer.readf32(FLOAT_BUFFER, 0) == value then
 			if not buf then
 				buf, size = buffer.create(5), 5
 			elseif pos + 5 > size then
