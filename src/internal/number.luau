@@ -32,8 +32,6 @@ local MAX_FLOAT = 2^127
 local READ = {}
 local WRITE = {} -- 1 to 1055
 
-local FLOAT_BUFFER = buffer.create(4)
-
 @native
 local function numSerializer(value: number, buf: buffer, pos: number, size: number)
 
@@ -101,23 +99,15 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 
 		-- Ensures that the output WILL be the same as the input
 		-- even if it results in a slower path
-		-- we could potentially use buf as the buffer so we don't have to write twice
-		buffer.writef32(FLOAT_BUFFER, 0, value)
-		if buffer.readf32(FLOAT_BUFFER, 0) == value then
-			if not buf then
-				buf, size = buffer.create(5), 5
-			elseif pos + 5 > size then
-				buf, size = inflate(buf, pos + 5, size)
-			end
-			buffer.writeu8(buf, pos, FLOAT)
-			buffer.writef32(buf, pos+1, value)
-			return buf, pos + 5, size
-		end
-		
 		if not buf then
 			buf, size = buffer.create(9), 9
 		elseif pos + 9 > size then
 			buf, size = inflate(buf, pos + 9, size)
+		end
+		buffer.writef32(buf, pos + 1, value)
+		if buffer.readf32(buf, pos + 1) == value then
+			buffer.writeu8(buf, pos, FLOAT)
+			return buf, pos + 5, size
 		end
 		buffer.writeu8(buf, pos, DOUBLE)
 		buffer.writef64(buf, pos+1, value)
