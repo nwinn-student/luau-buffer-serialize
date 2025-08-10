@@ -97,7 +97,7 @@ local function serialCache(data: any, buf: buffer, pos: number, size: number, ex
 			tinyIndex = 0
 		end
 		existing.Tiny[data] = tinyIndex
-		existing.TinyIndex += 1
+		existing.TinyIndex = tinyIndex + 1
 	end
 	return buf, pos, size, existingIndex
 end
@@ -201,7 +201,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			end
 			-- writebits is not faster
 			buffer.writeu8(buf, tempPos, EQ_EXISTING)
-			buffer.writeu16(buf, tempPos + 1, cached)
+			buffer.writeu16(buf, tempPos + 1, excached)
 			tempPos += 3
 		elseif not cached then
 			-- store i
@@ -315,7 +315,7 @@ local function deserialCache(valId, buf, pos, existing, existingIndex)
 			tinyIndex = 0
 		end
 		existing.Tiny[tinyIndex] = value
-		existing.TinyIndex += 1
+		existing.TinyIndex = tinyIndex + 1
 	end
 	return value, pos, existingIndex
 end
@@ -382,6 +382,7 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: DexistingData?)
 			
 			index += 1
 			if valId == 0 then
+				pos += 1
 				continue
 			end
 			
