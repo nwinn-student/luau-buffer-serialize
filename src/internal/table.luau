@@ -111,9 +111,9 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	local isFinal = not parExisting
 	if isFinal then
 		parExisting = {
-			-- 2^16 values (fastest path)
+			-- 2^16 values
 			Data = {[value] = 0},
-			-- 2^8 values (second fastest path)
+			-- 2^8 values
 			Tiny = {},
 			Index = 1,
 			TinyIndex = 0,
@@ -124,7 +124,6 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	end
 	
 	local existingIndex = parExisting.Index
-	local tinyIndex = parExisting.TinyIndex
 	local existing = parExisting.Data
 	local tiny = parExisting.Tiny
 
