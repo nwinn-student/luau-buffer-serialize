@@ -63,7 +63,9 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 		--								<-123.521> <e-53>
 		-- we just want positive integers (it is 2+x faster than above)
 		local start, finish = string.find(value, "%d+")
-
+		if start and string.sub(value, start, start) == "0" then
+			start, finish = nil, nil
+		end
 		if start == 1 and finish == len then -- <num>
 			if not buf then
 				buf, size = buffer.create(1), 1
