@@ -2,25 +2,23 @@
 local enumerator = require("./pointer/Enumerator")
 
 -- all
+local serialSwitch = {
+	boolean = require("./boolean").serialize,
+	buffer = require("./buffer").serialize,
+	string = require("./string").serialize,
+	number = require("./number").serialize,
+	vector = require("./vector").serialize,
+	userdata = require("./userdata").serialize
+}
+
 local nilSerializer = require("./nil").serialize
+
 local nilDeserializer = require("./nil").deserialize
-
-local boolSerializer = require("./boolean").serialize
 local boolDeserializer = require("./boolean").deserialize
-
-local bufSerializer = require("./buffer").serialize
 local bufDeserializer = require("./buffer").deserialize
-
-local strSerializer = require("./string").serialize
 local strDeserializer = require("./string").deserialize
-
-local numSerializer = require("./number").serialize
 local numDeserializer = require("./number").deserialize
-
-local vecSerializer = require("./vector").serialize
 local vecDeserializer = require("./vector").deserialize
-
-local userSerializer = require("./userdata").serialize
 local userDeserializer = require("./userdata").deserialize
 
 local inflate = enumerator.Methods.inflateBuffer
@@ -74,24 +72,19 @@ local function serialCache(data: any, buf: buffer, pos: number, size: number, ex
 	
 	local typeV = type(data)
 	local oldPos = pos
-	if typeV == "function" or typeV == "thread" then
-		buf, pos, size = nilSerializer(data, buf, pos, size)
-	elseif typeV == "boolean" then
-		buf, pos, size = boolSerializer(data, buf, pos, size)
-	elseif typeV == "buffer" then
-		buf, pos, size = bufSerializer(data, buf, pos, size)
-	elseif typeV == "string" then
-		buf, pos, size = strSerializer(data, buf, pos, size)
-	elseif typeV == "number" then
-		buf, pos, size = numSerializer(data, buf, pos, size)
-	elseif typeV == "vector" then
-		buf, pos, size = vecSerializer(data, buf, pos, size)
-	elseif typeV == "userdata" then
-		buf, pos, size = userSerializer(data, buf, pos, size)
-	elseif typeV == "table" then
-		existing.Index = existingIndex
-		buf, pos, size = tabSerializer(data, buf, pos, size, existing)
-		existingIndex = existing.Index
+	
+	local case = serialSwitch[typeV]
+	if case then
+		buf, pos, size = case(data, buf, pos, size)
+	else
+		-- could be table (or function or thread for array)
+		if typeV == "function" or typeV == "thread" then
+			buf, pos, size = nilSerializer(data, buf, pos, size)
+		else
+			existing.Index = existingIndex
+			buf, pos, size = tabSerializer(data, buf, pos, size, existing)
+			existingIndex = existing.Index
+		end
 	end
 
 	if pos - oldPos == 1 then
