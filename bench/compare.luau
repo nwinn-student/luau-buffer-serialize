@@ -17,6 +17,31 @@
 ]]--
 
 local bench = require("./Bench/Bench")
+local benchPrecision = require("./Bench/internal/Print").precision
+
+local benchMethods = getmetatable(bench(function() end)).__index
+
+-- Makes the output look much neater
+function benchMethods:summarize(name: string)
+	self.Name = name
+	
+	local str = `Name: {name}\n    Speed: [seconds]\n        Median: {
+		benchPrecision(self.Speed.Median, 4)
+	}\n    Memory: [kB]\n        Avg:    {
+		benchPrecision(self.Memory.Average, 4)
+	}`
+	
+	local typeOutput = type(self.Output)
+	if typeOutput == "string" or typeOutput == "buffer" then
+		str ..= `\n    Size:   {
+			if typeOutput == "string" then #self.Output
+			else buffer.len(self.Output)
+		} bytes`
+	end
+	print(str)
+	return self
+end
+
 
 local bufferSerial = require("./BufferSerializer/Serialize")
 local serialize = bufferSerial.serialize
@@ -38,49 +63,45 @@ local zlibdeflate = require("./zlibdeflate")
 local compress = zlibdeflate.Deflate.Compress
 local decompress = zlibdeflate.Deflate.Decompress
 
+function outputStr(output)
+	return `Size: {#output}`
+end
+function outputBuf(output)
+	return `Size: {buffer.len(output)}`
+end
+
 function test(testData: {[any]: any}, name: string)
 	bench(serialize, testData)
 		:withName(`Serial {name}`)
-		:updateOutput(function(output): any?
-			return `Size: {buffer.len(output)}`	
+		:updateOutput(function(output)
+			return `Size: {buffer.len(output)}`
 		end)
 		-- Add task.wait() if supported
 		:print()
-	bench(jsonEncode, json, testData)
-		:withName(`JSON {name}`)
-		:updateOutput(function(output): any?
-			return `Size: {#output}`	
-		end)
-		-- Add task.wait() if supported
-		:print()
-	bench(msgpackEncode, testData)
-		:withName(`MsgpackEncode {name}`)
-		:updateOutput(function(output): any?
-			return `Size: {#output}`	
-		end)
-		-- Add task.wait() if supported
-		:print()
+		:compare(
+			bench(jsonEncode, json, testData)
+				-- Add task.wait() if supported
+				:summarize(`JSON {name}`),
+			bench(msgpackEncode, testData)
+				-- Add task.wait() if supported
+				:summarize(`MsgpackEncode {name}`)
+		):print()
+	
 	bench(compress, buffer.tostring(serialize(testData)))
 		:withName(`Compress Serial {name}`)
-		:updateOutput(function(output): any?
-			return `Size: {#output}`	
+		:updateOutput(function(output)
+			return `Size: {#output}`
 		end)
 		-- Add task.wait() if supported
 		:print()
-	bench(compress, jsonEncode(json, testData))
-		:withName(`Compress JSON {name}`)
-		:updateOutput(function(output): any?
-			return `Size: {#output}`	
-		end)
-		-- Add task.wait() if supported
-		:print()
-	bench(compress, msgpackEncode(testData))
-		:withName(`Compress Msgpack {name}`)
-		:updateOutput(function(output): any?
-			return `Size: {#output}`	
-		end)
-		-- Add task.wait() if supported
-		:print()
+		:compare(
+			bench(compress, jsonEncode(json, testData))
+				-- Add task.wait() if supported
+				:summarize(`Compress JSON {name}`),
+			bench(compress, msgpackEncode(testData))
+				-- Add task.wait() if supported
+				:summarize(`Compress Msgpack {name}`)
+		):print()
 
 	bench(deserialize, serialize(testData))
 		:withName(`Deserial {name}`)
