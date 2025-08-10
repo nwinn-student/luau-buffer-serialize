@@ -93,32 +93,21 @@ end
 @native
 function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: number, parExisting: ExistingData?)
 
-	if next(value) == nil then
-		if not buf then
-			buf, size = buffer.create(1), 1
-		elseif pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
-		buffer.writeu8(buf, pos, EMPTY)
-		return buf, pos + 1, size
-	end
-
 	local lastIndex = 1
-	local existingIndex = parExisting and parExisting.Index or 1
-	local existing = parExisting and parExisting.Data or {  -- MASSIVE TABLE
-		[value] = 0
-	}
-	local one_byte_existing = parExisting and parExisting.One or {} -- for speed
-	local two_byte_existing = parExisting and parExisting.Two or {} -- for speed
 	local isFinal = not parExisting
 	if isFinal then
 		parExisting = {
-			Data = existing, 
-			Index = existingIndex,
-			One = one_byte_existing,
-			Two = two_byte_existing
+			Data = {[value] = 0}, 
+			Index = 1,
+			One = {},
+			Two = {}
 		}
 	end
+	
+	local existingIndex = parExisting.Index
+	local existing = parExisting.Data
+	local one_byte_existing = parExisting.One
+	local two_byte_existing = parExisting.Two
 
 	local isDict = #value == 0
 	if not buf then
@@ -199,6 +188,11 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 		
 		-- store v
 		buf, tempPos, size, existingIndex = serialCache(v, buf, tempPos, size, parExisting, existingIndex)
+	end
+	
+	if tempPos == pos + 1 then
+		buffer.writeu8(buf, pos, EMPTY)
+		return buf, pos + 1, size
 	end
 	
 	if not isFinal then
