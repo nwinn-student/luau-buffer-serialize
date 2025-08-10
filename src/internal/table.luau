@@ -387,6 +387,31 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: DexistingData?)
 			end
 			
 			local value
+			
+			-- check if tiny
+			if valId == EQ_TINY then
+				value = tiny[buffer.readu8(buf, pos + 1)]
+				pos += 2
+				if value == nil then
+					if isFinal then close() end
+					return nil, pos
+				end
+				returnedTab[index] = value
+				continue
+			end
+			
+			-- check if existing
+			if valId == EQ_EXISTING then
+				value = existing[buffer.readu16(buf, pos + 1)]
+				pos += 3
+				if value == nil then
+					if isFinal then close() end
+					return nil, pos
+				end
+				returnedTab[index] = value
+				continue
+			end
+			
 			value, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
 			if value == nil then
 				if isFinal then close() end
@@ -405,18 +430,67 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: DexistingData?)
 		end
 		
 		local key, value
-		key, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
-		if key == nil then
-			if isFinal then close() end
-			return nil, pos
+		
+		-- check if tiny
+		if valId == EQ_TINY then
+			key = tiny[buffer.readu8(buf, pos + 1)]
+			if key == nil then
+				if isFinal then close() end
+				return nil, pos
+			end
+			pos += 2
 		end
+
+		-- check if existing
+		if valId == EQ_EXISTING then
+			key = existing[buffer.readu16(buf, pos + 1)]
+			if key == nil then
+				if isFinal then close() end
+				return nil, pos
+			end
+			pos += 3
+		end
+		
+		if not key then
+			key, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
+			if key == nil then
+				if isFinal then close() end
+				return nil, pos
+			end
+		end
+		
 		valId = buffer.readu8(buf, pos)
+		
+		-- check if tiny
+		if valId == EQ_TINY then
+			key = tiny[buffer.readu8(buf, pos + 1)]
+			if key == nil then
+				if isFinal then close() end
+				return nil, pos
+			end
+			pos += 2
+			returnedTab[key] = value
+			continue
+		end
+
+		-- check if existing
+		if valId == EQ_EXISTING then
+			key = existing[buffer.readu16(buf, pos + 1)]
+			if key == nil then
+				if isFinal then close() end
+				return nil, pos
+			end
+			pos += 3
+			returnedTab[key] = value
+			continue
+		end
+		
 		value, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
 		if value == nil then
 			if isFinal then close() end
 			return nil, pos
 		end
-		
+
 		returnedTab[key] = value
 	end
 end
