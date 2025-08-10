@@ -304,7 +304,7 @@ local function deserialCache(valId, buf, pos, existing, existingIndex)
 		return nil, pos -- data corrupted
 	end
 	
-	if pos - 1 > oldPos then
+	if pos - 2 > oldPos then
 		if existingIndex ~= 65_535 then
 			existing.Data[existingIndex] = value
 			existingIndex += 1
