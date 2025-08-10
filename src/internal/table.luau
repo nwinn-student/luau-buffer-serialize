@@ -32,12 +32,15 @@ local ARRAY = 197
 local DICT = 198
 local ARRAY_END = 199
 local TABLE_END = 200
+local EQ_TINY = 201
 
 type ExistingData = {
 	Data: {[any]: number},
+	Tiny: {[any]: number},
 	Index: number,
-	One: {[any]: number},
-	Two: {[any]: number}
+	TinyIndex: number,
+	One: {[any]: number}?,
+	Two: {[any]: number}?
 }
 
 @native
@@ -81,11 +84,22 @@ local function serialCache(data: any, buf: buffer, pos: number, size: number, ex
 		existing.One[data] = buffer.readu8(buf, oldPos)
 	elseif pos - oldPos == 2 then
 		existing.Two[data] = buffer.readu16(buf, oldPos)
-	elseif existingIndex ~= 65_535 and data == data then
-		-- cache for rest (only 65_536 values we can cache!!)
-		-- v == v checks for nans :>
-		existing.Data[data] = existingIndex
-		existingIndex += 1
+	elseif data == data then
+		if existingIndex ~= 65_535 then
+			-- cache for rest (only 65_536 values we can cache!!)
+			-- v == v checks for nans :>
+			existing.Data[data] = existingIndex
+			existingIndex += 1
+		end
+		local tinyIndex = existing.TinyIndex
+		if tinyIndex + 1 == 256 then
+			table.clear(existing.Tiny)
+			tinyIndex = 0
+		else
+			tinyIndex += 1
+		end
+		existing.Tiny[data] = tinyIndex
+		existing.TinyIndex = tinyIndex
 	end
 	return buf, pos, size, existingIndex
 end
@@ -97,21 +111,25 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	local isFinal = not parExisting
 	if isFinal then
 		parExisting = {
-			Data = {[value] = 0}, 
+			-- 2^16 values (fastest path)
+			Data = {[value] = 0},
+			-- 2^8 values (second fastest path)
+			Tiny = {},
 			Index = 1,
+			TinyIndex = 0,
+			-- A slower fast-path
 			One = {},
 			Two = {}
 		}
 	end
 	
 	local existingIndex = parExisting.Index
+	local tinyIndex = parExisting.TinyIndex
 	local existing = parExisting.Data
-	local one_byte_existing = parExisting.One
-	local two_byte_existing = parExisting.Two
+	local tiny = parExisting.Tiny
 
 	local isDict = #value == 0
 	if not buf then
-		-- reduces inflate
 		buf, size = buffer.create(64), 64
 	elseif pos + 1 > size then
 		buf, size = inflate(buf, pos + 1, size)
@@ -126,7 +144,17 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 		if lastIndex == i then
 			lastIndex += 1
 			
-			local cached = existing[v]
+			local cached = tiny[v]
+			if cached then
+				if tempPos + 2 > size then
+					buf, size = inflate(buf, tempPos + 2, size)
+				end
+				buffer.writeu8(buf, tempPos, EQ_TINY)
+				buffer.writeu8(buf, tempPos + 1, cached)
+				tempPos += 2
+				continue
+			end
+			cached = existing[v]
 			if cached then
 				if tempPos + 3 > size then
 					buf, size = inflate(buf, tempPos + 3, size)
@@ -160,7 +188,16 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			continue
 		end
 		
-		local cached = existing[i]
+		local cached = tiny[i]
+		if cached then
+			if tempPos + 2 > size then
+				buf, size = inflate(buf, tempPos + 2, size)
+			end
+			buffer.writeu8(buf, tempPos, EQ_TINY)
+			buffer.writeu8(buf, tempPos + 1, cached)
+			tempPos += 2
+		end
+		cached = not cached and existing[i]
 		if cached then
 			if tempPos + 3 > size then
 				buf, size = inflate(buf, tempPos + 3, size)
@@ -174,6 +211,16 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			buf, tempPos, size, existingIndex = serialCache(i, buf, tempPos, size, parExisting, existingIndex)
 		end
 		
+		local cached = tiny[v]
+		if cached then
+			if tempPos + 2 > size then
+				buf, size = inflate(buf, tempPos + 2, size)
+			end
+			buffer.writeu8(buf, tempPos, EQ_TINY)
+			buffer.writeu8(buf, tempPos + 1, cached)
+			tempPos += 2
+			continue
+		end
 		cached = existing[v]
 		if cached then
 			if tempPos + 3 > size then
@@ -198,7 +245,8 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	if not isFinal then
 		parExisting.Index = existingIndex
 	else
-		table.clear(parExisting.Data)
+		table.clear(existing)
+		table.clear(tiny)
 		table.clear(parExisting.One)
 		table.clear(parExisting.Two)
 	end
@@ -216,15 +264,21 @@ end
 
 
 local function deserialCache(valId, buf, pos, existing, existingIndex)
+	-- check if tiny
+	if valId == EQ_TINY then
+		local value = existing.Tiny[buffer.readu8(buf, pos + 1)]
+		if value == nil then
+			return nil, pos + 1, existingIndex -- data corrupted
+		end
+		return value, pos + 2, existingIndex
+	end
 	-- check if existing
 	if valId == EQ_EXISTING then
-		pos += 1
-		local value = existing.Data[buffer.readu16(buf, pos)]
+		local value = existing.Data[buffer.readu16(buf, pos + 1)]
 		if value == nil then
-			return nil, pos, existingIndex -- data corrupted
+			return nil, pos + 1, existingIndex -- data corrupted
 		end
-		pos += 2
-		return value, pos, existingIndex
+		return value, pos + 3, existingIndex
 	end
 	
 	local value: any = nil
@@ -255,14 +309,32 @@ local function deserialCache(valId, buf, pos, existing, existingIndex)
 	end
 	
 	if pos - 1 > oldPos then
-		existing.Data[existingIndex] = value
-		existingIndex += 1
+		if existingIndex ~= 65_535 then
+			existing.Data[existingIndex] = value
+			existingIndex += 1
+		end
+		local tinyIndex = existing.TinyIndex
+		if tinyIndex + 1 == 256 then
+			table.clear(existing.Tiny)
+			tinyIndex = 0
+		else
+			tinyIndex += 1
+		end
+		existing.Tiny[tinyIndex] = value
+		existing.TinyIndex = tinyIndex
 	end
 	return value, pos, existingIndex
 end
 
+type DexistingData = {
+	Data: {[number]: any},
+	Tiny: {[number]: any},
+	Index: number,
+	TinyIndex: number
+}
+
 @native
-function tabDeserializer(buf: buffer, pos: number, parExisting: {Data: {[any]:any}, Index: number}?)
+function tabDeserializer(buf: buffer, pos: number, parExisting: DexistingData?)
 	local id = buffer.readu8(buf, pos)
 
 	pos += 1
@@ -273,17 +345,29 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: {Data: {[any]:an
 
 	local returnedTab = {}
 
-	local existingIndex = parExisting and parExisting.Index or 1
-	local existing = parExisting and parExisting.Data or {  -- MASSIVE TABLE
-		[0] = returnedTab
-	}
-	if not parExisting then
-		parExisting = {Data = existing, Index = existingIndex}
+	local isFinal = not parExisting
+	local close
+	if isFinal then
+		parExisting = {
+			Data = {[0] = returnedTab},
+			Tiny = {},
+			Index = 1,
+			TinyIndex = 0
+		}
+		
+		-- Ensures memory leaks are avoided
+		close = function()
+			table.clear(parExisting.Data)
+			table.clear(parExisting.Tiny)
+		end
 	end
+
+	local existingIndex = parExisting.Index
 
 	local hasArray = id == ARRAY or id == TABLE
 
 	if id ~= ARRAY and id ~= TABLE and id ~= DICT then
+		if isFinal then close() end
 		return nil, pos -- data corruption
 	end
 	
@@ -298,6 +382,7 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: {Data: {[any]:an
 			end
 			if valId == TABLE_END then
 				parExisting.Index = existingIndex
+				if isFinal then close() end
 				return returnedTab, pos + 1 -- for ARRAY
 			end
 
@@ -309,6 +394,7 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: {Data: {[any]:an
 			local value
 			value, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
 			if value == nil then
+				if isFinal then close() end
 				return nil, pos
 			end
 			returnedTab[index] = value
@@ -319,17 +405,20 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: {Data: {[any]:an
 		local valId = buffer.readu8(buf, pos)
 		if valId == TABLE_END then
 			parExisting.Index = existingIndex
+			if isFinal then close() end
 			return returnedTab, pos + 1
 		end
 
 		local key, value
 		key, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
 		if key == nil then
+			if isFinal then close() end
 			return nil, pos
 		end
 		valId = buffer.readu8(buf, pos)
 		value, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
 		if value == nil then
+			if isFinal then close() end
 			return nil, pos
 		end
 		
