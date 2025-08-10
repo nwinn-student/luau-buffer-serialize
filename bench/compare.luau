@@ -81,17 +81,6 @@ function test(testData: {[any]: any}, name: string)
 		end)
 		-- Add task.wait() if supported
 		:print()
-	
-	bench(deserialize, serialize(testData))
-		:withName(`Deserial {name}`)
-		:updateOutput()
-		-- Add task.wait() if supported
-		:print()
-	bench(jsonDecode, json, jsonEncode(json, testData))
-		:withName(`JSONDecode {name}`)
-		:updateOutput()
-		-- Add task.wait() if supported
-		:print()
 
 	bench(deserialize, serialize(testData))
 		:withName(`Deserial {name}`)
