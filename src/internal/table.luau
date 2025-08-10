@@ -42,18 +42,8 @@ type ExistingData = {
 
 @native
 local function serialCache(data: any, buf: buffer, pos: number, size: number, existing: ExistingData, existingIndex: number)
-	local cached = existing.Data[data]
-	if cached then
-		if pos + 3 > size then
-			buf, size = inflate(buf, pos + 3, size)
-		end
-		-- writebits is not faster
-		buffer.writeu8(buf, pos, EQ_EXISTING)
-		buffer.writeu16(buf, pos + 1, cached)
-		return buf, pos + 3, size, existingIndex
-	end
 	-- check 1 and 2 byte caches
-	cached = existing.Two[data]
+	local cached = existing.Two[data]
 	if cached then
 		if pos + 2 > size then
 			buf, size = inflate(buf, pos + 2, size)
@@ -146,7 +136,19 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 		-- Array portion
 		if lastIndex == i then
 			lastIndex += 1
-		
+			
+			local cached = existing[v]
+			if cached then
+				if tempPos + 3 > size then
+					buf, size = inflate(buf, tempPos + 3, size)
+				end
+				-- writebits is not faster
+				buffer.writeu8(buf, tempPos, EQ_EXISTING)
+				buffer.writeu16(buf, tempPos + 1, cached)
+				tempPos += 3
+				continue
+			end
+			
 			buf, tempPos, size, existingIndex = serialCache(v, buf, tempPos, size, parExisting, existingIndex)
 			continue
 		end
@@ -169,8 +171,32 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			continue
 		end
 		
-		-- store i
-		buf, tempPos, size, existingIndex = serialCache(i, buf, tempPos, size, parExisting, existingIndex)
+		local cached = existing[i]
+		if cached then
+			if tempPos + 3 > size then
+				buf, size = inflate(buf, tempPos + 3, size)
+			end
+			-- writebits is not faster
+			buffer.writeu8(buf, tempPos, EQ_EXISTING)
+			buffer.writeu16(buf, tempPos + 1, cached)
+			tempPos += 3
+		else
+			-- store i
+			buf, tempPos, size, existingIndex = serialCache(i, buf, tempPos, size, parExisting, existingIndex)
+		end
+		
+		cached = existing[v]
+		if cached then
+			if tempPos + 3 > size then
+				buf, size = inflate(buf, tempPos + 3, size)
+			end
+			-- writebits is not faster
+			buffer.writeu8(buf, tempPos, EQ_EXISTING)
+			buffer.writeu16(buf, tempPos + 1, cached)
+			tempPos += 3
+			continue
+		end
+		
 		-- store v
 		buf, tempPos, size, existingIndex = serialCache(v, buf, tempPos, size, parExisting, existingIndex)
 	end
