@@ -4,7 +4,6 @@
 	Notes:
 	    Bench can be found at https://github.com/nwinn-student/luau-bench
 	    msgpack can be found at https://github.com/cipharius/msgpack-luau
-	    zlibdeflate can be found at https://devforum.roblox.com/t/string-compression-zlibdeflate/755687
 	    Roblox JSON will be faster than most other luau JSON implementations
 
 	Datasets:
@@ -59,17 +58,6 @@ local msgpack = require("./msgpack")
 local msgpackEncode = msgpack.encode
 local msgpackDecode = msgpack.decode
 
-local zlibdeflate = require("./zlibdeflate")
-local compress = zlibdeflate.Deflate.Compress
-local decompress = zlibdeflate.Deflate.Decompress
-
-function outputStr(output)
-	return `Size: {#output}`
-end
-function outputBuf(output)
-	return `Size: {buffer.len(output)}`
-end
-
 function test(testData: {[any]: any}, name: string)
 	bench(serialize, testData)
 		:withName(`Serial {name}`)
@@ -86,22 +74,6 @@ function test(testData: {[any]: any}, name: string)
 				-- Add task.wait() if supported
 				:summarize(`MsgpackEncode {name}`)
 		):print()
-	
-	bench(compress, buffer.tostring(serialize(testData)))
-		:withName(`Compress Serial {name}`)
-		:updateOutput(function(output)
-			return `Size: {#output}`
-		end)
-		-- Add task.wait() if supported
-		:print()
-		:compare(
-			bench(compress, jsonEncode(json, testData))
-				-- Add task.wait() if supported
-				:summarize(`Compress JSON {name}`),
-			bench(compress, msgpackEncode(testData))
-				-- Add task.wait() if supported
-				:summarize(`Compress Msgpack {name}`)
-		):print()
 
 	bench(deserialize, serialize(testData))
 		:withName(`Deserial {name}`)
@@ -115,19 +87,6 @@ function test(testData: {[any]: any}, name: string)
 			bench(msgpackDecode, msgpackEncode(testData))
 				-- Add task.wait() if supported
 				:withName(`MsgpackDecode {name}`)
-		):print()
-	bench(decompress, compress(buffer.tostring(serialize(testData))))
-		:withName(`Decompress Serial {name}`)
-		:updateOutput()
-		-- Add task.wait() if supported
-		:print()
-		:compare(
-			bench(decompress, compress(jsonEncode(json, testData)))
-				-- Add task.wait() if supported
-				:withName(`Decompress JSON {name}`),
-			bench(decompress, compress(msgpackEncode(testData)))
-				-- Add task.wait() if supported
-				:withName(`Decompress Msgpack {name}`)
 		):print()
 end
 
