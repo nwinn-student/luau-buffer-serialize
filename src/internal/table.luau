@@ -43,87 +43,37 @@ type ExistingData = {
 	Two: {[any]: number}?
 }
 
-@native
-local function serialCache(data: any, buf: buffer, pos: number, size: number, existing: ExistingData, existingIndex: number)
-	-- check 1 and 2 byte caches
-	local cached = existing.Two[data]
-	if cached then
-		if pos + 2 > size then
-			buf, size = inflate(buf, pos + 2, size)
-		end
-		buffer.writeu16(buf, pos, cached)
-		return buf, pos + 2, size, existingIndex
-	end
-	cached = existing.One[data]
-	if cached then
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
-		buffer.writeu8(buf, pos, cached)
-		return buf, pos + 1, size, existingIndex
-	end
-	
-	local typeV = type(data)
-	local oldPos = pos
-	
-	local case = serialSwitch[typeV]
-	if case then
-		buf, pos, size = case(data, buf, pos, size)
-	else
-		-- could be table (or function or thread for array)
-		if typeV == "function" or typeV == "thread" then
-			buf, pos, size = nilSerializer(data, buf, pos, size)
-		else
-			existing.Index = existingIndex
-			buf, pos, size = tabSerializer(data, buf, pos, size, existing)
-			existingIndex = existing.Index
-		end
-	end
-	
-	if pos - oldPos == 1 then
-		existing.One[data] = buffer.readu8(buf, oldPos)
-	elseif pos - oldPos == 2 then
-		existing.Two[data] = buffer.readu16(buf, oldPos)
-	elseif data == data then
-		if existingIndex ~= 65_535 then
-			-- cache for rest (only 65_536 values we can cache!!)
-			-- v == v checks for nans :>
-			existing.Data[data] = existingIndex
-			existingIndex += 1
-		end
-		local tinyIndex = existing.TinyIndex
-		if tinyIndex + 1 == 256 then
-			table.clear(existing.Tiny)
-			tinyIndex = 0
-		end
-		existing.Tiny[data] = tinyIndex
-		existing.TinyIndex = tinyIndex + 1
-	end
-	return buf, pos, size, existingIndex
-end
+
 
 @native
 function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: number, parExisting: ExistingData?)
 
 	local lastIndex = 1
 	local isFinal = not parExisting
+	local one, two, tiny, existing
+	local existingIndex
 	if isFinal then
+		existingIndex = 1
+		one, two, tiny = {}, {}, {}
+		existing = {[value] = 0}
 		parExisting = {
 			-- 2^16 values
-			Data = {[value] = 0},
+			Data = existing,
 			-- 2^8 values
-			Tiny = {},
-			Index = 1,
+			Tiny = tiny,
+			Index = existingIndex,
 			TinyIndex = 0,
 			-- A slower fast-path
-			One = {},
-			Two = {}
+			One = one,
+			Two = two
 		}
+	else
+		existingIndex = parExisting.Index
+		existing = parExisting.Data
+		one = parExisting.One
+		two = parExisting.Two
+		tiny = parExisting.Tiny
 	end
-	
-	local existingIndex = parExisting.Index
-	local existing = parExisting.Data
-	local tiny = parExisting.Tiny
 	
 	local isDict = #value == 0
 	if not buf then
@@ -136,6 +86,72 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	local tempPos = pos + 1
 	local endArray = false
 	
+	--[[
+		Much slower sadly.  Also much more expensive in memory
+		If we change tabSerialize call into a while loop or something,
+		it will be better?  but probably still slower
+	]]--
+	@native
+	local function serialCache(data: any)
+		-- check 1 and 2 byte caches
+		local cached = two[data]
+		if cached then
+			if tempPos + 2 > size then
+				buf, size = inflate(buf, tempPos + 2, size)
+			end
+			buffer.writeu16(buf, tempPos, cached)
+			tempPos += 2
+			return
+		end
+		cached = one[data]
+		if cached then
+			if tempPos + 1 > size then
+				buf, size = inflate(buf, tempPos + 1, size)
+			end
+			buffer.writeu8(buf, tempPos, cached)
+			tempPos += 1
+			return
+		end
+	
+		local typeV = type(data)
+		local oldPos = tempPos
+		
+		local case = serialSwitch[typeV]
+		if case then
+			buf, tempPos, size = case(data, buf, tempPos, size)
+		else
+			-- could be table (or function or thread for array)
+			if typeV == "function" or typeV == "thread" then
+				buf, tempPos, size = nilSerializer(data, buf, tempPos, size)
+			else
+				existing.Index = existingIndex
+				buf, tempPos, size = tabSerializer(data, buf, tempPos, size, parExisting)
+				existingIndex = existing.Index
+			end
+		end
+	
+		if tempPos - oldPos == 1 then
+			one[data] = buffer.readu8(buf, oldPos)
+		elseif pos - oldPos == 2 then
+			two[data] = buffer.readu16(buf, oldPos)
+		elseif data == data then
+			if existingIndex ~= 65_535 then
+				-- cache for rest (only 65_536 values we can cache!!)
+				-- v == v checks for nans :>
+				existing[data] = existingIndex
+				existingIndex += 1
+			end
+			local tinyIndex = parExisting.TinyIndex
+			if tinyIndex + 1 == 256 then
+				table.clear(tiny)
+				tinyIndex = 0
+			end
+			tiny[data] = tinyIndex
+			parExisting.TinyIndex = tinyIndex + 1
+		end
+	end
+	--print(serialCache)
+
 	for i,v in value do
 		-- Array portion
 		if lastIndex == i then
@@ -163,7 +179,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 				continue
 			end
 			
-			buf, tempPos, size, existingIndex = serialCache(v, buf, tempPos, size, parExisting, existingIndex)
+			serialCache(v)
 			continue
 		end
 		if not endArray and not isDict then
@@ -205,7 +221,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			tempPos += 3
 		elseif not cached then
 			-- store i
-			buf, tempPos, size, existingIndex = serialCache(i, buf, tempPos, size, parExisting, existingIndex)
+			serialCache(i)
 		end
 		
 		local cached = tiny[v]
@@ -231,7 +247,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 		end
 		
 		-- store v
-		buf, tempPos, size, existingIndex = serialCache(v, buf, tempPos, size, parExisting, existingIndex)
+		serialCache(v)
 	end
 	
 	if tempPos == pos + 1 then
