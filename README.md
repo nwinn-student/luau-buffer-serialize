@@ -86,7 +86,7 @@ vector and nil if in table (so not added).
 - [X] empty [9]: The constant `""`
 - [X] byte [10]: A string has a length that can be represented as a byte (Takes 2 + strLen bytes)
 - [X] char [11]: A string has a length that can be represented as a char (Takes 3 + strLen bytes)
-- [X] three_byte [12]: A string has a length that can be represented in 3 bytes (Takes 4 + strLen bytes)
+- [X] tryte [12]: A string has a length that can be represented in 3 bytes (Takes 4 + strLen bytes)
 - [X] int [13]: A string has a length that can be represented as an int (Takes 5 + strLen bytes)
 - [X] concatcn [14]: Concatenation of a string and a positive integer (Takes 3-5 + n bytes, 32- chars)
 - [X] concatnc [15]: Concatenation of a positive integer and a string (Takes 3-5 + n bytes, 32- chars)
@@ -99,7 +99,7 @@ vector and nil if in table (so not added).
 - [X] one [89]: The constant `1`
 - [X] byte [90]: The number is a byte (Takes 2 byte)
 - [X] char [91]: The number is a char (2 bytes) (Takes 3 byte)
-- [X] three_byte [92]: The number is 3 bytes (Takes 4 byte)
+- [X] tryte [92]: The number is 3 bytes (Takes 4 byte)
 - [X] int [93]: The number is an int (4 bytes) (Takes 5 byte)
 - [X] float [94]: The number is a float (4 bytes) (Takes 5 byte)
 - [X] double [95]: The number is a double (8 bytes) (Takes 9 byte)
@@ -119,7 +119,7 @@ vector and nil if in table (so not added).
 - [X] yz_axis [143]: The constant `(0,1,1)`
 - [X] byte [144]: All three values are bytes (Takes 4 bytes)
 - [X] char [145]: All three values are chars (Takes 7 bytes)
-- [X] three_byte [146]: All three values are three_bytes (Takes 10 bytes)
+- [X] tryte [146]: All three values are three_bytes (Takes 10 bytes)
 - [X] float [147]: All three values are floats (Takes 13 bytes, worst case) 
 - [X] number [148]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
 - [X] scalar_number [149]: The vector is a multiple of an above constant vector (Takes 3 to 7 bytes)
