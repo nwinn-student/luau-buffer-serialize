@@ -260,23 +260,6 @@ end
 
 
 local function deserialCache(valId, buf, pos, existing, existingIndex)
-	-- check if tiny
-	if valId == EQ_TINY then
-		local value = existing.Tiny[buffer.readu8(buf, pos + 1)]
-		if value == nil then
-			return nil, pos + 1, existingIndex -- data corrupted
-		end
-		return value, pos + 2, existingIndex
-	end
-	-- check if existing
-	if valId == EQ_EXISTING then
-		local value = existing.Data[buffer.readu16(buf, pos + 1)]
-		if value == nil then
-			return nil, pos + 1, existingIndex -- data corrupted
-		end
-		return value, pos + 3, existingIndex
-	end
-	
 	local value: any = nil
 	local oldPos = pos
 	if valId <= 2 then -- boolean
