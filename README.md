@@ -45,9 +45,7 @@ print(`Initial Data: {data}, Final Data: {input}`)
 
 ## Performance
 
-Tests were performed comparing Roblox's JSONEncode/Decode, cipharius's MessagePack, and BufferSerializer.  [LibDeflate](https://github.com/safeteeWow/LibDeflate) is used to compare whether using BufferSerializer is comparable to using JSONEncode/Decode / MessagePack.  The test code can be located [here](./bench/compare.luau) and personal results [here](./bench/results.txt).
-
-The most important result would be the output size when comparing the different libraries as the speed can easily be improved upon, BufferSerializer outputs a roughly 50% smaller size than JSONEncode and 40% smaller size than MessagePack.  However, BufferSerializer is less compressable than JSONEncode / MessagePack, so the end resulting output size will be roughly the same.
+Tests were performed comparing Roblox's JSONEncode/Decode, cipharius's MessagePack, and BufferSerializer.  The test code can be located [here](./bench/compare.luau) and personal results [here](./bench/compare_results.txt).
 
 ## Constant Amount Supported
 | **Type** | **Amount** | **Cost** |
@@ -80,7 +78,7 @@ vector and nil if in table (so not added).
 - [X] empty [3]: The empty buffer
 - [X] byte [4]: A buffer has a length that can be represented as a byte (Takes 2 + bufferLen bytes)
 - [X] char [5]: A buffer has a length that can be represented as a char (Takes 3 + bufferLen bytes)
-- [X] three_byte [6]: A buffer has a length that can be represented in 3 bytes (Takes 4 + bufferLen bytes)
+- [X] tryte [6]: A buffer has a length that can be represented in 3 bytes (Takes 4 + bufferLen bytes)
 - [X] int [7]: A buffer has a length that can be represented as an int (Takes 5 + bufferLen bytes)
 - [ ] UNKNOWN [8]: An approach that may be used in the future.
 

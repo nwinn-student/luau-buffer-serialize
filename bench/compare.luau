@@ -1,12 +1,12 @@
 --[[
-	BENCHMARK - FOR - BUFFERSERIALIZER
+	COMPARISON BENCHMARK - FOR - BUFFERSERIALIZER
 		
 	Notes:
 	    Bench can be found at https://github.com/nwinn-student/luau-bench
 	    msgpack can be found at https://github.com/cipharius/msgpack-luau
 	    Roblox JSON will be faster than most other luau JSON implementations
 
-	Datasets:
+	Datasets (only table / number / string are used):
 		bench - created by https://github.com/nwinn-student/luau-bench
 		
 		Found at: https://github.com/jdorfman/awesome-json-datasets
