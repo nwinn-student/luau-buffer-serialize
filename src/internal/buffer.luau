@@ -71,8 +71,7 @@ return {
 			len = buffer.readu16(buf, pos)
 			pos += lenSize
 		elseif id == THREE_BYTE then
-			local posbits = 8*pos
-			len = buffer.readbits(buf, posbits, 24)
+			len = buffer.readbits(buf, 8 * pos, 24)
 			pos += lenSize
 		elseif id == INT then
 			len = buffer.readu32(buf, pos)

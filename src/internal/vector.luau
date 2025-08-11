@@ -28,6 +28,7 @@ local READ = {}
 local WRITE = {} -- 1 to 1055
 
 local builtinConst = {
+	-- Used for serialization
 	[vector.zero] = ZERO,
 	[vector.one] = ONE,
 	[vector.create(1,0,0)] = X_AXIS,
@@ -35,7 +36,17 @@ local builtinConst = {
 	[vector.create(0,0,1)] = Z_AXIS,
 	[vector.create(1,1,0)] = XY_AXIS,
 	[vector.create(1,0,1)] = XZ_AXIS,
-	[vector.create(0,1,1)] = YZ_AXIS
+	[vector.create(0,1,1)] = YZ_AXIS,
+	
+	-- Used for deserialization, indexing this is 30% faster
+	-- than calling vector.create (vector.one/zero is 120% faster)
+	[ONE] = vector.one,
+	[X_AXIS] = vector.create(1,0,0),
+	[Y_AXIS] = vector.create(0,1,0),
+	[Z_AXIS] = vector.create(0,0,1),
+	[XY_AXIS] = vector.create(1,1,0),
+	[XZ_AXIS] = vector.create(1,0,1),
+	[YZ_AXIS] = vector.create(0,1,1)
 }
 
 local MIN_BYTE = -2^7
@@ -215,17 +226,17 @@ local function vecDeserializer(buf: buffer, pos: number)
 	elseif id == ONE then
 		return vector.one, pos + 1
 	elseif id == X_AXIS then
-		return vector.create(1,0,0), pos + 1
+		return builtinConst[X_AXIS], pos + 1
 	elseif id == Y_AXIS then
-		return vector.create(0,1,0), pos + 1
+		return builtinConst[Y_AXIS], pos + 1
 	elseif id == Z_AXIS then
-		return vector.create(0,0,1), pos + 1
+		return builtinConst[Z_AXIS], pos + 1
 	elseif id == XY_AXIS then
-		return vector.create(1,1,0), pos + 1
+		return builtinConst[XY_AXIS], pos + 1
 	elseif id == XZ_AXIS then
-		return vector.create(1,0,1), pos + 1
+		return builtinConst[XZ_AXIS], pos + 1
 	elseif id == YZ_AXIS then
-		return vector.create(0,1,1), pos + 1
+		return builtinConst[YZ_AXIS], pos + 1
 	end
 
 	local cachedId = if id > 189 then (id - 189) * 256 + 64
@@ -237,8 +248,8 @@ local function vecDeserializer(buf: buffer, pos: number)
 	end
 
 	if id == SCALAR_NUMBER then
-		local vecVal, pos = vecDeserializer(buf, pos + 1)
-		local numVal, pos = numDeserializer(buf, pos)
+		local vecVal = builtinConst[buffer.readu8(buf, pos + 1)]
+		local numVal, pos = numDeserializer(buf, pos + 2)
 		if vecVal and numVal then
 			return numVal * vecVal, pos
 		end
