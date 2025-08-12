@@ -93,7 +93,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 		
 		pos += 1
 		
-		local oldPos = pos + 1
+		local oldPos = pos
 		local endArray = false
 		local lastIndex = 1
 		
@@ -212,7 +212,6 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			return
 		end
 		
-		-- issue: doesn't work properly?
 		if not isDict and not endArray then
 			buffer.writeu8(buf, oldPos - 1, ARRAY)
 		end
