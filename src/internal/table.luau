@@ -32,7 +32,6 @@ local ARRAY = 197
 local DICT = 198
 local ARRAY_END = 199
 local TABLE_END = 200
-local EQ_TINY = 201
 
 @native
 function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: number)
@@ -289,13 +288,6 @@ local function deserialCache(valId, buf, pos, existing, existingIndex)
 			existing.Data[existingIndex] = value
 			existingIndex += 1
 		end
-		local tinyIndex = existing.TinyIndex
-		if tinyIndex + 1 == 256 then
-			table.clear(existing.Tiny)
-			tinyIndex = 0
-		end
-		existing.Tiny[tinyIndex] = value
-		existing.TinyIndex = tinyIndex + 1
 	end
 	return value, pos, existingIndex
 end
@@ -324,15 +316,12 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: DexistingData?)
 	if isFinal then
 		parExisting = {
 			Data = {[0] = returnedTab},
-			Tiny = {},
 			Index = 1,
-			TinyIndex = 0
 		}
 		
 		-- Ensures memory leaks are avoided
 		close = function()
 			table.clear(parExisting.Data)
-			table.clear(parExisting.Tiny)
 		end
 	end
 	
@@ -369,18 +358,6 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: DexistingData?)
 			
 			local value
 			
-			-- check if tiny
-			if valId == EQ_TINY then
-				value = tiny[buffer.readu8(buf, pos + 1)]
-				pos += 2
-				if value == nil then
-					if isFinal then close() end
-					return nil, pos
-				end
-				returnedTab[index] = value
-				continue
-			end
-			
 			-- check if existing
 			if valId == EQ_EXISTING then
 				value = existing[buffer.readu16(buf, pos + 1)]
@@ -412,16 +389,6 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: DexistingData?)
 		
 		local key, value
 		
-		-- check if tiny
-		if valId == EQ_TINY then
-			key = tiny[buffer.readu8(buf, pos + 1)]
-			if key == nil then
-				if isFinal then close() end
-				return nil, pos
-			end
-			pos += 2
-		end
-
 		-- check if existing
 		if valId == EQ_EXISTING then
 			key = existing[buffer.readu16(buf, pos + 1)]
@@ -442,18 +409,6 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: DexistingData?)
 		
 		valId = buffer.readu8(buf, pos)
 		
-		-- check if tiny
-		if valId == EQ_TINY then
-			key = tiny[buffer.readu8(buf, pos + 1)]
-			if key == nil then
-				if isFinal then close() end
-				return nil, pos
-			end
-			pos += 2
-			returnedTab[key] = value
-			continue
-		end
-
 		-- check if existing
 		if valId == EQ_EXISTING then
 			key = existing[buffer.readu16(buf, pos + 1)]
