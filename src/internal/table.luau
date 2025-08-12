@@ -39,8 +39,9 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	
 	local existingIndex = 1
 	local existing = {[value] = 0}
-	local roundRobinCache -- used later to help existing
-	local roundRobinIndex = 61439
+	local roundRobinCache = {}
+	local roundRobinLength = 0
+	local roundRobinIndex = 61440
 	
 	local constants = {}
 	
@@ -61,8 +62,13 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			if typeV == "function" or typeV == "thread" then
 				buf, pos, size = nilSerializer(data, buf, pos, size)
 			else
-				existing[data] = existingIndex
-				existingIndex += 1
+				-- ISSUE: A table cycle may be so deep that it bypasses existing altogether
+				-- We will need to ensure the cycle is nonproblematic 
+				if existingIndex < 61_440 then
+					existing[data] = existingIndex
+					existingIndex += 1
+				end
+				
 				serialTable(data)
 				return
 			end
@@ -76,13 +82,24 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			if existingIndex < 61_440 then
 				-- cache for rest (only 61_440 values we can cache!!)
 				-- for duration of table
-				-- v == v checks for nans :>
+				-- data == data checks for nans :>
 				existing[data] = existingIndex
 				existingIndex += 1
-			else
-				-- Not done, it is hard to find datasets for this
-				-- 4096 values we cache in a cycle
+				return
 			end
+			-- Not done, it is hard to find datasets for this
+			-- 4096 values we cache in a cycle
+			if roundRobinLength == 4096 then
+				-- Cycle time
+				existing[roundRobinCache[roundRobinIndex - 61_439]] = nil
+				existing[data] = roundRobinIndex
+				roundRobinCache[roundRobinIndex] = data
+				roundRobinIndex += 1
+				return
+			end
+			existing[data] = 61_440 + roundRobinLength
+			roundRobinLength += 1
+			roundRobinCache[roundRobinLength] = data
 		end
 	end
 	
@@ -320,6 +337,7 @@ function tabDeserializer(buf: buffer, pos: number, parExisting: DexistingData?)
 	end
 	
 	local existingIndex = parExisting.Index
+	local existing = parExisting.Data
 	
 	local hasArray = id == ARRAY or id == TABLE
 	
