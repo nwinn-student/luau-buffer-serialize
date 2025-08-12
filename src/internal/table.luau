@@ -75,6 +75,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 				-- cache for rest (only 61_440 values we can cache!!)
 				-- for duration of table
 				-- v == v checks for nans :>
+				existing[data] = existingIndex
 				existingIndex += 1
 			else
 				-- Not done, it is hard to find datasets for this
