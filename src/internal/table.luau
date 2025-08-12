@@ -34,244 +34,204 @@ local ARRAY_END = 199
 local TABLE_END = 200
 local EQ_TINY = 201
 
-type ExistingData = {
-	Data: {[any]: number},
-	Tiny: {[any]: number},
-	Index: number,
-	TinyIndex: number,
-	One: {[any]: number}?,
-	Two: {[any]: number}?
-}
-
-
-
 @native
-function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: number, parExisting: ExistingData?)
-
-	local lastIndex = 1
-	local isFinal = not parExisting
-	local one, two, tiny, existing
-	local existingIndex
-	if isFinal then
-		existingIndex = 1
-		one, two, tiny = {}, {}, {}
-		existing = {[value] = 0}
-		parExisting = {
-			-- 2^16 values
-			Data = existing,
-			-- 2^8 values
-			Tiny = tiny,
-			Index = existingIndex,
-			TinyIndex = 0,
-			-- A slower fast-path
-			One = one,
-			Two = two
-		}
-	else
-		existingIndex = parExisting.Index
-		existing = parExisting.Data
-		one = parExisting.One
-		two = parExisting.Two
-		tiny = parExisting.Tiny
-	end
+function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: number)
 	
-	local isDict = #value == 0
-	if not buf then
-		buf, size = buffer.create(64), 64
-	elseif pos + 1 > size then
-		buf, size = inflate(buf, pos + 1, size)
-	end
-	buffer.writeu8(buf, pos, if isDict then DICT else TABLE)
+	local existingIndex = 1
+	local existing = {[value] = 0}
+	local roundRobinCache -- used later to help existing
+	local roundRobinIndex = 61439
 	
-	local tempPos = pos + 1
-	local endArray = false
+	local constants = {}
 	
-	--[[
-		Much slower sadly.  Also much more expensive in memory
-		If we change tabSerialize call into a while loop or something,
-		it will be better?  but probably still slower
-	]]--
+	local serialTable
+	
+	buf, size = buffer.create(64), 64
+	
 	@native
-	local function serialCache(data: any)
-		-- check 1 and 2 byte caches
-		local cached = two[data]
-		if cached then
-			if tempPos + 2 > size then
-				buf, size = inflate(buf, tempPos + 2, size)
-			end
-			buffer.writeu16(buf, tempPos, cached)
-			tempPos += 2
-			return
-		end
-		cached = one[data]
-		if cached then
-			if tempPos + 1 > size then
-				buf, size = inflate(buf, tempPos + 1, size)
-			end
-			buffer.writeu8(buf, tempPos, cached)
-			tempPos += 1
-			return
-		end
-	
-		local typeV = type(data)
-		local oldPos = tempPos
+	local function serialCache(data: any, typeName: string?)
+		local typeV = typeName or type(data)
+		local oldPos = pos
 		
 		local case = serialSwitch[typeV]
 		if case then
-			buf, tempPos, size = case(data, buf, tempPos, size)
+			buf, pos, size = case(data, buf, pos, size)
 		else
 			-- could be table (or function or thread for array)
 			if typeV == "function" or typeV == "thread" then
-				buf, tempPos, size = nilSerializer(data, buf, tempPos, size)
+				buf, pos, size = nilSerializer(data, buf, pos, size)
 			else
-				existing.Index = existingIndex
-				buf, tempPos, size = tabSerializer(data, buf, tempPos, size, parExisting)
-				existingIndex = existing.Index
+				-- fix bug for deep cyclic tables
+				serialTable(data)
 			end
 		end
 	
-		if tempPos - oldPos == 1 then
-			one[data] = buffer.readu8(buf, oldPos)
+		if pos - oldPos == 1 then
+			constants[data] = buffer.readu8(buf, oldPos)
 		elseif pos - oldPos == 2 then
-			two[data] = buffer.readu16(buf, oldPos)
+			constants[data] = buffer.readu16(buf, oldPos)
 		elseif data == data then
-			if existingIndex ~= 65_535 then
-				-- cache for rest (only 65_536 values we can cache!!)
+			if existingIndex < 61_440 then
+				-- cache for rest (only 61_440 values we can cache!!)
+				-- for duration of table
 				-- v == v checks for nans :>
-				existing[data] = existingIndex
 				existingIndex += 1
+			else
+				-- Not done, it is hard to find datasets for this
+				-- 4096 values we cache in a cycle
 			end
-			local tinyIndex = parExisting.TinyIndex
-			if tinyIndex + 1 == 256 then
-				table.clear(tiny)
-				tinyIndex = 0
-			end
-			tiny[data] = tinyIndex
-			parExisting.TinyIndex = tinyIndex + 1
 		end
 	end
-	--print(serialCache)
-
-	for i,v in value do
-		-- Array portion
-		if lastIndex == i then
-			lastIndex += 1
-			
-			local cached = tiny[v]
-			if cached then
-				if tempPos + 2 > size then
-					buf, size = inflate(buf, tempPos + 2, size)
+	
+	@native
+	function serialTable(data: {[any]: any})
+		local isDict = #data == 0
+		if pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
+		buffer.writeu8(buf, pos, if isDict then DICT else TABLE)
+		
+		pos += 1
+		
+		local oldPos = pos + 1
+		local endArray = false
+		local lastIndex = 1
+		
+		for key, element in data do
+			-- Array section
+			if lastIndex == key then
+				lastIndex += 1
+				
+				local cached = existing[element]
+				if cached then
+					if pos + 3 > size then
+						buf, size = inflate(buf, pos + 3, size)
+					end
+					buffer.writeu8(buf, pos, EQ_EXISTING)
+					buffer.writeu16(buf, pos + 1, cached)
+					pos += 3
+					continue
 				end
-				buffer.writeu8(buf, tempPos, EQ_TINY)
-				buffer.writeu8(buf, tempPos + 1, cached)
-				tempPos += 2
+				cached = constants[element]
+				if cached then
+					local newSize = cached > 255 and 2 or 1
+					if pos + newSize > size then
+						buf, size = inflate(buf, pos + newSize, size)
+					end
+					if newSize == 1 then
+						buffer.writeu8(buf, pos, cached)
+					else
+						buffer.writeu16(buf, pos, cached)
+					end
+					pos += newSize
+					continue
+				end
+				
+				serialCache(element)
 				continue
 			end
-			cached = existing[v]
+			if not endArray and not isDict then
+				endArray = true
+				if pos + 1 > size then
+					buf, size = inflate(buf, pos + 1, size)
+				end
+				buffer.writeu8(buf, pos, ARRAY_END)
+				pos += 1
+			end
+			
+			-- Dictionary section
+			local typeKey = type(key)
+			if typeKey == "function" or typeKey == "thread" then
+				continue
+			end
+			
+			local typeElement = type(element)
+			if typeElement == "function" or typeElement == "thread" then
+				continue
+			end
+			
+			local cached = existing[key]
 			if cached then
-				if tempPos + 3 > size then
-					buf, size = inflate(buf, tempPos + 3, size)
+				if pos + 3 > size then
+					buf, size = inflate(buf, pos + 3, size)
+				end
+				buffer.writeu8(buf, pos, EQ_EXISTING)
+				buffer.writeu16(buf, pos + 1, cached)
+				pos += 3
+			end
+			
+			local constCached = constants[key]
+			if constCached and not cached then
+				local newSize = constCached > 255 and 2 or 1
+				if pos + newSize > size then
+					buf, size = inflate(buf, pos + newSize, size)
+				end
+				if newSize == 1 then
+					buffer.writeu8(buf, pos, constCached)
+				else
+					buffer.writeu16(buf, pos, constCached)
+				end
+				pos += newSize
+			elseif not cached then
+				-- store key
+				serialCache(key, typeKey)
+			end
+		
+			local cached = existing[element]
+			if cached then
+				if pos + 3 > size then
+					buf, size = inflate(buf, pos + 3, size)
 				end
 				-- writebits is not faster
-				buffer.writeu8(buf, tempPos, EQ_EXISTING)
-				buffer.writeu16(buf, tempPos + 1, cached)
-				tempPos += 3
+				buffer.writeu8(buf, pos, EQ_EXISTING)
+				buffer.writeu16(buf, pos + 1, cached)
+				pos += 3
+				continue
+			end
+			cached = constants[element]
+			if cached then
+				local newSize = cached > 255 and 2 or 1
+				if pos + newSize > size then
+					buf, size = inflate(buf, pos + newSize, size)
+				end
+				if newSize == 1 then
+					buffer.writeu8(buf, pos, cached)
+				else
+					buffer.writeu16(buf, pos, cached)
+				end
+				pos += newSize
 				continue
 			end
 			
-			serialCache(v)
-			continue
+			-- store element
+			serialCache(element, typeElement)
 		end
-		if not endArray and not isDict then
-			endArray = true
-			if tempPos + 1 > size then
-				buf, size = inflate(buf, tempPos + 1, size)
-			end
-			buffer.writeu8(buf, tempPos, ARRAY_END)
-			tempPos += 1
+		if oldPos == pos + 1 then
+			buffer.writeu8(buf, pos, EMPTY)
+			pos += 1
+			return
 		end
 		
-		local typeI = type(i)
-		if typeI == "function" or typeI == "thread" then
-			continue
+		-- issue: doesn't work properly?
+		if not isDict and not endArray then
+			buffer.writeu8(buf, oldPos - 1, ARRAY)
 		end
-		
-		local typeV = type(v)
-		if typeV == "function" or typeV == "thread" then
-			continue
+		if pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
 		end
-		
-		local cached = tiny[i]
-		if cached then
-			if tempPos + 2 > size then
-				buf, size = inflate(buf, tempPos + 2, size)
-			end
-			buffer.writeu8(buf, tempPos, EQ_TINY)
-			buffer.writeu8(buf, tempPos + 1, cached)
-			tempPos += 2
-		end
-		local excached = existing[i]
-		if excached and not cached then
-			if tempPos + 3 > size then
-				buf, size = inflate(buf, tempPos + 3, size)
-			end
-			-- writebits is not faster
-			buffer.writeu8(buf, tempPos, EQ_EXISTING)
-			buffer.writeu16(buf, tempPos + 1, excached)
-			tempPos += 3
-		elseif not cached then
-			-- store i
-			serialCache(i)
-		end
-		
-		local cached = tiny[v]
-		if cached then
-			if tempPos + 2 > size then
-				buf, size = inflate(buf, tempPos + 2, size)
-			end
-			buffer.writeu8(buf, tempPos, EQ_TINY)
-			buffer.writeu8(buf, tempPos + 1, cached)
-			tempPos += 2
-			continue
-		end
-		cached = existing[v]
-		if cached then
-			if tempPos + 3 > size then
-				buf, size = inflate(buf, tempPos + 3, size)
-			end
-			-- writebits is not faster
-			buffer.writeu8(buf, tempPos, EQ_EXISTING)
-			buffer.writeu16(buf, tempPos + 1, cached)
-			tempPos += 3
-			continue
-		end
-		
-		-- store v
-		serialCache(v)
+		buffer.writeu8(buf, pos, TABLE_END)
+		pos += 1
 	end
 	
-	if tempPos == pos + 1 then
-		buffer.writeu8(buf, pos, EMPTY)
-		return buf, pos + 1, size
-	end
+	serialTable(value)	
 	
-	if not isFinal then
-		parExisting.Index = existingIndex
-	else
-		table.clear(existing)
-		table.clear(tiny)
-		table.clear(parExisting.One)
-		table.clear(parExisting.Two)
+	table.clear(existing)
+	if roundRobinCache then
+		table.clear(roundRobinCache)
 	end
+	table.clear(constants)
 	
-	if not isDict and not endArray then
-		buffer.writeu8(buf, pos, ARRAY)
-	end
-	if tempPos + 1 > size then
-		buf, size = inflate(buf, tempPos + 1, size)
-	end
-	buffer.writeu8(buf, tempPos, TABLE_END)
-	return buf, tempPos + 1, size
+	return buf, pos, size
 end
 
 
