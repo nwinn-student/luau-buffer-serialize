@@ -255,180 +255,165 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 end
 
 
-local function deserialCache(valId, buf, pos, existing, existingIndex)
-	local value: any = nil
-	local oldPos = pos
-	if valId <= 2 then -- boolean
-		value, pos = boolDeserializer(buf, pos)
-	elseif valId <= 8 then -- buffer
-		value, pos = bufDeserializer(buf, pos) 
-	elseif valId <= 87 then -- string
-		value, pos = strDeserializer(buf, pos)
-	elseif valId <= 135 then -- number
-		value, pos = numDeserializer(buf, pos)
-	elseif valId <= 193 then -- vector
-		value, pos = vecDeserializer(buf, pos)
-	elseif valId <= 201 then -- table
-		existing.Index = existingIndex
-		value, pos = tabDeserializer(buf, pos, existing)
-		existingIndex = existing.Index
-	elseif valId <= 223 then -- userdata
-		value, pos = userDeserializer(buf, pos)
-	else 
-		pos += 1 -- ... data corrupted
-	end
-	
-	if value == nil then
-		existing.Index = existingIndex
-		return nil, pos -- data corrupted
-	end
-	
-	if pos - 2 > oldPos then
-		if existingIndex ~= 65_535 then
-			existing.Data[existingIndex] = value
-			existingIndex += 1
-		end
-	end
-	return value, pos, existingIndex
-end
-
-type DexistingData = {
-	Data: {[number]: any},
-	Tiny: {[number]: any},
-	Index: number,
-	TinyIndex: number
-}
-
 @native
-function tabDeserializer(buf: buffer, pos: number, parExisting: DexistingData?)
-	local id = buffer.readu8(buf, pos)
-	
-	pos += 1
-	
-	if id == EMPTY then
-		return {}, pos
-	end
-	
+function tabDeserializer(buf: buffer, pos: number)
+		
 	local returnedTab = {}
 	
-	local isFinal = not parExisting
-	local close
-	if isFinal then
-		parExisting = {
-			Data = {[0] = returnedTab},
-			Index = 1,
-		}
+	local existingIndex = 1
+	local existing = {[0] = returnedTab}
+	local roundRobinCache = {}
+	local roundRobinLength = 0
+	local roundRobinIndex = 61440
 		
-		-- Ensures memory leaks are avoided
-		close = function()
-			table.clear(parExisting.Data)
+	local deserialTable
+	
+	@native
+	local function deserialCache(valId: number)
+		local value: any = nil
+		local oldPos = pos
+		if valId <= 2 then -- boolean
+			value, pos = boolDeserializer(buf, pos)
+		elseif valId <= 8 then -- buffer
+			value, pos = bufDeserializer(buf, pos) 
+		elseif valId <= 87 then -- string
+			value, pos = strDeserializer(buf, pos)
+		elseif valId <= 135 then -- number
+			value, pos = numDeserializer(buf, pos)
+		elseif valId <= 193 then -- vector
+			value, pos = vecDeserializer(buf, pos)
+		elseif valId <= 201 then -- table
+			value, pos = deserialTable()
+		elseif valId <= 223 then -- userdata
+			value, pos = userDeserializer(buf, pos)
+		else 
+			pos += 1 -- ... data corrupted
 		end
+		
+		if value == nil then
+			return nil -- data corrupted
+		end
+		
+		if pos - 2 > oldPos then
+			if existingIndex ~= 65_535 then
+				existing.Data[existingIndex] = value
+				existingIndex += 1
+			end
+		end
+		return value
 	end
 	
-	local existingIndex = parExisting.Index
-	local existing = parExisting.Data
-	
-	local hasArray = id == ARRAY or id == TABLE
-	
-	if id ~= ARRAY and id ~= TABLE and id ~= DICT then
-		if isFinal then close() end
-		return nil, pos -- data corruption
-	end
-	
-	if hasArray then
-		local index = 0
+	@native
+	function deserialTable()
+		local id = buffer.readu8(buf, pos)
+		
+		pos += 1
+		
+		if id == EMPTY then
+			return {}
+		end
+		
+		local data = {}
+		
+		local hasArray = id == ARRAY or id == TABLE
+		
+		if id ~= ARRAY and id ~= TABLE and id ~= DICT then
+			return nil -- data corruption
+		end
+		
+		if hasArray then
+			local index = 0
+			while true do
+				local valId = buffer.readu8(buf, pos)
+				
+				if valId == ARRAY_END then
+					pos += 1
+					break -- if there is no end, it will error!
+				end
+				if valId == TABLE_END then
+					parExisting.Index = existingIndex
+					pos += 1
+						return data -- for ARRAY
+				end
+				
+				index += 1
+				if valId == 0 then
+					pos += 1
+					continue
+				end
+				
+				local value
+				
+				-- check if existing
+				if valId == EQ_EXISTING then
+					value = existing[buffer.readu16(buf, pos + 1)]
+					pos += 3
+					if value == nil then
+						return nil
+					end
+					data[index] = value
+					continue
+				end
+				
+				value  = deserialCache(valId)
+				if value == nil then
+					return nil
+				end
+				data[index] = value
+			end
+		end
+		
 		while true do
 			local valId = buffer.readu8(buf, pos)
-
-			if valId == ARRAY_END then
-				pos += 1
-				break -- if there is no end, it will error!
-			end
 			if valId == TABLE_END then
-				parExisting.Index = existingIndex
-				if isFinal then close() end
-				return returnedTab, pos + 1 -- for ARRAY
-			end
-			
-			index += 1
-			if valId == 0 then
 				pos += 1
-				continue
+				return returnedTab
 			end
 			
-			local value
+			local key, value
 			
 			-- check if existing
 			if valId == EQ_EXISTING then
-				value = existing[buffer.readu16(buf, pos + 1)]
-				pos += 3
-				if value == nil then
-					if isFinal then close() end
-					return nil, pos
+				key = existing[buffer.readu16(buf, pos + 1)]
+				if key == nil then
+					return nil
 				end
-				returnedTab[index] = value
+				pos += 3
+			end
+			
+			if not key then
+				key = deserialCache(valId)
+				if key == nil then
+					return nil
+				end
+			end
+			
+			valId = buffer.readu8(buf, pos)
+			
+			-- check if existing
+			if valId == EQ_EXISTING then
+				key = existing[buffer.readu16(buf, pos + 1)]
+				if key == nil then
+					return nil
+				end
+				pos += 3
+				data[key] = value
 				continue
 			end
 			
-			value, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
+			value = deserialCache(valId)
 			if value == nil then
-				if isFinal then close() end
-				return nil, pos
+				return nil
 			end
-			returnedTab[index] = value
+			
+			data[key] = value
 		end
 	end
 	
-	while true do
-		local valId = buffer.readu8(buf, pos)
-		if valId == TABLE_END then
-			parExisting.Index = existingIndex
-			if isFinal then close() end
-			return returnedTab, pos + 1
-		end
-		
-		local key, value
-		
-		-- check if existing
-		if valId == EQ_EXISTING then
-			key = existing[buffer.readu16(buf, pos + 1)]
-			if key == nil then
-				if isFinal then close() end
-				return nil, pos
-			end
-			pos += 3
-		end
-		
-		if not key then
-			key, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
-			if key == nil then
-				if isFinal then close() end
-				return nil, pos
-			end
-		end
-		
-		valId = buffer.readu8(buf, pos)
-		
-		-- check if existing
-		if valId == EQ_EXISTING then
-			key = existing[buffer.readu16(buf, pos + 1)]
-			if key == nil then
-				if isFinal then close() end
-				return nil, pos
-			end
-			pos += 3
-			returnedTab[key] = value
-			continue
-		end
-		
-		value, pos, existingIndex = deserialCache(valId, buf, pos, parExisting, existingIndex)
-		if value == nil then
-			if isFinal then close() end
-			return nil, pos
-		end
-
-		returnedTab[key] = value
-	end
+	table.clear(existing)
+	table.clear(roundRobinCache)
+	
+	return returningTab, pos + 1
 end
 
 return {
