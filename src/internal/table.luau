@@ -61,8 +61,10 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			if typeV == "function" or typeV == "thread" then
 				buf, pos, size = nilSerializer(data, buf, pos, size)
 			else
-				-- fix bug for deep cyclic tables
+				existing[data] = existingIndex
+				existingIndex += 1
 				serialTable(data)
+				return
 			end
 		end
 	
@@ -209,6 +211,8 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 		end
 		if oldPos == pos + 1 then
 			buffer.writeu8(buf, pos, EMPTY)
+			existing[data] = nil
+			existingIndex -= 1
 			pos += 1
 			return
 		end
