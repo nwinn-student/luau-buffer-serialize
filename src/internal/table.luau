@@ -258,8 +258,6 @@ end
 @native
 function tabDeserializer(buf: buffer, pos: number)
 		
-	local returnedTab = {}
-	
 	local existingIndex = 1
 	local existing = {[0] = returnedTab}
 	local roundRobinCache = {}
@@ -283,6 +281,7 @@ function tabDeserializer(buf: buffer, pos: number)
 		elseif valId <= 193 then -- vector
 			value, pos = vecDeserializer(buf, pos)
 		elseif valId <= 201 then -- table
+			-- TODO: Maybe add cyclic checker here?
 			value, pos = deserialTable()
 		elseif valId <= 223 then -- userdata
 			value, pos = userDeserializer(buf, pos)
@@ -295,10 +294,12 @@ function tabDeserializer(buf: buffer, pos: number)
 		end
 		
 		if pos - 2 > oldPos then
-			if existingIndex ~= 65_535 then
+			if existingIndex < 61_440 then
 				existing.Data[existingIndex] = value
 				existingIndex += 1
+				return value
 			end
+			-- TODO: roundRobin stuff
 		end
 		return value
 	end
@@ -331,9 +332,8 @@ function tabDeserializer(buf: buffer, pos: number)
 					break -- if there is no end, it will error!
 				end
 				if valId == TABLE_END then
-					parExisting.Index = existingIndex
 					pos += 1
-						return data -- for ARRAY
+					return data -- for ARRAY
 				end
 				
 				index += 1
@@ -367,7 +367,7 @@ function tabDeserializer(buf: buffer, pos: number)
 			local valId = buffer.readu8(buf, pos)
 			if valId == TABLE_END then
 				pos += 1
-				return returnedTab
+				return data
 			end
 			
 			local key, value
@@ -410,10 +410,12 @@ function tabDeserializer(buf: buffer, pos: number)
 		end
 	end
 	
+	local data = deserialTable()
+	
 	table.clear(existing)
 	table.clear(roundRobinCache)
 	
-	return returningTab, pos + 1
+	return data, pos + 1
 end
 
 return {
