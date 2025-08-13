@@ -7,14 +7,16 @@ local CFRAME = 5 -- assuming you want to have other userdata supported
 
 --[[
 
-The provided approach is NOT 100% correct, value:ToEulerAnglesXYZ() seems 
-to cause CFrame.fromEulerAngles to round incorrectly.  So the values are 
-VERY accurate, but there is some floating point error
+There are multiple approaches of varying accuracy depending on how cheap 
+CFrames must be.  The below approach is incredibly accurate, however for 
+perfect accuracy numbers must be used in place of CFrame:ToEulerAnglesXYZ.
+
+Should solely the position or solely the orientation be important, only 
+serialize those sections.  Should a section's accuracy not be as important, 
+the values can be pre-processed to ensure a cheaper result.
 
 ]]--
 
--- Better approach
--- https://devforum.roblox.com/t/how-to-efficiently-store-cframe-values-in-datastores/2909067/14
 local function cframeWriter(value: CFrame, buf: buffer, pos: number, size: number)
 	local typeV = typeof(value)
 	if typeV == "CFrame" then
