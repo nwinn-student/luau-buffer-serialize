@@ -13,9 +13,6 @@ local BYTE = 10
 local CHAR = 11
 local THREE_BYTE = 12
 local INT = 13
-local CONCAT_STR_NUM = 14
-local CONCAT_NUM_STR = 15
-local NUM = 16
 
 local READ = {}
 local WRITE = {} -- 1 to 1343
@@ -57,102 +54,6 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 
 	local len = #value
 
-	-- strings larger will take less time, may change to only support constant strings
-	if len <= 32 then
-		-- for all decimal numbers use "%-?%d*%.?%d+e?%-?%d*" (not perfect)
-		--								<-123.521> <e-53>
-		-- we just want positive integers (it is 2+x faster than above)
-		local start, finish = string.find(value, "%d+")
-		if start and string.sub(value, start, start) == "0" then
-			start, finish = nil, nil
-		end
-		if start == 1 and finish == len then -- <num>
-			if not buf then
-				buf, size = buffer.create(1), 1
-			elseif pos + 1 > size then
-				buf, size = inflate(buf, pos + 1, size)
-			end
-			buffer.writeu8(buf, pos, NUM)
-			return numSerializer(tonumber(value), buf, pos + 1, size)
-		elseif start and finish and finish - start > 1 then
-			if start ~= 1 and finish == len then -- <str><num>
-				if not buf then
-					buf, size = buffer.create(1), 1
-				elseif pos + 1 > size then
-					buf, size = inflate(buf, pos + 1, size)
-				end
-				buffer.writeu8(buf, pos, CONCAT_STR_NUM)
-				return numSerializer(tonumber(string.sub(value, start)), 
-					strSerializer(string.sub(value, 1, start-1), buf, pos + 1, size)
-				)
-			elseif start == 1 and finish ~= len then -- <num><str>
-				-- there exist cases where it could be <num><str><num>
-				-- in those cases.. it can become much slower
-				if not buf then
-					buf, size = buffer.create(1), 1
-				elseif pos + 1 > size then
-					buf, size = inflate(buf, pos + 1, size)
-				end
-				buffer.writeu8(buf, pos, CONCAT_NUM_STR)
-				return strSerializer(string.sub(value, finish + 1), 
-					numSerializer(tonumber(string.sub(value, 1, finish)), buf, pos + 1, size)
-				)
-			end
-		else
-			-- str MUST be a constant for any value
-			if start ~= 1 and finish == len then -- <str><num>
-				local str = string.sub(value, 1, start-1)
-				local cachedConstant = WRITE[str]
-				if cachedConstant then
-					local newSize = if cachedConstant <= 64 then 2
-						else 3
-					if not buf then
-						buf, size = buffer.create(newSize), newSize
-					elseif pos + newSize > size then
-						buf, size = inflate(buf, pos + newSize, size)
-					end
-					buffer.writeu8(buf, pos, CONCAT_STR_NUM)
-
-					if newSize == 1 then
-						buffer.writeu8(buf, pos + 1, cachedConstant + 18)
-					else
-						local constVal = cachedConstant - 64
-						buffer.writeu8(buf, pos + 1, 83 + (constVal // 256) )
-						buffer.writeu8(buf, pos + 2, constVal)
-					end
-					return numSerializer(tonumber(string.sub(value, start)), buf, pos + newSize, size)
-				end
-			elseif start == 1 and finish ~= len then -- <num><str>
-				local str = string.sub(value, finish + 1)
-				local cachedConstant = WRITE[str]
-				if cachedConstant then
-					if not buf then
-						buf, size = buffer.create(1), 1
-					elseif pos + 1 > size then
-						buf, size = inflate(buf, pos + 1, size)
-					end
-					buffer.writeu8(buf, pos, CONCAT_NUM_STR)
-					buf, pos, size = numSerializer(tonumber(string.sub(value, 1, finish)), buf, pos + 1, size)
-					local newSize = if cachedConstant <= 64 then 1
-						else 2
-					if pos + newSize > size then
-						buf, size = inflate(buf, pos + newSize, size)
-					end
-
-					if newSize == 1 then
-						buffer.writeu8(buf, pos + 1, cachedConstant + 18)
-					else
-						local constVal = cachedConstant - 64
-						buffer.writeu8(buf, pos + 1, 83 + (constVal // 256) )
-						buffer.writeu8(buf, pos + 2, constVal)
-					end
-					return buf, pos + newSize, size
-				end
-			end
-		end
-
-	end
-
 	local newSize = if len < 256 then 2
 		elseif len < 65_536 then 3
 		elseif len < 16_777_216 then 4
@@ -193,28 +94,6 @@ local function strDeserializer(buf: buffer, pos: number)
 	local cachedConstant = READ[cachedId]
 	if cachedConstant then
 		return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
-	end
-
-	if id == CONCAT_NUM_STR then
-		local numVal, pos = numDeserializer(buf, pos + 1)
-		local strVal, pos = strDeserializer(buf, pos)
-		if numVal and strVal then
-			return numVal .. strVal, pos
-		end
-		return nil, pos + 1 -- data corrupted
-	elseif id == CONCAT_STR_NUM then
-		local strVal, pos = strDeserializer(buf, pos + 1)
-		local numVal, pos = numDeserializer(buf, pos)
-		if numVal and strVal then
-			return strVal .. numVal, pos
-		end
-		return nil, pos + 1 -- data corrupted
-	elseif id == NUM then
-		local numVal, pos = numDeserializer(buf, pos + 1)
-		if numVal then
-			return tostring(numVal), pos
-		end
-		return nil, pos + 1 -- data corrupted
 	end
 
 	local lenSize = id - EMPTY

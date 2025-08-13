@@ -88,9 +88,9 @@ vector and nil if in table (so not added).
 - [X] char [11]: A string has a length that can be represented as a char (Takes 3 + strLen bytes)
 - [X] tryte [12]: A string has a length that can be represented in 3 bytes (Takes 4 + strLen bytes)
 - [X] int [13]: A string has a length that can be represented as an int (Takes 5 + strLen bytes)
-- [X] concatsn [14]: Concatenation of a string and a positive integer (Takes 3-5 + n bytes, 32- chars)
-- [X] concatns [15]: Concatenation of a positive integer and a string (Takes 3-5 + n bytes, 32- chars)
-- [X] num [16]: The string can be converted to a positive integer (Takes 2-6 bytes, 32- chars).
+- [ ] UNKNOWN [14]: An approach that may be used in the future.
+- [ ] UNKNOWN [15]: An approach that may be used in the future.
+- [ ] UNKNOWN [16]: An approach that may be used in the future.
 - [ ] UNKNOWN [17]: An approach that may be used in the future.
 - [ ] UNKNOWN [18]: An approach that may be used in the future.
 
