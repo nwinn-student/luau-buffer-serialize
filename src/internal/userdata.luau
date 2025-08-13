@@ -77,7 +77,8 @@ local Userdata = {
 		if Reader then
 			return Reader(buf, pos + 1)
 		end
-		return nil, pos + 1
+		-- We cannot return nil or it will corrupt
+		return newproxy(), pos + 1
 	end,
 	setReader = function(reader: (buf: buffer, pos: number)->(unknown, number))
 		Reader = reader
