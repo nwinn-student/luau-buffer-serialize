@@ -257,7 +257,9 @@ end
 
 @native
 function tabDeserializer(buf: buffer, pos: number)
-		
+	
+	local returnedTab = {}
+	
 	local existingIndex = 1
 	local existing = {[0] = returnedTab}
 	local roundRobinCache = {}
@@ -309,7 +311,7 @@ function tabDeserializer(buf: buffer, pos: number)
 	end
 	
 	@native
-	function deserialTable()
+	function deserialTable(data: {}?)
 		local id = buffer.readu8(buf, pos)
 		
 		pos += 1
@@ -320,7 +322,7 @@ function tabDeserializer(buf: buffer, pos: number)
 			return {}
 		end
 		
-		local data = {}
+		data = data or {}
 		
 		local hasArray = id == ARRAY or id == TABLE
 		
@@ -398,8 +400,8 @@ function tabDeserializer(buf: buffer, pos: number)
 			
 			-- check if existing
 			if valId == EQ_EXISTING then
-				key = existing[buffer.readu16(buf, pos + 1)]
-				if key == nil then
+				value = existing[buffer.readu16(buf, pos + 1)]
+				if value == nil then
 					return nil
 				end
 				pos += 3
@@ -416,7 +418,7 @@ function tabDeserializer(buf: buffer, pos: number)
 		end
 	end
 	
-	local data = deserialTable()
+	local data = deserialTable(returnedTab)
 	
 	table.clear(existing)
 	table.clear(roundRobinCache)
