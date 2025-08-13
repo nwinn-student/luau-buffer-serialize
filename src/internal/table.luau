@@ -62,7 +62,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 				buf, pos, size = nilSerializer(data, buf, pos, size)
 			else
 				-- ISSUE: A table cycle may be so deep that it bypasses existing altogether
-				-- We will need to ensure the cycle is nonproblematic 
+				-- We will need to ensure the cycle is nonproblematic
 				if existingIndex < 61_440 then
 					existing[data] = existingIndex
 					existingIndex += 1
@@ -89,6 +89,9 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			-- Not done, it is hard to find datasets for this
 			-- 4096 values we cache in a cycle
 			if roundRobinLength == 4096 then
+				if roundRobinIndex == 65_536 then
+					roundRobinIndex = 61_440
+				end
 				-- Cycle time
 				existing[roundRobinCache[roundRobinIndex - 61_439]] = nil
 				existing[data] = roundRobinIndex
@@ -246,7 +249,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	serialTable(value)	
 	
 	table.clear(existing)
-	if roundRobinCache then
+	if roundRobinLength > 0 then
 		table.clear(roundRobinCache)
 	end
 	table.clear(constants)
@@ -262,8 +265,6 @@ function tabDeserializer(buf: buffer, pos: number)
 	
 	local existingIndex = 1
 	local existing = {[0] = returnedTab}
-	local roundRobinCache = {}
-	local roundRobinLength = 0
 	local roundRobinIndex = 61440
 		
 	local deserialTable
@@ -306,18 +307,24 @@ function tabDeserializer(buf: buffer, pos: number)
 				return value
 			end
 			-- TODO: roundRobin stuff
+			if roundRobinIndex == 65_536 then
+				roundRobinIndex = 61_440
+			end
+			-- Cycle time
+			existing[roundRobinIndex] = value
+			roundRobinIndex += 1			
 		end
 		return value
 	end
 	
 	@native
-	function deserialTable(data: {}?)
+	function deserialTable(data: {}?): {[any]: any}?
 		local id = buffer.readu8(buf, pos)
 		
 		pos += 1
 		
 		if id == EMPTY then
-			existing[existingIndex] = nil
+			existing[existingIndex - 1] = nil
 			existingIndex -= 1
 			return {}
 		end
@@ -326,7 +333,7 @@ function tabDeserializer(buf: buffer, pos: number)
 		
 		local hasArray = id == ARRAY or id == TABLE
 		
-		if id ~= ARRAY and id ~= TABLE and id ~= DICT then
+		if not hasArray and id ~= DICT then
 			return nil -- data corruption
 		end
 		
@@ -421,7 +428,6 @@ function tabDeserializer(buf: buffer, pos: number)
 	local data = deserialTable(returnedTab)
 	
 	table.clear(existing)
-	table.clear(roundRobinCache)
 	
 	return data, pos + 1
 end
