@@ -282,7 +282,11 @@ function tabDeserializer(buf: buffer, pos: number)
 			value, pos = vecDeserializer(buf, pos)
 		elseif valId <= 201 then -- table
 			-- TODO: Maybe add cyclic checker here?
-			value, pos = deserialTable()
+			if existingIndex < 61_440 then
+				existing[existingIndex] = value
+				existingIndex += 1
+			end
+			return deserialTable()
 		elseif valId <= 223 then -- userdata
 			value, pos = userDeserializer(buf, pos)
 		else 
@@ -295,7 +299,7 @@ function tabDeserializer(buf: buffer, pos: number)
 		
 		if pos - 2 > oldPos then
 			if existingIndex < 61_440 then
-				existing.Data[existingIndex] = value
+				existing[existingIndex] = value
 				existingIndex += 1
 				return value
 			end
@@ -311,6 +315,8 @@ function tabDeserializer(buf: buffer, pos: number)
 		pos += 1
 		
 		if id == EMPTY then
+			existing[existingIndex] = nil
+			existingIndex -= 1
 			return {}
 		end
 		
@@ -355,7 +361,7 @@ function tabDeserializer(buf: buffer, pos: number)
 					continue
 				end
 				
-				value  = deserialCache(valId)
+				value = deserialCache(valId)
 				if value == nil then
 					return nil
 				end
