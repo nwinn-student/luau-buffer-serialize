@@ -16,6 +16,14 @@
 
 BufferSerializer is a general-purpose serializer for complex data structures with the capability to compress known constants whose goal tredges the line of speed and effective output size.
 
+#### Limitations
+ - Although cyclic tables<sup>[1]</sup> are supported, large datasets with distant<sup>[2]</sup> cyclic tables will fatally error.
+
+<sub>[1]: Tables that point to other tables that at some point point back to the initial pointing table.</sub>
+
+<sub>[2]: Large datasets are datasets with at least 61_440 unique values, including dictionary keys and excluding constants.  Distant cyclic tables are cyclic tables that are at least 4_096 unique values apart.</sub>
+
+
 ### Requirements
 [Luau 0.670+](https://github.com/luau-lang/luau/releases): As internal methods may shift to use @self to refer to each other.
 
@@ -26,6 +34,9 @@ A user with an extension of Luau may wish to have their userdata objects special
 
 
 ## Example
+
+More in-depth examples can be found in [examples](./examples).
+
 ```luau
 local bufferSerial = require("./BufferSerializer/BufferSerializer")
 
@@ -46,9 +57,21 @@ BufferSerializer was compared against Roblox's JSONEncode/Decode and @cipharius'
 
 ## Technical Details
 
-For the binary format BufferSerializer is using, look to [FORMAT.md](./FORMAT.md).
+For the binary format BufferSerializer is using to (de)serialize, look to [FORMAT.md](./FORMAT.md).  There are 24 approaches left for future applications, whether it be for a new type in Luau or upon enough user requests.  These approaches will be consumed when no unknown approach is left in the type's section of the binary format.
+
+`serialize(data: any): buffer`: Takes in a value and spits out the serialized version within a buffer.
+
+`deserialize(data: buffer): any`: Takes in a serialized version of some data and **recreates** and returns the original data.
+
+`pair(id: number, data: any)`: Connects a constant value to an identifier.  See [constants supported](#constant-amount-supported) in order to understand how expensive the constant will be in its serialized form.  
 
 ### Constant Amount Supported
+
+Constants are used to save the as much output size as possible given **fixed** information.  The constants should seldomly be modified as there is risk of corruption if mishandled.
+
+ - NaN values are NOT supported, such as vector.create(2, 4, 0/0).
+ - Userdata values should be handled with care*.  Prioritize pairing lightuserdata objects or known fixed userdata objects.  Do NOT expect userdata objects, like Roblox Instances, to equal other Roblox Instances with the same properties.
+
 | **Type** | **Amount** | **Cost** |
 | ---- | ---- | ---- |
 | `string` | 64 | 1 byte |

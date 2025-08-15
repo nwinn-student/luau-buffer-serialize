@@ -13,7 +13,7 @@ local modules = {}
 --[[
 	Returns the value as a buffer
 ]]--
-Serialize.serialize = function(value: any): (buffer, number, number)
+Serialize.serialize = function(value: any): buffer
 	local typeValue = type(value)
 	if typeValue == "function" or typeValue == "thread" then
 		typeValue = "nil"
@@ -27,7 +27,7 @@ Serialize.serialize = function(value: any): (buffer, number, number)
 	return trim(serial(value, nil, 0, 0))
 end
 
-Serialize.deserialize = function(value: buffer): (any, number)
+Serialize.deserialize = function(value: buffer): any
 	local pointer = buffer.readu8(value, 0)
 	if pointer == 0 then return nil end
 
@@ -51,12 +51,15 @@ Serialize.deserialize = function(value: buffer): (any, number)
 
 	local deserial = modules[pointer]
 	if deserial then
-		return deserial(value, 0)
+		local originalData = deserial(value, 0)
+		return originalData
 	end
 
 	deserial = require(`./internal/{enumerator[pointer]}`).deserialize
 	modules[pointer] = deserial
-	return deserial(value, 0)
+	
+	local originalData = deserial(value, 0)
+	return originalData
 end
 
 Serialize.pair = function(id: number, value: any): nil
@@ -67,7 +70,7 @@ Serialize.pair = function(id: number, value: any): nil
 		elseif typeV == "userdata" then 1039
 		else 0
 
-	assert(type(id) == "number" and id % 1 == 0, `Invalid id {id} (must be integer)`)
+	assert(type(id) == "number" and id % 1 == 0 and id == id, `Invalid id {id} (must be integer)`)
 	assert(id >= 1 and id <= maxId, `Invalid id {id} (must be between 1 and {maxId})`)
 	assert(value == value, `Invalid value {value} (must be non-nan)`)
 
