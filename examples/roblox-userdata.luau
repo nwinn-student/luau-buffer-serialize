@@ -1,5 +1,5 @@
 --!optimize 2
-local bufferSerial = require("./BufferSerializer/Serialize")
+local bufferSerial = require("./BufferSerializer/BufferSerializer")
 
 --[[
 	Specification for userdata:
@@ -20,6 +20,7 @@ local tableSerial = require("./BufferSerializer/internal/table")
 local inflate = require("./BufferSerializer/internal/pointer/Enumerator").Methods.inflateBuffer
 
 -- the only dependancy, Instances are not as simple to support
+-- Location: https://github.com/Gem-API/Rose
 local rose = require("./rose")
 
 local BRICKCOLOR = 0

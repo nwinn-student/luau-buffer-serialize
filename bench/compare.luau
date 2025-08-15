@@ -42,7 +42,7 @@ function benchMethods:summarize(name: string)
 end
 
 
-local bufferSerial = require("./BufferSerializer/Serialize")
+local bufferSerial = require("./BufferSerializer/BufferSerializer")
 local serialize = bufferSerial.serialize
 local deserialize = bufferSerial.deserialize
 

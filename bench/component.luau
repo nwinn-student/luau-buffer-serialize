@@ -45,7 +45,7 @@ function printType(name: string)
 	print(` | {name} [s / kB / bytes]`)
 end
 
-local bufferSerial = require("./BufferSerializer/Serialize")
+local bufferSerial = require("./BufferSerializer/BufferSerializer")
 local serialize = bufferSerial.serialize
 local deserialize = bufferSerial.deserialize
 

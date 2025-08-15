@@ -1,4 +1,4 @@
-local bufferSerial = require("./BufferSerializer/Serialize")
+local bufferSerial = require("./BufferSerializer/BufferSerializer")
 local userdataSerial = require("./BufferSerializer/internal/userdata")
 local vectorSerial = require("./BufferSerializer/internal/vector")
 local inflate = require("./BufferSerializer/internal/pointer/Enumerator").Methods.inflateBuffer
