@@ -75,7 +75,13 @@ local Userdata = {
 		end
 
 		if Reader then
-			return Reader(buf, pos + 1)
+			local obj
+			obj, pos = Reader(buf, pos + 1)
+			if obj == nil then
+				-- We cannot return nil or it will corrupt
+				return newproxy(), pos + 1
+			end
+			return obj, pos
 		end
 		-- We cannot return nil or it will corrupt
 		return newproxy(), pos + 1
