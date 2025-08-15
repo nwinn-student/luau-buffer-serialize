@@ -17,7 +17,7 @@
 BufferSerializer is a general-purpose serializer for complex data structures with the capability to compress known constants whose goal tredges the line of speed and effective output size.
 
 #### Limitations
- - Although cyclic tables<sup>[1]</sup> are supported, large datasets with distant<sup>[2]</sup> cyclic tables will fatally error.
+ - Although cyclic tables<sup>[1]</sup> are supported, large datasets with distant<sup>[2]</sup> cyclic tables will fatally error.  Although possible, the solution would be too costly.
 
 <sub>[1]: Tables that point to other tables that at some point point back to the initial pointing table.</sub>
 
