@@ -15,18 +15,12 @@
 ## Purpose
 
 BufferSerializer is a general-purpose serializer for complex data structures with the capability to compress known constants whose goal tredges the line of speed and effective output size.
-  
-The currently supported types are `nil`, `string`, `boolean`, `buffer`, `number`, `vector`, `table`, and `userdata`.  `thread` and `functions` are also supported, but they are immediately converted to `nil`.  They can be used to save output size in array structures with potential gaps `{1, 2, 3, fn, 4, 5}`.  The user must define their own serialization / deserialization approach for `userdata`, examples are provided in [examples](./examples).
 
 ## Requirements
 [Luau 0.670+](https://github.com/luau-lang/luau/releases)
 
 ## Usage Cases
 A user may need to prepare data for storing in a database, they will use BufferSerializer to convert the table with the data into a buffer, then passing the buffer to a lossless compressor module such as [LibDeflate](https://github.com/safeteeWow/LibDeflate) and storing the value.
-
-Another user may need to pass data from one server to another, they will use BufferSerializer to convert the data into a buffer, then a string, passing the Luau string to the other server to be deserialized and understood.
-
-Another user may need to serialize a table that contains itself, as they wish to pass classes and objects across the network.  BufferSerializer can be used to convert the table into a buffer, which is then converted into a string and passed across the network.
 
 A user with an extension of Luau may wish to have their userdata objects specially handled, using BufferSerializer, they create a function to handle userdata objects that are not constants and use BufferSerializer to convert the userdata's information into understandable information.  When reading the information, another specified function is called to specially read the userdata.
 
