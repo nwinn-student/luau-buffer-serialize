@@ -14,8 +14,15 @@
 
 BufferSerializer is a general-purpose serializer for complex data structures with the capability to compress known constants whose goal tredges the line of speed and effective output size.
 
+In order to make the most out of BufferSerializer, it is highly recommended to reformat the dataset into a form that produces a minimal output size in JSON.  Upon completion perform the following:
+ - Identify whether there are arrays in the dataset with gaps worth filling with nil bytes, functions and threads can be used to represent `nil`.
+ - Supply known constants to BufferSerializer.
+
+Reformatting using JSON as a reference is much simpler than understanding how BufferSerializer internals function in order to reduce the output size.  Most improvements to the JSON'ed format will improve the output of BufferSerializer.  The more information known regarding the dataset, the smaller the output size can be, and at some point, schema-based serializers will be more optimal, and beyond that a custom-made serializer based on the specific information.  BufferSerializer sits right before schema-based serializers in that it assumes less knowledge is known regarding the format and the little known can be conveyed through constants and userdata functions.
+
 #### Limitations
  - Although cyclic tables<sup>[1]</sup> are supported, large datasets with distant<sup>[2]</sup> cyclic tables will fatally error.  Although possible, the solution would be too costly.
+ - Constants need to be handled with care in order to avoid corruption when migrating.
 
 <sub>[1]: Tables that point to other tables that at some point point back to the initial pointing table.</sub>
 
@@ -23,13 +30,12 @@ BufferSerializer is a general-purpose serializer for complex data structures wit
 
 
 ### Requirements
-[Luau 0.670+](https://github.com/luau-lang/luau/releases): As internal methods may shift to use @self to refer to each other.
+[Luau 0.670+](https://github.com/luau-lang/luau/releases): As internal methods use @self to refer to each other.
 
 ### Usage Cases
 A user needs to prepare data for storing in a database, they will use BufferSerializer to convert the table with the data into a buffer, then passing the buffer to a lossless compressor module such as [LibDeflate](https://github.com/safeteeWow/LibDeflate) and store the value.
 
-A user with an extension of Luau may wish to have their userdata objects specially handled, using BufferSerializer, they create two functions to handle the serialization and deserialization of userdata objects.  
-
+A user with an extension of Luau may wish to have their userdata objects specially handled, using BufferSerializer, they create two functions to handle the serialization and deserialization of userdata objects.
 
 ## Example
 
