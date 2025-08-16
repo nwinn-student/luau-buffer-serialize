@@ -228,11 +228,10 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			-- store element
 			serialCache(element, typeElement)
 		end
-		if oldPos == pos + 1 then
-			buffer.writeu8(buf, pos, EMPTY)
+		if oldPos == pos then
+			buffer.writeu8(buf, pos - 1, EMPTY)
 			existing[data] = nil
 			existingIndex -= 1
-			pos += 1
 			return
 		end
 		
