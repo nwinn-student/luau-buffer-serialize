@@ -29,11 +29,9 @@ For numbers, the data following the representation byte is equivalent to the lit
 - [X] char [11]: A string has a length that can be represented as a char (Takes 3 + strLen bytes)
 - [X] tryte [12]: A string has a length that can be represented in 3 bytes (Takes 4 + strLen bytes)
 - [X] int [13]: A string has a length that can be represented as an int (Takes 5 + strLen bytes)
-- [ ] UNKNOWN [14]: An approach that may be used in the future.
-- [ ] UNKNOWN [15]: An approach that may be used in the future.
-- [ ] UNKNOWN [16]: An approach that may be used in the future.
-- [ ] UNKNOWN [17]: An approach that may be used in the future.
-- [ ] UNKNOWN [18]: An approach that may be used in the future.
+- [ ] UNKNOWN [14-18]: An approach that may be used in the future.
+- [X] byte_constant [19-82]: This byte stores the id of a string constant (1-64)
+- [X] char_constant_next [83-87]: The next byte stores the id of a string constant (Takes 2 bytes)
 
 `number`
 - [X] zero [88]: The constant `0`
@@ -45,9 +43,9 @@ For numbers, the data following the representation byte is equivalent to the lit
 - [X] float [94]: The number is a float (4 bytes) (Takes 5 byte)
 - [X] double [95]: The number is a double (8 bytes) (Takes 9 byte)
 - [X] nan [96]: The constant `nan` or `0/0`.
-- [ ] UNKNOWN [97]: An approach that may be used in the future, maybe five_byte.
-- [ ] UNKNOWN [98]: An approach that may be used in the future, maybe six_byte.
-- [ ] UNKNOWN [99]: An approach that may be used in the future.
+- [ ] UNKNOWN [97-99]: An approach that may be used in the future, maybe five_byte/six_byte.
+- [X] byte_constant [100-131]: This byte stores the id of a number constant (1-32)
+- [X] char_constant_next [132-135]: The next byte stores the id of a number constant (Takes 2 bytes)
 
 `vector`: (X, Y, Z), All of which are floats (vector is immutable!).
 - [X] zero [136]: The constant `(0,0,0)`
@@ -64,14 +62,9 @@ For numbers, the data following the representation byte is equivalent to the lit
 - [X] float [147]: All three values are floats (Takes 13 bytes, worst case) 
 - [X] number [148]: At least one of the values is of a different type (Takes 4 to 15 bytes) 
 - [X] scalar_number [149]: The vector is a multiple of an above constant vector (Takes 3 to 7 bytes)
-- [ ] UNKNOWN [150]: An approach that may be used in the future.
-- [ ] UNKNOWN [151]: An approach that may be used in the future.
-- [ ] UNKNOWN [152]: An approach that may be used in the future.
-- [ ] UNKNOWN [153]: An approach that may be used in the future.
-- [ ] UNKNOWN [154]: An approach that may be used in the future.
-- [ ] UNKNOWN [155]: An approach that may be used in the future.
-- [ ] UNKNOWN [156]: An approach that may be used in the future.
-- [ ] UNKNOWN [157]: An approach that may be used in the future.
+- [ ] UNKNOWN [150-157]: An approach that may be used in the future.
+- [X] byte_constant [158-189]: This byte stores the id of a vector constant (1-32)
+- [X] char_constant_next [190-193]: The next byte stores the id of a vector constant (Takes 2 bytes)
 
 `table`  
 Definition of array used: An array is a list of elements from index 1 to n where there exist no gaps between the integers 1 and n.  
@@ -91,3 +84,8 @@ The dictSize variable represents the amount of bytes used to store all of the ke
 `userdata`
 - [X] custom [202]: A user-defined function is used to read/write the information associated with the userdata (Takes 1+custom bytes)
 - [X] nil [203]: Specifies that the userdata is not supported.
+- [X] byte_constant [204-219]: This byte stores the id of a userdata constant (1-16)
+- [X] char_constant_next [220-223]: The next byte stores the id of a userdata constant (Takes 2 bytes)
+
+`future`
+- [ ] future_approaches [224-255]: Approaches reserved for new types or expanding upon prior.

@@ -57,7 +57,7 @@ BufferSerializer was compared against Roblox's JSONEncode/Decode and @cipharius'
 
 ## Technical Details
 
-For the binary format BufferSerializer is using to (de)serialize, look to [FORMAT.md](./FORMAT.md).  There are 24 approaches left for future applications, whether it be for a new type in Luau or upon enough user requests.  These approaches will be consumed when no unknown approach is left in the type's section of the binary format.
+For the binary format BufferSerializer is using to (de)serialize, look to [FORMAT.md](./FORMAT.md).  There are 32 approaches left for future applications, whether it be for a new type in Luau or upon enough user requests.  These approaches will be consumed when no unknown approach is left in the type's section of the binary format.
 
 `serialize(data: any): buffer`: Takes in a value and spits out the serialized version within a buffer.
 
