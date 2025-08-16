@@ -1,12 +1,10 @@
 --!optimize 2
-local enumerator = require("./pointer/Enumerator")
-local Number = require("./number")
-type BufferData = enumerator.BufferData
-type PositionData = enumerator.PositionData
+--!strict
+local inflate = require("./inflate")
 
-local grow = enumerator.Methods.grow
-
-enumerator = nil
+local numSerializer = require("./number").serialize
+local numDeserializer = require("./number").deserialize
+local numWrite = require("./number").Write
 
 local ZERO = 136
 local ONE = 137
@@ -24,9 +22,10 @@ local NUMBER = 148
 local SCALAR_NUMBER = 149
 
 local READ = {}
-local WRITE = {} -- 1 to 1087
+local WRITE = {} -- 1 to 1055
 
-local builtinConst = {
+local builtinSerialConst = {
+	-- Used for serialization
 	[vector.zero] = ZERO,
 	[vector.one] = ONE,
 	[vector.create(1,0,0)] = X_AXIS,
@@ -35,6 +34,17 @@ local builtinConst = {
 	[vector.create(1,1,0)] = XY_AXIS,
 	[vector.create(1,0,1)] = XZ_AXIS,
 	[vector.create(0,1,1)] = YZ_AXIS
+}
+local builtinDeserialConst = {
+	-- Used for deserialization, indexing this is 30% faster
+	-- than calling vector.create (vector.one/zero is 120% faster)
+	[ONE] = vector.one,
+	[X_AXIS] = vector.create(1,0,0),
+	[Y_AXIS] = vector.create(0,1,0),
+	[Z_AXIS] = vector.create(0,0,1),
+	[XY_AXIS] = vector.create(1,1,0),
+	[XZ_AXIS] = vector.create(1,0,1),
+	[YZ_AXIS] = vector.create(0,1,1)
 }
 
 local MIN_BYTE = -2^7
@@ -46,7 +56,8 @@ local MAX_CHAR = 2^15-1
 local MIN_THREE = -2^23
 local MAX_THREE = 2^23-1
 
-local function getType(value: number)
+@native
+local function getType(value: number): number
 	if value % 1 ~= 0 or MAX_THREE < value or value < MIN_THREE then
 		return FLOAT
 	elseif MAX_BYTE >= value and value >= MIN_BYTE then
@@ -59,23 +70,29 @@ local function getType(value: number)
 end
 
 @native
-local function vecSerializer(value: vector, data: BufferData)
-	local buf = data.Data
-	local pos = data.Position or 0
+local function vecSerializer(value: vector, buf: buffer, pos: number, size: number)
 
-	local builtin: number? = builtinConst[value]
+	local builtin: number? = builtinSerialConst[value]
 	if builtin then
-		buf = grow(buf, data, 1)
+		if not buf then
+			buf, size = buffer.create(1), 1
+		elseif pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 		buffer.writeu8(buf, pos, builtin)
-		return
+		return buf, pos + 1, size
 	end
 
 	local cachedConstant: number? = WRITE[value]
 	if cachedConstant then
 		local newSize = if cachedConstant <= 32 then 1
 			else 2
-
-		buf = grow(buf, data, newSize)
+		
+		if not buf then
+			buf, size = buffer.create(newSize), newSize
+		elseif pos + newSize > size then
+			buf, size = inflate(buf, pos + newSize, size)
+		end
 
 		if newSize == 1 then
 			buffer.writeu8(buf, pos, cachedConstant + 157)
@@ -85,19 +102,20 @@ local function vecSerializer(value: vector, data: BufferData)
 			buffer.writeu8(buf, pos+1, constVal)
 		end
 
-		return
+		return buf, pos + newSize, size
 	end
-	
-	-- what if nan is in any?!
-	-- i cannot force 1-2 bytes for vectors with nans it isn't possible
-	-- we could check if the value == itself?
-	
+
 	-- now we check scalar
 	local valueX = value.x
 	local valueY = value.y
 	local valueZ = value.z
+	-- if nan (always better)
+	local isNumber = valueX ~= valueX 
+		or valueY ~= valueY 
+		or valueZ ~= valueZ
 
-	do
+	if not isNumber then
+		-- best case we need to perform valX == valY twice and valX == 0 twice, can cache
 		local isOneValue = valueX == valueY and valueY == valueZ
 		local isXAxis = valueY == 0 and valueZ == 0
 		local isYAxis = valueX == 0 and valueZ == 0
@@ -110,7 +128,12 @@ local function vecSerializer(value: vector, data: BufferData)
 			or isYAxis or isZAxis
 			or isXYAxis or isYZAxis
 		then
-			buf = grow(buf, data, 2)
+			-- 3+ bytes
+			if not buf then
+				buf, size = buffer.create(3), 3
+			elseif pos + 3 > size then
+				buf, size = inflate(buf, pos + 3, size)
+			end
 			buffer.writeu8(buf, pos, SCALAR_NUMBER)
 
 			local var = if isOneValue then ONE
@@ -126,37 +149,53 @@ local function vecSerializer(value: vector, data: BufferData)
 			local val = if isOneValue or isXAxis or isXYAxis or isXZAxis then valueX
 				elseif isYAxis or isYZAxis then valueY
 				else valueZ
-			Number.serialize(val, data)
-			return
+			return numSerializer(val, buf, pos + 2, size)
 		end
 	end
 
 	-- now we check types
-	local typeX = getType(valueX)
-	local typeY = getType(valueY)
-	local typeZ = getType(valueZ)
-
-	local constX = Number.Write[valueX]
-	local constY = Number.Write[valueY]
-	local constZ = Number.Write[valueZ]
-
-	local isNumber = valueX ~= valueX 
-		or valueY ~= valueY 
-		or valueZ ~= valueZ 
-		or constX or constY or constZ
-
-	if typeX ~= typeY or typeY ~= typeZ or isNumber then
-		buf = grow(buf, data, 1)
+	local typeX, typeY, typeZ
+	
+	-- if num type differs
+	if not isNumber then
+		typeX = getType(valueX)
+		typeY = getType(valueY)
+		isNumber = typeX ~= typeY
+	end
+	if not isNumber then
+		typeZ = getType(valueZ)
+		isNumber = typeY ~= typeZ 
+	end
+	if not isNumber and typeX ~= BYTE then
+		-- if num is a constant and all types aren't byte
+		-- char/tryte COULD be cheaper (1 + 2 (const) + 5 (float) + 5 (float) is worst case)
+		-- the checks are VERY expensive (from a line perspective) though
+		isNumber = (
+			numWrite[valueX] or numWrite[valueY] or numWrite[valueZ]
+		)
+	end
+	
+	-- 4+ bytes (NOT intelligent, as a const byte will be more expensive)
+	if isNumber then
+		if not buf then
+			buf, size = buffer.create(4), 4
+		elseif pos + 4 > size then
+			buf, size = inflate(buf, pos + 4, size)
+		end
 		buffer.writeu8(buf, pos, NUMBER)
-		Number.serialize(valueX, data)
-		Number.serialize(valueY, data)
-		Number.serialize(valueZ, data)
-		return
+		buf, pos, size = numSerializer(valueX, buf, pos + 1, size)
+		buf, pos, size = numSerializer(valueY, buf, pos, size)
+		return numSerializer(valueZ, buf, pos, size)
 	end
 
-	local newSize = 3 * (typeX - 143) + 1
-	buf = grow(buf, data, newSize) -- 4, 7, 10, 13
-	buffer.writeu8(buf, pos, typeX)
+	local newSize = 3 * ((typeX :: number) - 143) + 1
+	-- 4, 7, 10, 13
+	if not buf then
+		buf, size = buffer.create(newSize), newSize
+	elseif pos + newSize > size then
+		buf, size = inflate(buf, pos + newSize, size)
+	end
+	buffer.writeu8(buf, pos, typeX :: number)
 
 	if typeX == BYTE then
 		buffer.writei8(buf, pos + 1, valueX)
@@ -175,37 +214,29 @@ local function vecSerializer(value: vector, data: BufferData)
 		buffer.writef32(buf, pos + 5, valueY)
 		buffer.writef32(buf, pos + 9, valueZ)
 	end
+	return buf, pos + newSize, size
 end
 
 @native
-local function vecDeserializer(buf: buffer, data: PositionData)
-	local pos = data.Position
+local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then
-		data.Position += 1
-		return vector.zero
+		return vector.zero, pos + 1
 	elseif id == ONE then
-		data.Position += 1
-		return vector.one
+		return vector.one, pos + 1
 	elseif id == X_AXIS then
-		data.Position += 1
-		return vector.create(1,0,0)
+		return builtinDeserialConst[X_AXIS], pos + 1
 	elseif id == Y_AXIS then
-		data.Position += 1
-		return vector.create(0,1,0)
+		return builtinDeserialConst[Y_AXIS], pos + 1
 	elseif id == Z_AXIS then
-		data.Position += 1
-		return vector.create(0,0,1)
+		return builtinDeserialConst[Z_AXIS], pos + 1
 	elseif id == XY_AXIS then
-		data.Position += 1
-		return vector.create(1,1,0)
+		return builtinDeserialConst[XY_AXIS], pos + 1
 	elseif id == XZ_AXIS then
-		data.Position += 1
-		return vector.create(1,0,1)
+		return builtinDeserialConst[XZ_AXIS], pos + 1
 	elseif id == YZ_AXIS then
-		data.Position += 1
-		return vector.create(0,1,1)
+		return builtinDeserialConst[YZ_AXIS], pos + 1
 	end
 
 	local cachedId = if id > 189 then (id - 189) * 256 + 64
@@ -213,34 +244,30 @@ local function vecDeserializer(buf: buffer, data: PositionData)
 
 	local cachedConstant = READ[cachedId]
 	if cachedConstant then
-		data.Position += if cachedId > 64 then 2 else 1
-		return cachedConstant
+		return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
 	end
 
 	if id == SCALAR_NUMBER then
-		data.Position += 1
-		local vecVal = vecDeserializer(buf, data)
-		local numVal = Number.deserialize(buf, data)
+		local vecVal = builtinDeserialConst[buffer.readu8(buf, pos + 1)]
+		local numVal
+		numVal, pos = numDeserializer(buf, pos + 2)
 		if vecVal and numVal then
-			return numVal * vecVal
+			return numVal * vecVal, pos
 		end
-		return nil -- data corruption
+		return nil, pos + 1 -- data corruption
 	elseif id == BYTE then
-		data.Position += 4
 		return vector.create(
 			buffer.readi8(buf, pos + 1), 
 			buffer.readi8(buf, pos + 2),
 			buffer.readi8(buf, pos + 3)
-		)
+		), pos + 4
 	elseif id == CHAR then
-		data.Position += 7
 		return vector.create(
 			buffer.readi16(buf, pos + 1), 
 			buffer.readi16(buf, pos + 3),
 			buffer.readi16(buf, pos + 5)
-		)
+		), pos + 7
 	elseif id == THREE_BYTE then
-		data.Position += 10
 		local xVal = buffer.readbits(buf, (pos + 1)*8, 24)
 		local yVal = buffer.readbits(buf, (pos + 4)*8, 24)
 		local zVal = buffer.readbits(buf, (pos + 7)*8, 24)
@@ -249,24 +276,26 @@ local function vecDeserializer(buf: buffer, data: PositionData)
 			xVal >= 2^23 and (-2^24) + xVal or xVal, 
 			yVal >= 2^23 and (-2^24) + yVal or yVal,
 			zVal >= 2^23 and (-2^24) + zVal or zVal
-		)
+		), pos + 10
 	elseif id == FLOAT then
-		data.Position += 13
 		return vector.create(
 			buffer.readf32(buf, pos + 1), 
 			buffer.readf32(buf, pos + 5),
 			buffer.readf32(buf, pos + 9)
-		)
+		), pos + 13
 	elseif id == NUMBER then
-		data.Position += 1
-		return vector.create(
-			Number.deserialize(buf, data),
-			Number.deserialize(buf, data),
-			Number.deserialize(buf, data)
-		)
+		local xVal, yVal, zVal
+		xVal, pos = numDeserializer(buf, pos + 1)
+		yVal, pos = numDeserializer(buf, pos)
+		zVal, pos = numDeserializer(buf, pos)
+		
+		if xVal and yVal and zVal then
+			return vector.create(xVal, yVal, zVal), pos
+		end
+		-- fill with 0's instead?
+		return nil, pos + 1 -- data corrupted
 	else
-		data.Position += 1
-		return nil -- data corrupted
+		return nil, pos + 1 -- data corrupted
 	end
 end
 
@@ -296,7 +325,7 @@ end
 function Vector.resetWrite()
 	table.clear(WRITE)
 	WRITE = {}
-	Vector.Read = WRITE
+	Vector.Write = WRITE
 end
 
 return Vector

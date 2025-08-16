@@ -1,11 +1,6 @@
 --!optimize 2
-local enumerator = require("./pointer/Enumerator")
-type BufferData = enumerator.BufferData
-type PositionData = enumerator.PositionData
-
-local grow = enumerator.Methods.grow
-
-enumerator = nil
+--!strict
+local inflate = require("./inflate")
 
 local EMPTY = 3
 local BYTE = 4
@@ -16,23 +11,29 @@ local INT = 7
 local EMPTY_BUFFER = buffer.create(0)
 
 return {
-	serialize = function(value: buffer, data: BufferData)
+	serialize = function(value: buffer, buf: buffer, pos: number, size: number)
 		local len = buffer.len(value)
-		local buf = data.Data
-		local pos = data.Position or 0
 
 		if len == 0 then
-			buf = grow(buf, data, 1)
+			if not buf then
+				buf, size = buffer.create(1), 1
+			elseif pos + 1 > size then
+				buf, size = inflate(buf, pos + 1, size)
+			end
 			buffer.writeu8(buf, pos, EMPTY)
-			return
+			return buf, pos + 1, size
 		end
 
 		local newSize = if len < 256 then 2
 			elseif len < 65_536 then 3
 			elseif len < 16_777_216 then 4
 			else 5
-
-		buf = grow(buf, data, len + newSize)
+		
+		if not buf then
+			buf, size = buffer.create(len + newSize), len + newSize
+		elseif pos + len + newSize > size then
+			buf, size = inflate(buf, pos + len + newSize, size)
+		end
 		buffer.writeu8(buf, pos, 2 + newSize)
 
 		if len < 256 then
@@ -46,20 +47,19 @@ return {
 		end
 
 		buffer.copy(buf, pos + newSize, value)
+		return buf, pos + newSize + len, size
 	end,
-	deserialize = function(buf: buffer, data: PositionData)
-		local pos = data.Position
+	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
-		
+
 		if id == EMPTY then
-			data.Position += 1
-			return EMPTY_BUFFER
+			return EMPTY_BUFFER, pos + 1
 		end
-		
+
 		pos += 1
-		
+
 		local lenSize = id - EMPTY
-		
+
 		local len: number
 		if id == BYTE then
 			len = buffer.readu8(buf, pos)
@@ -68,8 +68,7 @@ return {
 			len = buffer.readu16(buf, pos)
 			pos += lenSize
 		elseif id == THREE_BYTE then
-			local posbits = 8*pos
-			len = buffer.readbits(buf, posbits, 24)
+			len = buffer.readbits(buf, 8 * pos, 24)
 			pos += lenSize
 		elseif id == INT then
 			len = buffer.readu32(buf, pos)
@@ -78,7 +77,6 @@ return {
 
 		local value = buffer.create(len)
 		buffer.copy(value, 0, buf, pos, len)
-		data.Position += len + lenSize + 1
-		return value
+		return value, pos + len
 	end
 }
