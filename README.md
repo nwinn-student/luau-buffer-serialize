@@ -1,7 +1,5 @@
 # Buffer Serializer
 
-> Design Stage: In Progress
-
 #### Table of Contents
 - [Purpose](#purpose)
 - [Requirements](#requirements)
