@@ -1,9 +1,6 @@
 --!optimize 2
-local enumerator = require("./pointer/Enumerator")
-
-local inflate = enumerator.Methods.inflateBuffer
-
-enumerator = nil
+--!strict
+local inflate = require("./inflate")
 
 --[[
 	Serializes nil values 
@@ -21,7 +18,7 @@ return {
 		buffer.writeu8(buf, pos, 0)
 		return buf, pos + 1, size
 	end,
-	deserialize = function(buf: buffer, pos: number): nil
+	deserialize = function(buf: buffer, pos: number)
 		return nil, pos + 1
 	end,
 }

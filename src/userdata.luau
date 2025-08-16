@@ -1,9 +1,6 @@
 --!optimize 2
-local enumerator = require("./pointer/Enumerator")
-
-local inflate = enumerator.Methods.inflateBuffer
-
-enumerator = nil
+--!strict
+local inflate = require("./inflate")
 
 local CUSTOM = 202
 local NIL = 203
@@ -75,9 +72,16 @@ local Userdata = {
 		end
 
 		if Reader then
-			return Reader(buf, pos + 1)
+			local obj
+			obj, pos = Reader(buf, pos + 1)
+			if obj == nil then
+				-- We cannot return nil or it will corrupt
+				return newproxy(), pos + 1
+			end
+			return obj, pos
 		end
-		return nil, pos + 1
+		-- We cannot return nil or it will corrupt
+		return newproxy(), pos + 1
 	end,
 	setReader = function(reader: (buf: buffer, pos: number)->(unknown, number))
 		Reader = reader

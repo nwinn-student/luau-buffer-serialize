@@ -1,4 +1,4 @@
-local bufferSerial = require("./BufferSerializer/Serialize")
+local bufferSerial = require("./BufferSerializer")
 
 local data = {
 	Foo = "Baz",
