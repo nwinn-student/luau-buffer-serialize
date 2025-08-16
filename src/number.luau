@@ -1,4 +1,5 @@
 --!optimize 2
+--!strict
 local inflate = require("./inflate")
 
 local ZERO = 88
@@ -135,7 +136,7 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 end
 
 @native
-local function numDeserializer(buf: buffer, pos: number)
+local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then

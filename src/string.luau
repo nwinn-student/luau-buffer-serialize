@@ -1,4 +1,5 @@
 --!optimize 2
+--!strict
 local inflate = require("./inflate")
 
 local EMPTY = 9
@@ -74,7 +75,7 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 end
 
 @native
-local function strDeserializer(buf: buffer, pos: number)
+local function strDeserializer(buf: buffer, pos: number): (string?, number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == EMPTY then
@@ -84,7 +85,7 @@ local function strDeserializer(buf: buffer, pos: number)
 	local cachedId = if id > 82 then (id - 82) * 256 + 64
 		else id - 18
 
-	local cachedConstant = READ[cachedId]
+	local cachedConstant: string? = READ[cachedId]
 	if cachedConstant then
 		return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
 	end

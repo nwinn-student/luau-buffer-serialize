@@ -1,4 +1,5 @@
 --!optimize 2
+--!strict
 
 --[[
 	Inflates the buffer size to be at least the new position.

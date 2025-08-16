@@ -1,4 +1,5 @@
 --!optimize 2
+--!strict
 local inflate = require("./inflate")
 
 --[[
@@ -17,7 +18,7 @@ return {
 		buffer.writeu8(buf, pos, 0)
 		return buf, pos + 1, size
 	end,
-	deserialize = function(buf: buffer, pos: number): nil
+	deserialize = function(buf: buffer, pos: number)
 		return nil, pos + 1
 	end,
 }

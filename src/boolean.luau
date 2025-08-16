@@ -1,4 +1,5 @@
 --!optimize 2
+--!strict
 local inflate = require("./inflate")
 
 --[[

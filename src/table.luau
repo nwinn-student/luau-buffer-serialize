@@ -1,4 +1,5 @@
 --!optimize 2
+--!strict
 local inflate = require("./inflate")
 
 -- all
@@ -265,7 +266,7 @@ function tabDeserializer(buf: buffer, pos: number)
 	local deserialTable
 	
 	@native
-	local function deserialCache(valId: number)
+	local function deserialCache(valId: number): any
 		local value: any = nil
 		local oldPos = pos
 		if valId <= 2 then -- boolean
@@ -313,7 +314,7 @@ function tabDeserializer(buf: buffer, pos: number)
 	end
 	
 	@native
-	function deserialTable(data: {}?): {[any]: any}?
+	function deserialTable(data: {[any]: any}?): {[any]: any}?
 		local id = buffer.readu8(buf, pos)
 		
 		pos += 1
