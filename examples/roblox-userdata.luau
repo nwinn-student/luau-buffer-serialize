@@ -1,5 +1,5 @@
 --!optimize 2
-local bufferSerial = require("./BufferSerializer/BufferSerializer")
+local bufferSerial = require("./BufferSerializer")
 
 --[[
 	Specification for userdata:
@@ -13,11 +13,11 @@ local bufferSerial = require("./BufferSerializer/BufferSerializer")
 		-- add more as needed
 ]]--
 
-local userdataSerial = require("./BufferSerializer/internal/userdata")
-local numberSerial = require("./BufferSerializer/internal/number")
-local vectorSerial = require("./BufferSerializer/internal/vector")
-local tableSerial = require("./BufferSerializer/internal/table")
-local inflate = require("./BufferSerializer/internal/pointer/Enumerator").Methods.inflateBuffer
+local userdataSerial = require("./BufferSerializer/userdata")
+local numberSerial = require("./BufferSerializer/number")
+local vectorSerial = require("./BufferSerializer/vector")
+local tableSerial = require("./BufferSerializer/table")
+local inflate = require("./BufferSerializer/inflate")
 
 -- the only dependancy, Instances are not as simple to support
 -- Location: https://github.com/Gem-API/Rose

@@ -1,7 +1,7 @@
-local bufferSerial = require("./BufferSerializer/BufferSerializer")
-local userdataSerial = require("./BufferSerializer/internal/userdata")
-local vectorSerial = require("./BufferSerializer/internal/vector")
-local inflate = require("./BufferSerializer/internal/pointer/Enumerator").Methods.inflateBuffer
+local bufferSerial = require("./BufferSerializer")
+local userdataSerial = require("./BufferSerializer/userdata")
+local vectorSerial = require("./BufferSerializer/vector")
+local inflate = require("./BufferSerializer/inflate")
 
 local CFRAME = 5 -- assuming you want to have other userdata supported
 

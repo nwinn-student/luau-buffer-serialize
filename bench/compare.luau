@@ -15,8 +15,8 @@
 		prize - https://api.nobelprize.org/v1/prize.json
 ]]--
 
-local bench = require("./Bench/Bench")
-local benchPrecision = require("./Bench/internal/Print").precision
+local bench = require("./Bench")
+local benchPrecision = require("./Bench/Print").precision
 
 local benchMethods = getmetatable(bench(function() end)).__index
 
@@ -42,7 +42,7 @@ function benchMethods:summarize(name: string)
 end
 
 
-local bufferSerial = require("./BufferSerializer/BufferSerializer")
+local bufferSerial = require("./BufferSerializer")
 local serialize = bufferSerial.serialize
 local deserialize = bufferSerial.deserialize
 

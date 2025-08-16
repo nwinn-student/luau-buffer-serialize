@@ -1,13 +1,9 @@
 --!optimize 2
-local enumerator = require("./pointer/Enumerator")
+local inflate = require("./inflate")
 
 local numSerializer = require("./number").serialize
 local numDeserializer = require("./number").deserialize
 local numWrite = require("./number").Write
-
-local inflate = enumerator.Methods.inflateBuffer
-
-enumerator = nil
 
 local ZERO = 136
 local ONE = 137
@@ -58,7 +54,8 @@ local MAX_CHAR = 2^15-1
 local MIN_THREE = -2^23
 local MAX_THREE = 2^23-1
 
-local function getType(value: number)
+@native
+local function getType(value: number): number
 	if value % 1 ~= 0 or MAX_THREE < value or value < MIN_THREE then
 		return FLOAT
 	elseif MAX_BYTE >= value and value >= MIN_BYTE then
@@ -116,6 +113,7 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 		or valueZ ~= valueZ
 
 	if not isNumber then
+		-- best case we need to perform valX == valY twice and valX == 0 twice, can cache
 		local isOneValue = valueX == valueY and valueY == valueZ
 		local isXAxis = valueY == 0 and valueZ == 0
 		local isYAxis = valueX == 0 and valueZ == 0
@@ -188,7 +186,7 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 		return numSerializer(valueZ, buf, pos, size)
 	end
 
-	local newSize = 3 * (typeX - 143) + 1
+	local newSize = 3 * ((typeX :: number) - 143) + 1
 	-- 4, 7, 10, 13
 	if not buf then
 		buf, size = buffer.create(newSize), newSize
@@ -249,7 +247,8 @@ local function vecDeserializer(buf: buffer, pos: number)
 
 	if id == SCALAR_NUMBER then
 		local vecVal = builtinConst[buffer.readu8(buf, pos + 1)]
-		local numVal, pos = numDeserializer(buf, pos + 2)
+		local numVal
+		numVal, pos = numDeserializer(buf, pos + 2)
 		if vecVal and numVal then
 			return numVal * vecVal, pos
 		end
@@ -283,9 +282,10 @@ local function vecDeserializer(buf: buffer, pos: number)
 			buffer.readf32(buf, pos + 9)
 		), pos + 13
 	elseif id == NUMBER then
-		local xVal, pos = numDeserializer(buf, pos + 1)
-		local yVal, pos = numDeserializer(buf, pos)
-		local zVal, pos = numDeserializer(buf, pos)
+		local xVal, yVal, zVal
+		xVal, pos = numDeserializer(buf, pos + 1)
+		yVal, pos = numDeserializer(buf, pos)
+		zVal, pos = numDeserializer(buf, pos)
 		return vector.create(xVal, yVal, zVal), pos
 	else
 		return nil, pos + 1 -- data corrupted

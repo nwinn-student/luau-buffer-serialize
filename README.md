@@ -38,7 +38,7 @@ A user with an extension of Luau may wish to have their userdata objects special
 More in-depth examples can be found in [examples](./examples).
 
 ```luau
-local bufferSerial = require("./BufferSerializer/BufferSerializer")
+local bufferSerial = require("./BufferSerializer")
 
 -- Serialize
 local data = "Hello World!"

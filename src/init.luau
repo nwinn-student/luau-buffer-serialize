@@ -1,19 +1,41 @@
 --!optimize 2
-local enumerator = require("./internal/pointer/Enumerator")
-
 do
-	require("./internal/table") -- ensures the rest are loaded
+	-- For runtimes that cache the requires
+	require("@self/table")
 end
 
-local trim = enumerator.Methods.trim
+@native
+local function trim(data: buffer, pos: number, size: number)
+	if size == pos then
+		return data
+	end
+	local newBuf = buffer.create(pos)
+	buffer.copy(newBuf, 0, data, 0, pos)
+	return newBuf
+end
 
-local Serialize = {}
+local enumerator = {
+	[0] = 'nil',
+	'boolean',
+	'buffer',
+	'string',
+	'number',
+	'vector',
+	'table',
+	'userdata'
+}
+
+local BufferSerializer = {}
 local modules = {}
 
 --[[
 	Returns the value as a buffer
+	
+	@param value the value to serialize
+	
+	@return a buffer representing the serialized value
 ]]--
-Serialize.serialize = function(value: any): buffer
+BufferSerializer.serialize = function(value: any): buffer
 	local typeValue = type(value)
 	if typeValue == "function" or typeValue == "thread" then
 		typeValue = "nil"
@@ -21,13 +43,20 @@ Serialize.serialize = function(value: any): buffer
 
 	local serial = modules[typeValue]
 	if not serial then
-		serial = require(`./internal/{typeValue}`).serialize
+		serial = require(`@self/{typeValue}`).serialize
 		modules[typeValue] = serial
 	end
 	return trim(serial(value, nil, 0, 0))
 end
 
-Serialize.deserialize = function(value: buffer): any
+--[[
+	
+	
+	@param value
+	
+	@return 
+]]--
+BufferSerializer.deserialize = function(value: buffer): any
 	local pointer = buffer.readu8(value, 0)
 	if pointer == 0 then return nil end
 
@@ -55,14 +84,14 @@ Serialize.deserialize = function(value: buffer): any
 		return originalData
 	end
 
-	deserial = require(`./internal/{enumerator[pointer]}`).deserialize
+	deserial = require(`@self/{enumerator[pointer]}`).deserialize
 	modules[pointer] = deserial
 	
 	local originalData = deserial(value, 0)
 	return originalData
 end
 
-Serialize.pair = function(id: number, value: any): nil
+BufferSerializer.pair = function(id: number, value: any): nil
 	local typeV = type(value)
 	local maxId = if typeV == "string" then 1343
 		elseif typeV == "number" then 1055
@@ -70,13 +99,14 @@ Serialize.pair = function(id: number, value: any): nil
 		elseif typeV == "userdata" then 1039
 		else 0
 
+	assert(maxId ~= 0, `Invalid type {typeV} (must be string | number | vector | userdata)`)
 	assert(type(id) == "number" and id % 1 == 0 and id == id, `Invalid id {id} (must be integer)`)
 	assert(id >= 1 and id <= maxId, `Invalid id {id} (must be between 1 and {maxId})`)
 	assert(value == value, `Invalid value {value} (must be non-nan)`)
 
-	local mod = require(`./internal/{typeV}`)
+	local mod = require(`@self/{typeV}`)
 	mod.Read[id] = value
 	mod.Write[value] = id
 end
 
-return Serialize
+return BufferSerializer

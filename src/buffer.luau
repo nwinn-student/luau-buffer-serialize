@@ -1,9 +1,5 @@
 --!optimize 2
-local enumerator = require("./pointer/Enumerator")
-
-local inflate = enumerator.Methods.inflateBuffer
-
-enumerator = nil
+local inflate = require("./inflate")
 
 local EMPTY = 3
 local BYTE = 4

@@ -1,12 +1,5 @@
 --!optimize 2
-local enumerator = require("./pointer/Enumerator")
-
-local numSerializer = require("./number").serialize
-local numDeserializer = require("./number").deserialize
-
-local inflate = enumerator.Methods.inflateBuffer
-
-enumerator = nil
+local inflate = require("./inflate")
 
 local EMPTY = 9
 local BYTE = 10
@@ -76,7 +69,7 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 		buffer.writeu32(buf, pos + 1, len)
 	end
 
-	buffer.writestring(buf, pos + newSize, value, len)
+	buffer.writestring(buf, pos + newSize, value :: string, len)
 	return buf, pos + newSize + len, size
 end
 

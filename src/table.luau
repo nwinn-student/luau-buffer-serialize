@@ -1,5 +1,5 @@
 --!optimize 2
-local enumerator = require("./pointer/Enumerator")
+local inflate = require("./inflate")
 
 -- all
 local serialSwitch = {
@@ -13,17 +13,12 @@ local serialSwitch = {
 
 local nilSerializer = require("./nil").serialize
 
-local nilDeserializer = require("./nil").deserialize
 local boolDeserializer = require("./boolean").deserialize
 local bufDeserializer = require("./buffer").deserialize
 local strDeserializer = require("./string").deserialize
 local numDeserializer = require("./number").deserialize
 local vecDeserializer = require("./vector").deserialize
 local userDeserializer = require("./userdata").deserialize
-
-local inflate = enumerator.Methods.inflateBuffer
-
-enumerator = nil
 
 local EMPTY = 194
 local TABLE = 195
@@ -199,7 +194,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 				serialCache(key, typeKey)
 			end
 		
-			local cached = existing[element]
+			cached = existing[element]
 			if cached then
 				if pos + 3 > size then
 					buf, size = inflate(buf, pos + 3, size)
@@ -228,6 +223,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			-- store element
 			serialCache(element, typeElement)
 		end
+		
 		if oldPos == pos then
 			buffer.writeu8(buf, pos - 1, EMPTY)
 			existing[data] = nil

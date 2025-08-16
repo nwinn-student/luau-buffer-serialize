@@ -6,8 +6,8 @@
 	    Constitutes a set of benchmarks to run to ensure general performance does not degrade
 ]]--
 
-local bench = require("./Bench/Bench")
-local benchPrecision = require("./Bench/internal/Print").precision
+local bench = require("./Bench")
+local benchPrecision = require("./Bench/Print").precision
 
 local benchMethods = getmetatable(bench(function() end)).__index
 
@@ -45,7 +45,7 @@ function printType(name: string)
 	print(` | {name} [s / kB / bytes]`)
 end
 
-local bufferSerial = require("./BufferSerializer/BufferSerializer")
+local bufferSerial = require("./BufferSerializer")
 local serialize = bufferSerial.serialize
 local deserialize = bufferSerial.deserialize
 
