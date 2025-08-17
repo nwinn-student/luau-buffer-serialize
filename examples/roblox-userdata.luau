@@ -45,9 +45,8 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 			buf, size = inflate(buf, pos + 4, size)
 		end
 		buffer.writeu8(buf, pos, COLOR3)
-		buffer.writeu8(buf, pos + 1, value.R)
-		buffer.writeu8(buf, pos + 2, value.G)
-		buffer.writeu8(buf, pos + 3, value.B)
+		buffer.writebits(buf, (pos + 1)*8, 24, 
+			tonumber(value:ToHex(), 16))
 		pos += 4
 	elseif userType == "EnumItem" then
 		if pos + 3 > size then
@@ -98,9 +97,9 @@ end
 @native
 local function userdataReader(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
-	
+
 	local obj
-	
+
 	if id == BRICKCOLOR then
 		local valNum
 		valNum, pos = numberSerial.deserialize(buf, pos + 1)
@@ -108,10 +107,10 @@ local function userdataReader(buf: buffer, pos: number)
 			obj = BrickColor.new(valNum)
 		end
 	elseif id == COLOR3 then
-		obj = Color3.new(
-			buffer.readu8(buf, pos + 1),
+		obj = Color3.fromRGB(
+			buffer.readu8(buf, pos + 3),
 			buffer.readu8(buf, pos + 2),
-			buffer.readu8(buf, pos + 3)
+			buffer.readu8(buf, pos + 1)
 		)
 		pos += 4
 	elseif id == ENUMITEM then
@@ -156,7 +155,7 @@ local function userdataReader(buf: buffer, pos: number)
 			obj = Enum:GetEnums()[enumVal]
 		end
 	end
-	
+
 	return obj, pos
 end
 
@@ -165,8 +164,8 @@ userdataSerial.setWriter(userdataWriter)
 
 local testData = {
 	Clothing = { -- ID, Color
-		Shirt = {1, Color3.new(0, 0, 0)},
-		Pants = {2, Color3.new(255, 200, 155)}
+		Shirt = {1, Color3.new(0.666667, 0.894118, 1)},
+		Pants = {2, Color3.fromRGB(255, 200, 155)}
 	},
 	Location = CFrame.new(500, 500, 500)
 }
@@ -175,4 +174,4 @@ local serData = bufferSerial.serialize(testData)
 
 -- ...
 
-local deserData = bufferSerial.deserialize(testData)
+local deserData = bufferSerial.deserialize(serData)
