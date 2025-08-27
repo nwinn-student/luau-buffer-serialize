@@ -1,198 +1,198 @@
-SERIALIZING...
- | NIL [s / kB / bytes]
-    | nil (0)
-      3.999e-7 1.517e-2 1
- | BOOLEAN [s / kB / bytes]
-    | truthy (1)
-      2.999e-7 1.370e-2 1
-    | falsy (2)
-      4.000e-7 1.518e-2 1
- | BUFFER [s / kB / bytes]
-    | empty (3)
-      5.000e-7 1.562e-2 1
-    | byte (4)
-      6.000e-7 1.519e-2 3
-    | char (5)
-      6.999e-7 2.592e-1 259
-    | tryte (6)
-      4.579e-5 64.02 65540
-TESTED: 442 times and took 5.029702599999837 seconds
-    | int (7)
-      1.050e-2 16379.53256 16777221
- | STRING [s / kB / bytes]
-    | empty (9)
-      2.999e-7 1.419e-2 1
-    | byte (10)
-      3.000e-7 1.420e-2 3
-    | char (11)
-      4.000e-7 2.603e-1 259
-    | tryte (12)
-      4.510e-5 63.91 65540
-TESTED: 628 times and took 5.0250145999998495 seconds
-    | int (13)
-      7.185e-3 16383.89198 16777221
- | NUMBER [s / kB / bytes]
-    | zero (88)
-      3.000e-7 1.467e-2 1
-    | one (89)
-      2.000e-7 1.518e-2 1
-    | byte (90)
-      5.000e-7 1.517e-2 2
-    | char (91)
-      5.000e-7 1.517e-2 3
-    | tryte (92)
-      6.000e-7 1.517e-2 4
-    | int (93)
-      5.000e-7 1.517e-2 5
-    | float (94)
-      6.000e-7 3.034e-2 5
-    | double (95)
-      3.000e-7 1.518e-2 9
-    | nan (96)
-      2.000e-7 1.519e-2 1
- | VECTOR [s / kB / bytes]
-    | zero (136)
-      2.000e-7 1.468e-2 1
-    | one (137)
-      2.999e-7 1.517e-2 1
-    | x_axis (138)
-      2.999e-7 1.517e-2 1
-    | y_axis (139)
-      2.999e-7 1.517e-2 1
-    | z_axis (140)
-      4.000e-7 1.468e-2 1
-    | xy_axis (141)
-      2.999e-7 1.517e-2 1
-    | xz_axis (142)
-      3.000e-7 1.517e-2 1
-    | yz_axis (143)
-      2.999e-7 1.517e-2 1
-    | byte (144)
-      6.999e-7 1.517e-2 4
-    | char (145)
-      1.000e-6 1.517e-2 7
-    | tryte (146)
-      1.200e-6 1.714e-2 10
-    | float (147)
-      6.999e-7 1.958e-2 13
-    | number (148)
-      1.599e-6 7.174e-2 10
-    | scalar_number (149)
-      1.299e-6 4.616e-2 4
- | TABLE [s / kB / bytes]
-    | empty (194)
-      9.999e-7 9.043e-1 1
-    | table (195)
-      2.200e-6 9.482e-1 8
-    | existing (196)
-      1.600e-6 9.387e-1 6
-    | array (197)
-      1.899e-6 9.217e-1 3
-    | dict (198)
-      1.999e-6 9.525e-1 6
-    | array_end (199)
-      2.200e-6 9.500e-1 8
-    | table_end (200)
-      1.899e-6 9.182e-1 3
- | USERDATA [s / kB / bytes]
-    | nil (203)
-      3.000e-7 1.516e-2 1
-DESERIALIZING...
- | NIL [s / kB / bytes]
-    | nil (0)
-      9.999e-8 0
- | BOOLEAN [s / kB / bytes]
-    | truthy (1)
-      1.999e-7 4.882e-4
-    | falsy (2)
-      1.999e-7 0
- | BUFFER [s / kB / bytes]
-    | empty (3)
-      1.999e-7 4.882e-4 0
-    | byte (4)
-      3.000e-7 1.473e-2 1
-    | char (5)
-      3.999e-7 2.568e-1 256
-    | tryte (6)
-      4.669e-5 64 65536
-TESTED: 594 times and took 5.0036558000001605 seconds
-    | int (7)
-      7.258e-3 16383.88562 16777216
- | STRING [s / kB / bytes]
-    | empty (9)
-      1.999e-7 0
-    | byte (10)
-      3.000e-7 0
-    | char (11)
-      5.000e-7 0
-    | tryte (12)
-      3.600e-5 0
-TESTED: 487 times and took 5.009963299999981 seconds
-    | int (13)
-      9.798e-3 0
- | NUMBER [s / kB / bytes]
-    | zero (88)
-      3.999e-7 0
-    | one (89)
-      1.999e-7 0
-    | byte (90)
-      2.999e-7 0
-    | char (91)
-      2.999e-7 0
-    | tryte (92)
-      4.000e-7 0
-    | int (93)
-      3.999e-7 0
-    | float (94)
-      4.000e-7 0
-    | double (95)
-      3.999e-7 0
-    | nan (96)
-      2.999e-7 0
- | VECTOR [s / kB / bytes]
-    | zero (136)
-      2.999e-7 0
-    | one (137)
-      1.999e-7 0
-    | x_axis (138)
-      2.999e-7 0
-    | y_axis (139)
-      2.000e-7 0
-    | z_axis (140)
-      3.000e-7 0
-    | xy_axis (141)
-      3.999e-7 0
-    | xz_axis (142)
-      2.999e-7 0
-    | yz_axis (143)
-      2.999e-7 0
-    | byte (144)
-      4.000e-7 0
-    | char (145)
-      5.000e-7 0
-    | tryte (146)
-      6.999e-7 0
-    | float (147)
-      3.000e-7 0
-    | number (148)
-      1.399e-6 0
-    | scalar_number (149)
-      7.999e-7 0
- | TABLE [s / kB / bytes]
-    | empty (194)
-      9.000e-7 6.545e-1
-    | table (195)
-      2.499e-6 6.702e-1
-    | existing (196)
-      1.800e-6 6.392e-1
-    | array (197)
-      1.399e-6 6.25.e-1
-    | dict (198)
-      1.899e-6 6.543e-1
-    | array_end (199)
-      1.800e-6 6.728e-1
-    | table_end (200)
-      1.000e-6 6.251e-1
- | USERDATA [s / kB / bytes]
-    | nil (203)
-      4.000e-7 1.527e-2
+  SERIALIZING...
+   | NIL [s / kB / bytes]
+      | nil (0)
+        3.000e-7 1.565e-2 1
+   | BOOLEAN [s / kB / bytes]
+      | truthy (1)
+        2.000e-7 1.466e-2 1
+      | falsy (2)
+        3.000e-7 1.513e-2 1
+   | BUFFER [s / kB / bytes]
+      | empty (3)
+        3.999e-7 1.516e-2 1
+      | byte (4)
+        4.999e-7 1.418e-2 3
+      | char (5)
+        4.000e-7 2.601e-1 259
+      | tryte (6)
+        1.590e-5 64 65540
+  TESTED: 425 times and took 5.000665300000037 seconds
+      | int (7)
+        1.027e-2 16383.83623 16777221
+   | STRING [s / kB / bytes]
+      | empty (9)
+        4.000e-7 1.418e-2 1
+      | byte (10)
+        6.999e-7 1.418e-2 3
+      | char (11)
+        7.999e-7 2.609e-1 259
+      | tryte (12)
+        1.290e-5 64 65540
+  TESTED: 630 times and took 5.0057833000000755 seconds
+      | int (13)
+        6.402e-3 16383.89 16777221
+   | NUMBER [s / kB / bytes]
+      | zero (88)
+        3.000e-7 1.467e-2 1
+      | one (89)
+        4.000e-7 1.468e-2 1
+      | byte (90)
+        6.000e-7 1.418e-2 2
+      | char (91)
+        6.000e-7 1.469e-2 3
+      | tryte (92)
+        7.999e-7 1.418e-2 4
+      | int (93)
+        7.000e-7 1.419e-2 5
+      | float (94)
+        9.000e-7 3.180e-2 5
+      | double (95)
+        6.999e-7 1.565e-2 9
+      | nan (96)
+        4.999e-7 1.418e-2 1
+   | VECTOR [s / kB / bytes]
+      | zero (136)
+        4.999e-7 1.468e-2 1
+      | one (137)
+        5.000e-7 1.467e-2 1
+      | x_axis (138)
+        4.000e-7 1.419e-2 1
+      | y_axis (139)
+        4.000e-7 1.467e-2 1
+      | z_axis (140)
+        3.999e-7 1.468e-2 1
+      | xy_axis (141)
+        4.999e-7 1.467e-2 1
+      | xz_axis (142)
+        4.000e-7 1.468e-2 1
+      | yz_axis (143)
+        4.999e-7 1.467e-2 1
+      | byte (144)
+        1.000e-6 1.517e-2 4
+      | char (145)
+        1.200e-6 1.466e-2 7
+      | tryte (146)
+        1.500e-6 1.663e-2 10
+      | float (147)
+        1.099e-6 1.957e-2 13
+      | number (148)
+        1.600e-6 7.118e-2 10
+      | scalar_number (149)
+        1.099e-6 4.650e-2 4
+   | TABLE [s / kB / bytes]
+      | empty (194)
+        1.299e-6 1 1
+      | table (195)
+        2.400e-6 1.1 8
+      | existing (196)
+        1.800e-6 1 6
+      | array (197)
+        1.500e-6 1 3
+      | dict (198)
+        2.400e-6 1.1 6
+      | array_end (199)
+        2.799e-6 1.1 8
+      | table_end (200)
+        1.599e-6 1 3
+   | USERDATA [s / kB / bytes]
+      | nil (203)
+        4.000e-7 1.513e-2 1
+  DESERIALIZING...
+   | NIL [s / kB / bytes]
+      | nil (0)
+        1.000e-7 0
+   | BOOLEAN [s / kB / bytes]
+      | truthy (1)
+        3.000e-7 0
+      | falsy (2)
+        1.999e-7 0
+   | BUFFER [s / kB / bytes]
+      | empty (3)
+        3.000e-7 4.882e-4 0
+      | byte (4)
+        4.999e-7 1.513e-2 1
+      | char (5)
+        4.999e-7 2.566e-1 256
+      | tryte (6)
+        1.229e-5 64 65536
+  TESTED: 630 times and took 5.00489030000017 seconds
+      | int (7)
+        6.438e-3 16383.88982 16777216
+   | STRING [s / kB / bytes]
+      | empty (9)
+        1.999e-7 0
+      | byte (10)
+        4.000e-7 0
+      | char (11)
+        4.999e-7 0
+      | tryte (12)
+        3.350e-5 0
+  TESTED: 493 times and took 5.005233200000021 seconds
+      | int (13)
+        1.008e-2 0
+   | NUMBER [s / kB / bytes]
+      | zero (88)
+        1.999e-7 0
+      | one (89)
+        3.000e-7 0
+      | byte (90)
+        3.000e-7 0
+      | char (91)
+        3.000e-7 0
+      | tryte (92)
+        4.000e-7 0
+      | int (93)
+        3.000e-7 0
+      | float (94)
+        3.000e-7 0
+      | double (95)
+        3.000e-7 0
+      | nan (96)
+        3.000e-7 0
+   | VECTOR [s / kB / bytes]
+      | zero (136)
+        1.999e-7 0
+      | one (137)
+        3.000e-7 0
+      | x_axis (138)
+        3.000e-7 0
+      | y_axis (139)
+        3.000e-7 0
+      | z_axis (140)
+        3.000e-7 0
+      | xy_axis (141)
+        3.000e-7 0
+      | xz_axis (142)
+        3.000e-7 0
+      | yz_axis (143)
+        3.000e-7 0
+      | byte (144)
+        3.000e-7 0
+      | char (145)
+        3.000e-7 0
+      | tryte (146)
+        5.000e-7 0
+      | float (147)
+        3.000e-7 0
+      | number (148)
+        7.000e-7 0
+      | scalar_number (149)
+        3.000e-7 0
+   | TABLE [s / kB / bytes]
+      | empty (194)
+        7.999e-7 7.650e-1
+      | table (195)
+        1.500e-6 7.812e-1
+      | existing (196)
+        9.999e-7 7.468e-1
+      | array (197)
+        9.000e-7 7.338e-1
+      | dict (198)
+        1.200e-6 7.643e-1
+      | array_end (199)
+        1.500e-6 7.810e-1
+      | table_end (200)
+        7.000e-7 7.340e-1
+   | USERDATA [s / kB / bytes]
+      | nil (203)
+        3.000e-7 1.513e-2
