@@ -2,8 +2,14 @@
 --!strict
 local inflate = require("./inflate")
 
--- all
-local serialSwitch = {
+type Serialize = (data: any, buf: buffer, pos: number, size: number)
+	-> (buffer, number, number)
+
+type Switch<F> = {
+	[string]: F
+}
+
+local serialSwitch: Switch<Serialize> = {
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
 	string = require("./string").serialize,
@@ -281,11 +287,12 @@ function tabDeserializer(buf: buffer, pos: number)
 			value, pos = vecDeserializer(buf, pos)
 		elseif valId <= 201 then -- table
 			-- TODO: Maybe add cyclic checker here?
+			value = {}
 			if existingIndex < 61_440 then
 				existing[existingIndex] = value
 				existingIndex += 1
 			end
-			return deserialTable()
+			return deserialTable(value)
 		elseif valId <= 223 then -- userdata
 			value, pos = userDeserializer(buf, pos)
 		else 
@@ -314,7 +321,7 @@ function tabDeserializer(buf: buffer, pos: number)
 	end
 	
 	@native
-	function deserialTable(data: {[any]: any}?): {[any]: any}?
+	function deserialTable(data: {[any]: any}): {[any]: any}?
 		local id = buffer.readu8(buf, pos)
 		
 		pos += 1
@@ -322,11 +329,9 @@ function tabDeserializer(buf: buffer, pos: number)
 		if id == EMPTY then
 			existing[existingIndex - 1] = nil
 			existingIndex -= 1
-			return {}
+			return data
 		end
-		
-		data = data or {}
-		
+				
 		local hasArray = id == ARRAY or id == TABLE
 		
 		if not hasArray and id ~= DICT then
