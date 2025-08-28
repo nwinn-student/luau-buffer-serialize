@@ -46,7 +46,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	
 	local constants = {}
 	
-	local serialTable
+	local serialTable: (data: {[any]: any})->()
 	
 	buf, size = buffer.create(64), 64
 	
@@ -269,7 +269,7 @@ function tabDeserializer(buf: buffer, pos: number)
 	local existing = {[0] = returnedTab}
 	local roundRobinIndex = 61440
 		
-	local deserialTable
+	local deserialTable: (data: {[any]: any})->({[any]: any}?)
 	
 	@native
 	local function deserialCache(valId: number): any
