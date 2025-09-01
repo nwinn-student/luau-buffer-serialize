@@ -80,6 +80,9 @@ The dictSize variable represents the amount of bytes used to store all of the ke
 - [X] arrayend [199]: Used to terminate the array portion of a table
 - [X] tableend [200]: Used to terminate a table
 - [ ] UNKNOWN [201]: An approach that may be used in the future.
+- [ ] connecttable [224]: A mixed table if the previous byte was tableend, overwrites tableend
+- [ ] connectarray [225]: An array if the previous byte was tableend, overwrites tableend
+- [ ] connectdict [226]: A dictionary if the previous byte was tableend, overwrites tableend 
 
 `userdata`
 - [X] custom [202]: A user-defined function is used to read/write the information associated with the userdata (Takes 1+custom bytes)
@@ -88,4 +91,4 @@ The dictSize variable represents the amount of bytes used to store all of the ke
 - [X] char_constant_next [220-223]: The next byte stores the id of a userdata constant (Takes 2 bytes)
 
 `future`
-- [ ] future_approaches [224-255]: Approaches reserved for new types or expanding upon prior.
+- [ ] future_approaches [227-255]: Approaches reserved for new types or expanding upon prior.
