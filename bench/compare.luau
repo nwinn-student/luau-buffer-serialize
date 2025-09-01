@@ -7,8 +7,6 @@
 	    Roblox JSON will be faster than most other luau JSON implementations
 
 	Datasets (only table / number / string are used):
-		bench - created by https://github.com/nwinn-student/luau-bench
-		
 		Found at: https://github.com/jdorfman/awesome-json-datasets
 		food-facts - https://world.openfoodfacts.org/api/v0/product/5060292302201.json
 		pokedex - https://raw.githubusercontent.com/Biuni/PokemonGO-Pokedex/master/pokedex.json
@@ -90,7 +88,6 @@ function test(testData: {[any]: any}, name: string)
 		):print()
 end
 
-test(bench(function() end), "Bench")
 test(jsonDecode(json, require("./food-facts")), "Food Facts")
 test(jsonDecode(json, require("./pokedex")), "Pokedex")
 test(jsonDecode(json, require("./prize")), "Prize")
