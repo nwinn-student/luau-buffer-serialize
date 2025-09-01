@@ -3,7 +3,7 @@
 local inflate = require("./inflate")
 
 type Serialize = (data: any, buf: buffer, pos: number, size: number)
-	-> (buffer, number, number)
+-> (buffer, number, number)
 
 type Deserialize = (buf: buffer, pos: number) -> (any, number)
 
@@ -36,6 +36,10 @@ local ARRAY = 197
 local DICT = 198
 local ARRAY_END = 199
 local TABLE_END = 200
+-- futures
+local CONNECT_TABLE = 224
+local CONNECT_ARRAY = 225
+local CONNECT_DICT = 226
 
 @native
 function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: number)
@@ -94,7 +98,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	end
 	
 	@native
-	local function serialCache(data: any, typeName: string)
+	local function serialCache(data: any, typeName: string, isPrevTable: boolean)
 		if typeName == "table" then
 			-- ISSUE: A table cycle may be so deep that it bypasses existing altogether
 			-- We will need to ensure the cycle is nonproblematic
@@ -115,7 +119,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			
 			existingCache(data)
 			
-			serialTable(data)
+			serialTable(data, isPrevTable)
 			return
 		end
 		
@@ -132,17 +136,20 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 	end
 	
 	@native
-	function serialTable(data: {[any]: any})
+	function serialTable(data: {[any]: any}, prevTable: boolean)
 		local isDict = #data == 0
 		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
 		
-		pos += 1
+		if not prevTable then
+			pos += 1
+		end
 		
 		local oldPos = pos
 		local endArray = false
 		local lastIndex = 1
+		local isPrevTable = false
 		
 		for key, element in data do
 			-- Array section
@@ -157,6 +164,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 					buffer.writeu8(buf, pos, EQ_EXISTING)
 					buffer.writeu16(buf, pos + 1, cached)
 					pos += 3
+					isPrevTable = false
 					continue
 				end
 				cached = constants[element]
@@ -171,6 +179,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 						buffer.writeu16(buf, pos, cached)
 					end
 					pos += newSize
+					isPrevTable = false
 					continue
 				end
 				
@@ -183,10 +192,12 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 					end
 					buffer.writeu8(buf, pos, 0)
 					pos += 1
+					isPrevTable = false
 					continue
 				end
 				
-				serialCache(element, typeElement)
+				serialCache(element, typeElement, isPrevTable)
+				isPrevTable = typeElement == "table"
 				continue
 			end
 			if not endArray and not isDict then
@@ -233,7 +244,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 				pos += newSize
 			elseif not cached then
 				-- store key
-				serialCache(key, typeKey)
+				serialCache(key, typeKey, false)
 			end
 			
 			cached = existing[element]
@@ -263,16 +274,17 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			end
 			
 			-- store element
-			serialCache(element, typeElement)
+			serialCache(element, typeElement, false)
 		end
 		
 		if isDict then
-			buffer.writeu8(buf, oldPos - 1, DICT)
+			buffer.writeu8(buf, oldPos - 1, 
+				if prevTable then CONNECT_DICT else DICT)
 		else
 			buffer.writeu8(buf, oldPos - 1, 
 				if not endArray 
-				then ARRAY 
-				else TABLE)
+					then if prevTable then CONNECT_ARRAY else ARRAY 
+				else if prevTable then CONNECT_TABLE else TABLE)
 		end
 		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
@@ -281,7 +293,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 		pos += 1
 	end
 	
-	serialTable(value)	
+	serialTable(value, false)	
 	
 	table.clear(existing)
 	if roundRobinLength > 0 then
@@ -304,6 +316,7 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 	local existingIndex = 1
 	local existing: {[number]: any} = {[0] = returnedTab}
 	local roundRobinIndex = 61_440
+	local isConnected = false
 	
 	local deserialTable: (data: {[any]: any})->({[any]: any}?)
 	
@@ -332,7 +345,7 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 		elseif valId == TABLE
 			or valId == ARRAY
 			or valId == DICT then
-			
+
 			-- TODO: Maybe add cyclic checker here?
 			local value = {}
 			existingCache(value)
@@ -370,6 +383,13 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 	function deserialTable(data: {[any]: any}): {[any]: any}?
 		local id = buffer.readu8(buf, pos)
 		
+		if isConnected then
+			id = if id == CONNECT_TABLE then TABLE
+				elseif id == CONNECT_ARRAY then ARRAY
+				else DICT
+			isConnected = false
+		end
+		
 		pos += 1
 		
 		local hasArray = id == ARRAY or id == TABLE
@@ -390,6 +410,15 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 				if valId == TABLE_END then
 					pos += 1
 					return data -- for ARRAY
+				end
+				if isConnected then
+					valId = TABLE -- Not accurate, but it doesn't matter
+				elseif valId == CONNECT_ARRAY
+					or valId == CONNECT_DICT
+					or valId == CONNECT_TABLE then
+					isConnected = true
+					
+					return data
 				end
 				
 				index += 1
@@ -418,11 +447,20 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 				data[index] = value
 			end
 		end
-		
 		while true do
 			local valId = buffer.readu8(buf, pos)
+			
 			if valId == TABLE_END then
 				pos += 1
+				return data
+			end
+			if isConnected then
+				valId = TABLE -- Not accurate, but it doesn't matter
+			elseif valId == CONNECT_ARRAY
+				or valId == CONNECT_DICT
+				or valId == CONNECT_TABLE then
+				isConnected = true
+
 				return data
 			end
 			
