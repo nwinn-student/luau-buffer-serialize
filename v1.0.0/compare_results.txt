@@ -1,446 +1,452 @@
-  Name: Serial Food Facts
+Name: Serial Food Facts
     Speed: [seconds]
-        Min:    8.035e-4
-        Low:    8.777e-4
-        Median: 1.034e-3
-        Avg:    1.033e-3
-        High:   1.231e-3
-        Max:    1.817e-3
-        Total:  2.1
+        Min:    8.487e-4
+        Low:    8.910e-4
+        Median: 1.044e-3
+        Avg:    1.075e-3
+        High:   1.590e-3
+        Max:    3.870e-3
+        Total:  2.2
         Histogram:
-            187   (8.777e-4 to 9.218e-4)
-            191   (9.218e-4 to 9.660e-4)
-            267   (9.660e-4 to 1.010e-3)
-            599   (1.010e-3 to 1.054e-3)
-            366   (1.054e-3 to 1.098e-3)
-            122   (1.098e-3 to 1.142e-3)
-            74    (1.142e-3 to 1.186e-3)
-            38    (1.186e-3 to 1.231e-3)
+            263   (8.910e-4 to 9.784e-4)
+            1037  (9.784e-4 to 1.065e-3)
+            305   (1.065e-3 to 1.153e-3)
+            294   (1.153e-3 to 1.240e-3)
+            61    (1.240e-3 to 1.328e-3)
+            35    (1.328e-3 to 1.415e-3)
+            4     (1.415e-3 to 1.502e-3)
+            10    (1.502e-3 to 1.590e-3)
     Memory: [kB]
         Min:    153
         Low:    154
         Median: 157
-        Avg:    156.508
+        Avg:    156.689
         High:   157
-        Max:    160
-        Total:  212381
+        Max:    157
+        Total:  229079
         Histogram:
-            97    (154 to 154.375)
-            60    (154.75 to 155.125)
-            181   (155.875 to 156.25)
-            982   (156.625 to 157)
+            5     (154 to 154.375)
+            388   (155.875 to 156.25)
+            1056  (156.625 to 157)
     Size: 26504
-  Name: JSON Food Facts
+TESTED: 1303 times and took 5.00235180000027 seconds
+Name: JSON Food Facts
     Speed: [seconds]
-        Median: 5.431e-4
+        Median: 3.795e-3
     Memory: [kB]
-        Avg:    1.904e-2
-    Size:   40271 bytes
-  Name: MsgpackEncode Food Facts
+        Avg:    397.728
+    Size:   39632 bytes
+Name: MsgpackEncode Food Facts
     Speed: [seconds]
-        Median: 6.558e-4
+        Median: 6.284e-4
     Memory: [kB]
-        Avg:    48.63
+        Avg:    49.41
     Size:   34204 bytes
-  
+
 Comparing against Serial Food Facts...
 
 Name: JSON Food Facts
     Speed: [seconds]
-        Min:    -3.423e-4  (-42.6%)
-        Low:    -4.073e-4  (-46.4%)
-        Median: -4.912e-4  (-47.5%)
-        Avg:    -4.839e-4  (-46.8%)
-        High:   -5.768e-4  (-46.9%)
-        Max:    -9.476e-4  (-52.1%)
-        Total:  -9.911e-1  (-46.8%)
+        Min:    +2.588e-3  (+305%)
+        Low:    +2.608e-3  (+292.7%)
+        Median: +2.751e-3  (+263.4%)
+        Avg:    +2.763e-3  (+257%)
+        High:   +2.851e-3  (+179.3%)
+        Max:    +2.845e-3  (+73.5%)
+        Total:  +2.8       (+127.1%)
     Memory: [kB]
         Min:    -153       (-100%)
         Low:    -154       (-100%)
-        Median: -157       (-100%)
-        Avg:    -156.489   (-100%)
-        High:   -157       (-100%)
-        Max:    -121       (-75.6%)
-        Total:  -212342    (-100%)
+        Median: +383       (+243.9%)
+        Avg:    +241.039   (+153.8%)
+        High:   +530       (+337.6%)
+        Max:    +540       (+343.9%)
+        Total:  -783       (-0.3%)
 Name: MsgpackEncode Food Facts
     Speed: [seconds]
-        Min:    -2.061e-4  (-25.7%)
-        Low:    -2.719e-4  (-31%)
-        Median: -3.785e-4  (-36.6%)
-        Avg:    -3.624e-4  (-35.1%)
-        High:   -4.401e-4  (-35.8%)
-        Max:    -5.681e-4  (-31.3%)
-        Total:  -7.422e-1  (-35.1%)
+        Min:    -2.774e-4  (-32.7%)
+        Low:    -3.064e-4  (-34.4%)
+        Median: -4.159e-4  (-39.8%)
+        Avg:    -4.390e-4  (-40.8%)
+        High:   -7.683e-4  (-48.3%)
+        Max:    -2.819e-3  (-72.8%)
+        Total:  -8.992e-1  (-40.8%)
     Memory: [kB]
-        Min:    -152       (-99.3%)
+        Min:    -142       (-92.8%)
         Low:    -105       (-68.2%)
         Median: -108       (-68.8%)
-        Avg:    -107.883   (-68.9%)
+        Avg:    -107.28    (-68.5%)
         High:   -107       (-68.2%)
-        Max:    -108       (-67.5%)
-        Total:  -126509    (-59.6%)
+        Max:    -107       (-68.2%)
+        Total:  -136586    (-59.6%)
 
-  Name: Deserial Food Facts
+Name: Deserial Food Facts
     Speed: [seconds]
-        Min:    7.659e-4
-        Low:    8.061e-4
-        Median: 9.497e-4
-        Avg:    9.481e-4
-        High:   1.082e-3
-        Max:    1.585e-3
-        Total:  1.9
+        Min:    7.095e-4
+        Low:    7.196e-4
+        Median: 8.216e-4
+        Avg:    8.445e-4
+        High:   1.045e-3
+        Max:    3.322e-3
+        Total:  1.7
         Histogram:
-            82    (8.061e-4 to 8.407e-4)
-            201   (8.407e-4 to 8.752e-4)
-            350   (8.752e-4 to 9.097e-4)
-            248   (9.097e-4 to 9.443e-4)
-            366   (9.443e-4 to 9.788e-4)
-            309   (9.788e-4 to 1.013e-3)
-            189   (1.013e-3 to 1.047e-3)
-            99    (1.047e-3 to 1.082e-3)
+            92    (7.196e-4 to 7.604e-4)
+            595   (7.604e-4 to 8.011e-4)
+            458   (8.011e-4 to 8.418e-4)
+            347   (8.418e-4 to 8.825e-4)
+            254   (8.825e-4 to 9.232e-4)
+            162   (9.232e-4 to 9.639e-4)
+            86    (9.639e-4 to 1.004e-3)
+            14    (1.004e-3 to 1.045e-3)
     Memory: [kB]
-        Min:    1
-        Low:    103
-        Median: 103
-        Avg:    103.112
-        High:   104
-        Max:    105
-        Total:  160442
+        Low:    62
+        Median: 111
+        Avg:    110.248
+        High:   112
+        Max:    112
+        Total:  192163
         Histogram:
-            769   (103 to 103.125)
-            756   (103.875 to 104)
-  
+            2     (62 to 68.25)
+            9     (87 to 93.25)
+            7     (93.25 to 99.5)
+            5     (99.5 to 105.75)
+            1704  (105.75 to 112)
+TESTED: 828 times and took 5.001492399999734 seconds
+
 Comparing against Deserial Food Facts...
 
 Name: JSONDecode Food Facts
     Speed: [seconds]
-        Min:    -5.959e-5  (-7.8%)
-        Low:    -6.759e-5  (-8.4%)
-        Median: -6.570e-5  (-6.9%)
-        Avg:    -5.650e-5  (-6%)
-        High:   -5.100e-6  (-0.5%)
-        Max:    -8.859e-5  (-5.6%)
-        Total:  -1.157e-1  (-6%)
+        Min:    +5.016e-3  (+707%)
+        Low:    +5.033e-3  (+699.4%)
+        Median: +5.232e-3  (+636.8%)
+        Avg:    +5.195e-3  (+615.2%)
+        High:   +5.381e-3  (+514.8%)
+        Max:    +5.096e-3  (+153.4%)
+        Total:  +3.3       (+189.2%)
     Memory: [kB]
-        Min:    -1         (-100%)
-        Low:    -28        (-27.2%)
-        Median: -28        (-27.2%)
-        Avg:    -28.2      (-27.3%)
-        High:   -29        (-27.9%)
-        Max:    -30        (-28.6%)
-        Total:  -35036     (-21.8%)
+        Low:    -28        (-45.2%)
+        Median: -34        (-30.6%)
+        Avg:    -34.05     (-30.9%)
+        High:   -34        (-30.4%)
+        Max:    -34        (-30.4%)
+        Total:  -136389    (-71%)
 Name: MsgpackDecode Food Facts
     Speed: [seconds]
-        Min:    -9.559e-5  (-12.5%)
-        Low:    -9.059e-5  (-11.2%)
-        Median: -1.399e-4  (-14.7%)
-        Avg:    -1.219e-4  (-12.9%)
-        High:   -9.720e-5  (-9%)
-        Max:    -4.479e-5  (-2.8%)
-        Total:  -2.497e-1  (-12.9%)
+        Min:    -2.569e-5  (-3.6%)
+        Low:    -3.130e-5  (-4.3%)
+        Median: -7.520e-5  (-9.2%)
+        Avg:    -7.335e-5  (-8.7%)
+        High:   -9.869e-5  (-9.4%)
+        Max:    -1.870e-3  (-56.3%)
+        Total:  -1.502e-1  (-8.7%)
     Memory: [kB]
-        Min:    +27        (+2700%)
-        Low:    +6         (+5.8%)
-        Median: +6         (+5.8%)
-        Avg:    +5.7       (+5.5%)
-        High:   +5         (+4.8%)
-        Max:    +5         (+4.8%)
-        Total:  +14735     (+9.2%)
+        Low:    +44        (+71%)
+        Median: -2         (-1.8%)
+        Avg:    -1.7       (-1.5%)
+        High:   -3         (-2.7%)
+        Max:    -3         (-2.7%)
+        Total:  +3885      (+2%)
 
-  Name: Serial Pokedex
+Name: Serial Pokedex
     Speed: [seconds]
-        Min:    1.004e-3
-        Low:    1.074e-3
-        Median: 1.312e-3
-        Avg:    1.289e-3
-        High:   1.496e-3
-        Max:    2.204e-3
-        Total:  2.6
+        Min:    1.037e-3
+        Low:    1.082e-3
+        Median: 1.293e-3
+        Avg:    1.306e-3
+        High:   1.616e-3
+        Max:    1.850e-3
+        Total:  2.7
         Histogram:
-            271   (1.074e-3 to 1.127e-3)
-            176   (1.127e-3 to 1.179e-3)
-            61    (1.179e-3 to 1.232e-3)
-            166   (1.232e-3 to 1.285e-3)
-            524   (1.285e-3 to 1.338e-3)
-            399   (1.338e-3 to 1.390e-3)
-            160   (1.390e-3 to 1.443e-3)
-            87    (1.443e-3 to 1.496e-3)
+            31    (1.082e-3 to 1.148e-3)
+            7     (1.148e-3 to 1.215e-3)
+            664   (1.215e-3 to 1.282e-3)
+            1040  (1.282e-3 to 1.349e-3)
+            181   (1.349e-3 to 1.416e-3)
+            42    (1.416e-3 to 1.483e-3)
+            28    (1.483e-3 to 1.550e-3)
+            15    (1.550e-3 to 1.616e-3)
     Memory: [kB]
-        Min:    156
+        Min:    122
         Low:    159
         Median: 160
-        Avg:    159.723
+        Avg:    159.561
         High:   160
-        Max:    163
-        Total:  223931
+        Max:    160
+        Total:  238703
         Histogram:
-            315   (159 to 159.125)
-            1019  (159.875 to 160)
+            571   (159 to 159.125)
+            912   (159.875 to 160)
     Size: 29435
-  Name: JSON Pokedex
+TESTED: 860 times and took 5.000789899999745 seconds
+Name: JSON Pokedex
     Speed: [seconds]
-        Median: 7.677e-4
+        Median: 5.838e-3
     Memory: [kB]
-        Avg:    0
+        Avg:    337.041
     Size:   54619 bytes
-  Name: MsgpackEncode Pokedex
+Name: MsgpackEncode Pokedex
     Speed: [seconds]
-        Median: 1.320e-3
+        Median: 1.238e-3
     Memory: [kB]
-        Avg:    76.09
+        Avg:    76.05
     Size:   45094 bytes
-  
+
 Comparing against Serial Pokedex...
 
 Name: JSON Pokedex
     Speed: [seconds]
-        Min:    -3.544e-4  (-35.3%)
-        Low:    -4.163e-4  (-38.7%)
-        Median: -5.446e-4  (-41.5%)
-        Avg:    -5.018e-4  (-38.9%)
-        High:   -4.772e-4  (-31.9%)
-        Max:    +2.362e-4  (+10.7%)
-        Total:  -1         (-38.9%)
+        Min:    +4.175e-3  (+402.6%)
+        Low:    +4.217e-3  (+389.8%)
+        Median: +4.545e-3  (+351.3%)
+        Avg:    +4.508e-3  (+345.2%)
+        High:   +4.901e-3  (+303.1%)
+        Max:    +7.149e-3  (+386.4%)
+        Total:  +2.3       (+86.9%)
     Memory: [kB]
-        Min:    -156       (-100%)
+        Min:    -122       (-100%)
         Low:    -159       (-100%)
-        Median: -160       (-100%)
-        Avg:    -159.723   (-100%)
-        High:   -160       (-100%)
-        Max:    -163       (-100%)
-        Total:  -223931    (-100%)
+        Median: +53        (+33.1%)
+        Avg:    +177.48    (+111.2%)
+        High:   +561       (+350.6%)
+        Max:    +579       (+361.9%)
+        Total:  -64790     (-27.1%)
 Name: MsgpackEncode Pokedex
     Speed: [seconds]
-        Min:    +1.816e-4  (+18.1%)
-        Low:    +1.452e-4  (+13.5%)
-        Median: +7.999e-6  (+0.6%)
-        Avg:    +7.760e-5  (+6%)
-        High:   +1.813e-4  (+12.1%)
-        Max:    +6.385e-4  (+29%)
-        Total:  +1.589e-1  (+6%)
+        Min:    +1.513e-4  (+14.6%)
+        Low:    +1.159e-4  (+10.7%)
+        Median: -5.509e-5  (-4.3%)
+        Avg:    -5.901e-5  (-4.5%)
+        High:   -2.113e-4  (-13.1%)
+        Max:    -1.780e-4  (-9.6%)
+        Total:  -1.208e-1  (-4.5%)
     Memory: [kB]
-        Min:    -82        (-52.6%)
+        Min:    -82        (-67.2%)
         Low:    -83        (-52.2%)
         Median: -84        (-52.5%)
-        Avg:    -83.63     (-52.4%)
+        Avg:    -83.51     (-52.3%)
         High:   -83        (-51.9%)
-        Max:    -85        (-52.1%)
-        Total:  -86361     (-38.6%)
+        Max:    -82        (-51.3%)
+        Total:  -92302     (-38.7%)
 
-  Name: Deserial Pokedex
+Name: Deserial Pokedex
     Speed: [seconds]
-        Min:    1.390e-3
-        Low:    1.531e-3
-        Median: 1.816e-3
-        Avg:    1.833e-3
-        High:   2.169e-3
-        Max:    3.179e-3
-        Total:  3.8
+        Min:    1.408e-3
+        Low:    1.428e-3
+        Median: 1.703e-3
+        Avg:    1.724e-3
+        High:   2.093e-3
+        Max:    2.382e-3
+        Total:  3.5
         Histogram:
-            156   (1.531e-3 to 1.611e-3)
-            248   (1.611e-3 to 1.691e-3)
-            251   (1.691e-3 to 1.771e-3)
-            422   (1.771e-3 to 1.850e-3)
-            325   (1.850e-3 to 1.930e-3)
-            235   (1.930e-3 to 2.010e-3)
-            138   (2.010e-3 to 2.090e-3)
-            69    (2.090e-3 to 2.169e-3)
+            75    (1.428e-3 to 1.511e-3)
+            50    (1.511e-3 to 1.594e-3)
+            783   (1.594e-3 to 1.677e-3)
+            437   (1.677e-3 to 1.760e-3)
+            346   (1.760e-3 to 1.844e-3)
+            127   (1.844e-3 to 1.927e-3)
+            123   (1.927e-3 to 2.010e-3)
+            67    (2.010e-3 to 2.093e-3)
     Memory: [kB]
         Min:    1
-        Low:    186
+        Low:    134
         Median: 187
-        Avg:    184.98
+        Avg:    185.484
         High:   187
         Max:    187
-        Total:  271365
+        Total:  311798
         Histogram:
-            272   (186 to 186.125)
-            1161  (186.875 to 187)
-  
+            1     (134 to 140.625)
+            1     (160.5 to 167.125)
+            1664  (180.375 to 187)
+TESTED: 509 times and took 5.000635699999748 seconds
+
 Comparing against Deserial Pokedex...
 
 Name: JSONDecode Pokedex
     Speed: [seconds]
-        Min:    -3.520e-4  (-25.3%)
-        Low:    -4.029e-4  (-26.3%)
-        Median: -4.698e-4  (-25.9%)
-        Avg:    -4.299e-4  (-23.4%)
-        High:   -2.431e-4  (-11.2%)
-        Max:    +2.593e-4  (+8.2%)
-        Total:  -8.804e-1  (-23.4%)
+        Min:    +7.908e-3  (+561.6%)
+        Low:    +8.086e-3  (+566.3%)
+        Median: +8.043e-3  (+472.1%)
+        Avg:    +8.099e-3  (+469.6%)
+        High:   +8.665e-3  (+413.8%)
+        Max:    +1.236e-2  (+519%)
+        Total:  +1.5       (+41.6%)
     Memory: [kB]
         Min:    -1         (-100%)
-        Low:    -35        (-18.8%)
-        Median: -36        (-19.3%)
-        Avg:    -35.32     (-19.1%)
-        High:   -35        (-18.7%)
-        Max:    -35        (-18.7%)
-        Total:  -37141     (-13.7%)
+        Low:    -42        (-31.3%)
+        Median: -33        (-17.6%)
+        Avg:    -32.42     (-17.5%)
+        High:   -32        (-17.1%)
+        Max:    -31        (-16.6%)
+        Total:  -245674    (-78.8%)
 Name: MsgpackDecode Pokedex
     Speed: [seconds]
-        Min:    -1.819e-4  (-13.1%)
-        Low:    -2.250e-4  (-14.7%)
-        Median: -3.571e-4  (-19.7%)
-        Avg:    -3.498e-4  (-19.1%)
-        High:   -4.590e-4  (-21.2%)
-        Max:    -7.190e-4  (-22.6%)
-        Total:  -7.165e-1  (-19.1%)
+        Min:    -1.400e-4  (-9.9%)
+        Low:    -1.477e-4  (-10.3%)
+        Median: -3.038e-4  (-17.8%)
+        Avg:    -2.827e-4  (-16.4%)
+        High:   -2.878e-4  (-13.7%)
+        Max:    +3.599e-5  (+1.5%)
+        Total:  -5.791e-1  (-16.4%)
     Memory: [kB]
-        Min:    +18        (+1800%)
-        Low:    +9         (+4.8%)
+        Min:    -1         (-100%)
+        Low:    +60        (+44.8%)
         Median: +8         (+4.3%)
-        Avg:    +8.4       (+4.5%)
+        Avg:    +8.9       (+4.8%)
         High:   +9         (+4.8%)
         Max:    +9         (+4.8%)
-        Total:  +23867     (+8.8%)
+        Total:  +30961     (+9.9%)
 
-  TESTED: 1406 times and took 5.001625899999908 seconds
-  Name: Serial Prize
+TESTED: 1383 times and took 5.00010390000034 seconds
+Name: Serial Prize
     Speed: [seconds]
-        Min:    2.817e-3
-        Low:    2.920e-3
-        Median: 3.541e-3
-        Avg:    3.556e-3
-        High:   4.255e-3
-        Max:    6.355e-3
+        Min:    2.842e-3
+        Low:    2.956e-3
+        Median: 3.531e-3
+        Avg:    3.615e-3
+        High:   5.046e-3
+        Max:    7.828e-3
         Total:  5
         Histogram:
-            147   (2.920e-3 to 3.087e-3)
-            64    (3.087e-3 to 3.254e-3)
-            86    (3.254e-3 to 3.420e-3)
-            480   (3.420e-3 to 3.587e-3)
-            301   (3.587e-3 to 3.754e-3)
-            115   (3.754e-3 to 3.921e-3)
-            43    (3.921e-3 to 4.088e-3)
-            30    (4.088e-3 to 4.255e-3)
+            35    (2.956e-3 to 3.217e-3)
+            466   (3.217e-3 to 3.478e-3)
+            560   (3.478e-3 to 3.739e-3)
+            260   (3.739e-3 to 4.001e-3)
+            13    (4.001e-3 to 4.262e-3)
+            5     (4.262e-3 to 4.523e-3)
+            6     (4.523e-3 to 4.785e-3)
+            12    (4.785e-3 to 5.046e-3)
     Memory: [kB]
-        Min:    629
-        Low:    629
+        Min:    355
+        Low:    356
         Median: 629
-        Avg:    629.247
+        Avg:    612.778
         High:   630
         Max:    630
-        Total:  706644
+        Total:  773939
         Histogram:
-            846   (629 to 629.125)
-            277   (629.875 to 630)
+            66    (356 to 390.25)
+            1     (493 to 527.25)
+            1186  (595.75 to 630)
     Size: 119042
-  Name: JSON Prize
+TESTED: 264 times and took 5.0062895000000935 seconds
+Name: JSON Prize
     Speed: [seconds]
-        Median: 2.365e-3
+        Median: 1.890e-2
     Memory: [kB]
-        Avg:    0
+        Avg:    313.078
     Size:   213804 bytes
-  TESTED: 1577 times and took 5.002093699999932 seconds
-  Name: MsgpackEncode Prize
+TESTED: 1677 times and took 5.000152400000388 seconds
+Name: MsgpackEncode Prize
     Speed: [seconds]
-        Median: 3.124e-3
+        Median: 2.968e-3
     Memory: [kB]
-        Avg:    298.052
+        Avg:    303.866
     Size:   183413 bytes
-  
+
 Comparing against Serial Prize...
 
 Name: JSON Prize
     Speed: [seconds]
-        Min:    -9.358e-4  (-33.2%)
-        Low:    -9.774e-4  (-33.5%)
-        Median: -1.176e-3  (-33.2%)
-        Avg:    -1.167e-3  (-32.8%)
-        High:   -1.480e-3  (-34.8%)
-        Max:    -1.856e-3  (-29.2%)
-        Total:  -1.075e-1  (-2.2%)
+        Min:    +1.471e-2  (+517.6%)
+        Low:    +1.467e-2  (+496.5%)
+        Median: +1.537e-2  (+435.5%)
+        Avg:    +1.534e-2  (+424.5%)
+        High:   +1.575e-2  (+312.3%)
+        Max:    +1.485e-2  (+189.7%)
+        Total:  +6.495e-3  (+0.1%)
     Memory: [kB]
-        Min:    -629       (-100%)
-        Low:    -629       (-100%)
-        Median: -629       (-100%)
-        Avg:    -629.247   (-100%)
-        High:   -630       (-100%)
-        Max:    -630       (-100%)
-        Total:  -706644    (-100%)
+        Min:    -355       (-100%)
+        Low:    -356       (-100%)
+        Median: -614       (-97.6%)
+        Avg:    -299.7     (-48.9%)
+        High:   +2255      (+357.9%)
+        Max:    +2908      (+461.6%)
+        Total:  -726038    (-93.8%)
 Name: MsgpackEncode Prize
     Speed: [seconds]
-        Min:    -4.149e-5  (-1.5%)
-        Low:    -6.430e-5  (-2.2%)
-        Median: -4.177e-4  (-11.8%)
-        Avg:    -3.852e-4  (-10.8%)
-        High:   -7.577e-4  (-17.8%)
-        Max:    +2.789e-4  (+4.4%)
-        Total:  +6.060e-4  (+0%)
+        Min:    -2.732e-4  (-9.6%)
+        Low:    -3.547e-4  (-12%)
+        Median: -5.627e-4  (-15.9%)
+        Avg:    -6.338e-4  (-17.5%)
+        High:   -7.098e-4  (-14.1%)
+        Max:    -2.216e-3  (-28.3%)
+        Total:  -6.700e-5  (-0%)
     Memory: [kB]
-        Min:    -578       (-91.9%)
-        Low:    -322       (-51.2%)
+        Min:    -255       (-71.8%)
+        Low:    -177       (-49.7%)
         Median: -322       (-51.2%)
-        Avg:    -331.195   (-52.6%)
+        Avg:    -308.913   (-50.4%)
         High:   -322       (-51.1%)
-        Max:    -320       (-50.8%)
-        Total:  -253605    (-35.9%)
+        Max:    -322       (-51.1%)
+        Total:  -280461    (-36.2%)
 
-  TESTED: 970 times and took 5.0021842999999535 seconds
-  Name: Deserial Prize
+TESTED: 997 times and took 5.002946600000087 seconds
+Name: Deserial Prize
     Speed: [seconds]
-        Min:    4.095e-3
-        Low:    4.419e-3
-        Median: 5.142e-3
-        Avg:    5.156e-3
-        High:   5.995e-3
-        Max:    8.151e-3
+        Min:    4.164e-3
+        Low:    4.486e-3
+        Median: 4.905e-3
+        Avg:    5.017e-3
+        High:   6.166e-3
+        Max:    6.847e-3
         Total:  5
         Histogram:
-            88    (4.419e-3 to 4.616e-3)
-            94    (4.616e-3 to 4.813e-3)
-            134   (4.813e-3 to 5.010e-3)
-            200   (5.010e-3 to 5.207e-3)
-            189   (5.207e-3 to 5.404e-3)
-            94    (5.404e-3 to 5.601e-3)
-            51    (5.601e-3 to 5.798e-3)
-            24    (5.798e-3 to 5.995e-3)
+            120   (4.486e-3 to 4.696e-3)
+            371   (4.696e-3 to 4.906e-3)
+            223   (4.906e-3 to 5.116e-3)
+            99    (5.116e-3 to 5.326e-3)
+            56    (5.326e-3 to 5.536e-3)
+            52    (5.536e-3 to 5.746e-3)
+            48    (5.746e-3 to 5.956e-3)
+            10    (5.956e-3 to 6.166e-3)
     Memory: [kB]
-        Low:    572
+        Low:    278
         Median: 572
-        Avg:    555.203
+        Avg:    566.616
         High:   573
         Max:    573
-        Total:  355885
+        Total:  450460
         Histogram:
-            305   (572 to 572.125)
-            306   (572.875 to 573)
-  TESTED: 1253 times and took 5.001247500000318 seconds
-  TESTED: 1351 times and took 5.002710499999921 seconds
-  
+            4     (278 to 314.875)
+            2     (462.375 to 499.25)
+            783   (536.125 to 573)
+TESTED: 161 times and took 5.014727700000094 seconds
+TESTED: 1324 times and took 5.001280599999973 seconds
+
 Comparing against Deserial Prize...
 
 Name: JSONDecode Prize
     Speed: [seconds]
-        Min:    -9.353e-4  (-22.8%)
-        Low:    -1.080e-3  (-24.4%)
-        Median: -1.141e-3  (-22.2%)
-        Avg:    -1.165e-3  (-22.6%)
-        High:   -1.386e-3  (-23.1%)
-        Max:    -1.952e-3  (-24%)
-        Total:  -9.984e-4  (-0%)
+        Min:    +2.605e-2  (+625.6%)
+        Low:    +2.573e-2  (+573.6%)
+        Median: +2.604e-2  (+531.1%)
+        Avg:    +2.612e-2  (+520.8%)
+        High:   +2.749e-2  (+445.9%)
+        Max:    +2.719e-2  (+397.2%)
+        Total:  +1.208e-2  (+0.2%)
     Memory: [kB]
-        Min:    +55        (+inf%)
-        Low:    -104       (-18.2%)
-        Median: -104       (-18.2%)
-        Avg:    -92.12     (-16.6%)
-        High:   -104       (-18.2%)
-        Max:    -104       (-18.2%)
-        Total:  +54402     (+15.3%)
+        Min:    +9         (+inf%)
+        Low:    -269       (-96.8%)
+        Median: -96        (-16.8%)
+        Avg:    -95.93     (-16.9%)
+        High:   -73        (-12.7%)
+        Max:    -67        (-11.7%)
+        Total:  -388330    (-86.2%)
 Name: MsgpackDecode Prize
     Speed: [seconds]
-        Min:    -1.014e-3  (-24.8%)
-        Low:    -1.121e-3  (-25.4%)
-        Median: -1.434e-3  (-27.9%)
-        Avg:    -1.453e-3  (-28.2%)
-        High:   -1.863e-3  (-31.1%)
-        Max:    -2.250e-3  (-27.6%)
-        Total:  +4.332e-4  (+0%)
+        Min:    -8.751e-4  (-21%)
+        Low:    -1.054e-3  (-23.5%)
+        Median: -1.243e-3  (-25.3%)
+        Avg:    -1.240e-3  (-24.7%)
+        High:   -1.478e-3  (-24%)
+        Max:    -1.187e-3  (-17.3%)
+        Total:  -1.788e-3  (-0%)
     Memory: [kB]
-        Min:    +109       (+inf%)
-        Low:    +75        (+13.1%)
-        Median: +75        (+13.1%)
-        Avg:    +88.94     (+16%)
+        Low:    +352       (+126.6%)
+        Median: +76        (+13.3%)
+        Avg:    +78.55     (+13.9%)
         High:   +75        (+13.1%)
         Max:    +75        (+13.1%)
-        Total:  +229000    (+64.3%)
+        Total:  +256640    (+57%)

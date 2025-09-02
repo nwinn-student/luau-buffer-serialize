@@ -7,7 +7,8 @@
 	Notes:
 	    Bench can be found at https://github.com/nwinn-student/luau-bench
 	    msgpack can be found at https://github.com/cipharius/msgpack-luau
-	    Roblox JSON will be faster than most other luau JSON implementations
+	    json can be found at https://github.com/rxi/json.lua
+		You do have to comment out line 78 though since it applies to a different JSON format
 
 	Datasets (only table / number / string are used):
 		Found at: https://github.com/jdorfman/awesome-json-datasets
@@ -48,13 +49,9 @@ local bufferSerial = require("./BufferSerializer")
 local serialize = bufferSerial.serialize
 local deserialize = bufferSerial.deserialize
 
--- For Roblox this could be a wrapper to HTTPService's JSONEncode
--- For Non-Roblox this could just be another JSON library
 local json = require("./json")
-
--- We assume typical calls are json:Encode(data)
-local jsonEncode = json.Encode
-local jsonDecode = json.Decode
+local jsonEncode = json.encode
+local jsonDecode = json.decode
 
 local msgpack = require("./msgpack")
 local msgpackEncode = msgpack.encode
@@ -69,7 +66,7 @@ function test(testData: {[any]: any}, name: string)
 		-- Add task.wait() if supported
 		:print()
 		:compare(
-			bench(jsonEncode, json, testData)
+			bench(jsonEncode, testData)
 				:summarize(`JSON {name}`),
 			bench(msgpackEncode, testData)
 				:summarize(`MsgpackEncode {name}`)
@@ -81,7 +78,7 @@ function test(testData: {[any]: any}, name: string)
 		-- Add task.wait() if supported
 		:print()
 		:compare(
-			bench(jsonDecode, json, jsonEncode(json, testData))
+			bench(jsonDecode, jsonEncode(testData))
 				-- Add task.wait() if supported
 				:withName(`JSONDecode {name}`),
 			bench(msgpackDecode, msgpackEncode(testData))
@@ -90,6 +87,6 @@ function test(testData: {[any]: any}, name: string)
 		):print()
 end
 
-test(jsonDecode(json, require("./food-facts")), "Food Facts")
-test(jsonDecode(json, require("./pokedex")), "Pokedex")
-test(jsonDecode(json, require("./prize")), "Prize")
+test(jsonDecode(require("./food-facts")), "Food Facts")
+test(jsonDecode(require("./pokedex")), "Pokedex")
+test(jsonDecode(require("./prize")), "Prize")
