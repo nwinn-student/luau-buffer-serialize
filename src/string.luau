@@ -2,11 +2,26 @@
 --!strict
 local inflate = require("./inflate")
 
-local EMPTY = 9
-local BYTE = 10
-local CHAR = 11
-local THREE_BYTE = 12
-local INT = 13
+local EMPTY = 8
+local BYTE = 9
+local CHAR = 10
+local THREE_BYTE = 11
+local INT = 12
+local STRING_1 = 13
+local STRING_2 = 14
+local STRING_3 = 15
+local STRING_4 = 16
+local STRING_5 = 17
+local STRING_6 = 18
+local STRING_7 = 19
+local STRING_8 = 20
+local STRING_9 = 21
+local STRING_10 = 22
+local STRING_11 = 23
+local STRING_12 = 24
+local STRING_13 = 25
+local STRING_14 = 26
+local STRING_15 = 27
 
 local READ = {}
 local WRITE = {} -- 1 to 1343
@@ -36,11 +51,11 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 		end
 
 		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + 18)
+			buffer.writeu8(buf, pos, cachedConstant + 27)
 		else
 			local constVal = cachedConstant - 64
-			buffer.writeu8(buf, pos, 83 + (constVal // 256) )
-			buffer.writeu8(buf, pos+1, constVal)
+			buffer.writeu8(buf, pos, 92 + (constVal // 256) )
+			buffer.writeu8(buf, pos + 1, constVal)
 		end
 
 		return buf, pos + newSize, size
@@ -82,8 +97,8 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 		return '', pos + 1
 	end
 
-	local cachedId = if id > 82 then (id - 82) * 256 + 64
-		else id - 18
+	local cachedId = if id > 91 then (id - 91) * 256 + 64
+		else id - 27
 
 	local cachedConstant: string? = READ[cachedId]
 	if cachedConstant then
@@ -104,6 +119,8 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 		len = buffer.readu32(buf, pos + 1)
 	else
 		-- DATA CORRUPTED (for now)
+		-- we want to error later**
+		-- we know it is an error from constants
 		return nil, pos + 1 -- for future version
 	end
 

@@ -2,15 +2,15 @@
 --!strict
 local inflate = require("./inflate")
 
-local ZERO = 88
-local ONE = 89
-local BYTE = 90
-local CHAR = 91
-local THREE_BYTE = 92
-local INT = 93
-local FLOAT = 94
-local DOUBLE = 95
-local NAN = 96
+local ZERO = 97
+local ONE = 98
+local BYTE = 99
+local CHAR = 100
+local THREE_BYTE = 101
+local INT = 102
+local FLOAT = 103
+local DOUBLE = 104
+local NAN = 105
 
 local MIN_BYTE = -2^7
 local MAX_BYTE = 2^7-1
@@ -70,11 +70,11 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 		end
 
 		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + 99)
+			buffer.writeu8(buf, pos, cachedConstant + 105)
 		else
 			local constVal = cachedConstant - 64
-			buffer.writeu8(buf, pos, 132 + (constVal // 256) )
-			buffer.writeu8(buf, pos+1, constVal)
+			buffer.writeu8(buf, pos, 138 + (constVal // 256) )
+			buffer.writeu8(buf, pos + 1, constVal)
 		end
 
 		return buf, pos + newSize, size
@@ -147,8 +147,8 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 		return 0/0, pos + 1
 	end
 
-	local cachedId = if id > 131 then (id - 131) * 256 + 64
-		else id - 99
+	local cachedId = if id > 137 then (id - 137) * 256 + 64
+		else id - 105
 
 	local cachedConstant = READ[cachedId]
 	if cachedConstant then
@@ -172,6 +172,8 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	elseif id == DOUBLE then
 		return buffer.readf64(buf, pos + 1), pos + 9
 	else
+		-- we want to error later**
+		-- we know it is an error from constants
 		return nil, pos + 1 -- data corruption
 	end
 end 

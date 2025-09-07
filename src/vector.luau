@@ -6,20 +6,20 @@ local numSerializer = require("./number").serialize
 local numDeserializer = require("./number").deserialize
 local numWrite = require("./number").Write
 
-local ZERO = 136
-local ONE = 137
-local X_AXIS = 138
-local Y_AXIS = 139
-local Z_AXIS = 140
-local XY_AXIS = 141
-local XZ_AXIS = 142
-local YZ_AXIS = 143
-local BYTE = 144
-local CHAR = 145
-local THREE_BYTE = 146
-local FLOAT = 147
-local NUMBER = 148
-local SCALAR_NUMBER = 149
+local ZERO = 142
+local ONE = 143
+local X_AXIS = 144
+local Y_AXIS = 145
+local Z_AXIS = 146
+local XY_AXIS = 147
+local XZ_AXIS = 148
+local YZ_AXIS = 149
+local BYTE = 150
+local CHAR = 151
+local THREE_BYTE = 152
+local FLOAT = 153
+local NUMBER = 154
+local SCALAR_NUMBER = 155
 
 local READ = {}
 local WRITE = {} -- 1 to 1055
@@ -254,6 +254,7 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		if vecVal and numVal then
 			return numVal * vecVal, pos
 		end
+		-- will error before this in future versions**
 		return nil, pos + 1 -- data corruption
 	elseif id == BYTE then
 		return vector.create(
@@ -292,9 +293,12 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		if xVal and yVal and zVal then
 			return vector.create(xVal, yVal, zVal), pos
 		end
+		-- will error before this in future versions**
 		-- fill with 0's instead?
 		return nil, pos + 1 -- data corrupted
 	else
+		-- we want to error later**
+		-- we know it is an error from constants
 		return nil, pos + 1 -- data corrupted
 	end
 end
