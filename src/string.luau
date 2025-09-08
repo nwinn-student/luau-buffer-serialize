@@ -27,8 +27,10 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 
 	local cachedConstant: number? = WRITE[value]
 	if cachedConstant then
-		local newSize = if cachedConstant <= 64 then 1
-			else 2
+		local newSize = if cachedConstant <= 64 then
+				1
+			else
+				2
 		
 		if not buf then
 			buf, size = buffer.create(newSize), newSize
@@ -91,15 +93,22 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 		return '', pos + 1
 	end
 
-	local cachedId = if id > 91 then (id - 91) * 256 + 64
-		else id - STRING_15
+	local cachedId = if id > 91 then
+			(id - 91) * 256 + 64
+		else
+			id - STRING_15
 
 	local cachedConstant: string? = READ[cachedId]
 	if cachedConstant then
 		return cachedConstant, 
 			pos + (if cachedId > 64 then 2 else 1)
 	end
-
+	
+	if id > INT and id <= STRING_15 then
+		return buffer.readstring(buf, pos + 1, id - INT),
+			pos + id - INT + 1
+	end
+	
 	local lenSize = id - EMPTY
 
 	local len = if id == BYTE then
@@ -110,15 +119,13 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 			buffer.readbits(buf, (pos + 1)*8, 24)
 		elseif id == INT then
 			buffer.readu32(buf, pos + 1)
-		elseif id > INT and id <= STRING_15 then
-			id - INT
 		else 
 			error(`Failed to parse string constant with id: {
 					cachedId
-				} at position {
+				} (id) at position {
 					pos
 				}`)
-
+	
 	return buffer.readstring(buf, pos + lenSize + 1, len), 
 		pos + len + 1 + lenSize
 end

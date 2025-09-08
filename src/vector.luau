@@ -266,13 +266,19 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 
 	if id == SCALAR_NUMBER then
 		local vecVal = builtinDeserialConst[buffer.readu8(buf, pos + 1)]
+		
+		if not vecVal then
+			error(`Failed to parse built-in vector constant with id: {
+					buffer.readu8(buf, pos + 1)
+				} at position {
+					pos
+				}`)
+		end
+		
 		local numVal
 		numVal, pos = numDeserializer(buf, pos + 2)
-		if vecVal and numVal then
-			return numVal * vecVal, pos
-		end
-		-- will error before this in future versions**
-		return nil, pos + 1 -- data corruption
+		
+		return (numVal :: number) * vecVal, pos
 	elseif id == BYTE then
 		return vector.create(
 			buffer.readi8(buf, pos + 1), 
@@ -307,16 +313,17 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		yVal, pos = numDeserializer(buf, pos)
 		zVal, pos = numDeserializer(buf, pos)
 		
-		if xVal and yVal and zVal then
-			return vector.create(xVal, yVal, zVal), pos
-		end
-		-- will error before this in future versions**
-		-- fill with 0's instead?
-		return nil, pos + 1 -- data corrupted
+		return vector.create(
+			xVal :: number, 
+			yVal :: number, 
+			zVal :: number
+		), pos
 	else
-		-- we want to error later**
-		-- we know it is an error from constants
-		return nil, pos + 1 -- data corrupted
+		error(`Failed to parse vector constant with id: {
+				cachedId
+			} (id) at position {
+				pos
+			}`)
 	end
 end
 

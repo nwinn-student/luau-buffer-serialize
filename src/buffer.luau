@@ -24,10 +24,14 @@ return {
 			return buf, pos + 1, size
 		end
 
-		local newSize = if len < 256 then 2
-			elseif len < 65_536 then 3
-			elseif len < 16_777_216 then 4
-			else 5
+		local newSize = if len < 256 then
+				2
+			elseif len < 65_536 then
+				3
+			elseif len < 16_777_216 then
+				4
+			else
+				5
 		
 		if not buf then
 			buf, size = buffer.create(len + newSize), len + newSize

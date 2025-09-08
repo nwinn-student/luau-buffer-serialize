@@ -60,8 +60,10 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 
 	local cachedConstant: number? = WRITE[value]
 	if cachedConstant then
-		local newSize = if cachedConstant <= 32 then 1
-			else 2
+		local newSize = if cachedConstant <= 32 then
+				1
+			else
+				2
 		
 		if not buf then
 			buf, size = buffer.create(newSize), newSize
@@ -111,10 +113,14 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 		return buf, pos + 9, size
 	end
 
-	local newSize = if MAX_BYTE >= value and value >= MIN_BYTE then 2
-		elseif MAX_CHAR >= value and value >= MIN_CHAR then 3
-		elseif MAX_THREE >= value and value >= MIN_THREE then 4
-		else 5
+	local newSize = if MAX_BYTE >= value and value >= MIN_BYTE then
+			2
+		elseif MAX_CHAR >= value and value >= MIN_CHAR then
+			3
+		elseif MAX_THREE >= value and value >= MIN_THREE then
+			4
+		else
+			5
 	
 	if not buf then
 		buf, size = buffer.create(newSize), newSize
@@ -175,9 +181,11 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	elseif id == DOUBLE then
 		return buffer.readf64(buf, pos + 1), pos + 9
 	else
-		-- we want to error later**
-		-- we know it is an error from constants
-		return nil, pos + 1 -- data corruption
+		error(`Failed to parse number constant with id: {
+				cachedId
+			} ({id}) at position {
+				pos
+			}`)
 	end
 end 
 
