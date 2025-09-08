@@ -58,15 +58,14 @@ local MAX_THREE = 2^23-1
 
 @native
 local function getType(value: number): number
-	if value % 1 ~= 0 or MAX_THREE < value or value < MIN_THREE then
-		return FLOAT
-	elseif MAX_BYTE >= value and value >= MIN_BYTE then
-		return BYTE
-	elseif MAX_CHAR >= value and value >= MIN_CHAR then
-		return CHAR
-	else
-		return THREE_BYTE
-	end
+	return if value % 1 ~= 0 or MAX_THREE < value or value < MIN_THREE then
+			FLOAT
+		elseif MAX_BYTE >= value and value >= MIN_BYTE then
+			BYTE
+		elseif MAX_CHAR >= value and value >= MIN_CHAR then
+			CHAR
+		else
+			THREE_BYTE
 end
 
 @native
