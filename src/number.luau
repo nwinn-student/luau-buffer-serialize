@@ -147,12 +147,15 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 		return 0/0, pos + 1
 	end
 
-	local cachedId = if id > 137 then (id - 137) * 256 + 64
-		else id - 105
+	local cachedId = if id > 137 then
+			(id - 137) * 256 + 64
+		else
+			id - 105
 
 	local cachedConstant = READ[cachedId]
 	if cachedConstant then
-		return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
+		return cachedConstant, 
+			pos + (if cachedId > 64 then 2 else 1)
 	end
 
 	if id == BYTE then

@@ -123,6 +123,8 @@ BufferSerializer.deserialize = function(value: buffer): any
 	return originalData
 end
 
+type Constantable = string | number | vector
+
 --[[
 	Connects a constant value to an identifier.
 	@ Only certain types are supported.
@@ -130,18 +132,27 @@ end
 	@param id the identifier
 	@param value the value
 ]]--
-BufferSerializer.pair = function(id: number, value: any): ()
+BufferSerializer.pair = function(id: number, value: Constantable): ()
 	local typeV = type(value)
-	local maxId = if typeV == "string" then 1343
-		elseif typeV == "number" then 1055
-		elseif typeV == "vector" then 1055
-		elseif typeV == "userdata" then 1039
-		else 0
+	local maxId = if typeV == "string" then
+			1343
+		elseif typeV == "number" then
+			1055
+		elseif typeV == "vector" then
+			1055
+		elseif typeV == "userdata" then
+			1039
+		else
+			0
 
-	assert(maxId ~= 0, `Invalid type {typeV} (must be string | number | vector | userdata)`)
-	assert(type(id) == "number" and id % 1 == 0 and id == id, `Invalid id {id} (must be integer)`)
-	assert(id >= 1 and id <= maxId, `Invalid id {id} (must be between 1 and {maxId})`)
-	assert(value == value, `Invalid value {value} (must be non-nan)`)
+	assert(maxId ~= 0, 
+		`Invalid type {typeV} (must be Constantable or userdata)`)
+	assert(type(id) == "number" and id % 1 == 0 and id == id, 
+		`Invalid id {id} (must be integer)`)
+	assert(id >= 1 and id <= maxId, 
+		`Invalid id {id} (must be between 1 and {maxId})`)
+	assert(value == value, 
+		`Invalid value {value} (must be non-nan)`)
 	
 	local mod: Pair = pairModules[typeV]
 	if not mod then

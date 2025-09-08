@@ -19,6 +19,7 @@ return {
 		return buf, pos + 1, size
 	end,
 	deserialize = function(buf: buffer, pos: number)
-		return buffer.readu8(buf, pos) == 1, pos + 1
+		return buffer.readu8(buf, pos) == 1, 
+			pos + 1
 	end,
 }

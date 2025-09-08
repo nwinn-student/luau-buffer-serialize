@@ -102,16 +102,16 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 
 	local lenSize = id - EMPTY
 
-	local len = if id == BYTE
-		then buffer.readu8(buf, pos + 1)
-		elseif id == CHAR
-		then buffer.readu16(buf, pos + 1)
-		elseif id == THREE_BYTE
-		then buffer.readbits(buf, (pos + 1)*8, 24)
-		elseif id == INT
-		then buffer.readu32(buf, pos + 1)
-		elseif id > INT and id <= STRING_15
-		then id - INT
+	local len = if id == BYTE then
+			buffer.readu8(buf, pos + 1)
+		elseif id == CHAR then
+			buffer.readu16(buf, pos + 1)
+		elseif id == THREE_BYTE then
+			buffer.readbits(buf, (pos + 1)*8, 24)
+		elseif id == INT then
+			buffer.readu32(buf, pos + 1)
+		elseif id > INT and id <= STRING_15 then
+			id - INT
 		else 
 			error(`Failed to parse string constant with id: {
 					cachedId

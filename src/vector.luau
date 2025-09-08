@@ -85,8 +85,10 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 
 	local cachedConstant: number? = WRITE[value]
 	if cachedConstant then
-		local newSize = if cachedConstant <= 32 then 1
-			else 2
+		local newSize = if cachedConstant <= 32 then
+				1
+			else
+				2
 		
 		if not buf then
 			buf, size = buffer.create(newSize), newSize
@@ -136,19 +138,30 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 			end
 			buffer.writeu8(buf, pos, SCALAR_NUMBER)
 
-			local var = if isOneValue then ONE
-				elseif isXAxis then X_AXIS
-				elseif isYAxis then Y_AXIS
-				elseif isZAxis then Z_AXIS
-				elseif isXYAxis then XY_AXIS
-				elseif isXZAxis then XZ_AXIS
-				else YZ_AXIS
+			local var = if isOneValue then
+					ONE
+				elseif isXAxis then
+					X_AXIS
+				elseif isYAxis then
+					Y_AXIS
+				elseif isZAxis then
+					Z_AXIS
+				elseif isXYAxis then
+					XY_AXIS
+				elseif isXZAxis then
+					XZ_AXIS
+				else
+					YZ_AXIS
 
 			buffer.writeu8(buf, pos+1, var)
 
-			local val = if isOneValue or isXAxis or isXYAxis or isXZAxis then valueX
-				elseif isYAxis or isYZAxis then valueY
-				else valueZ
+			local val = if isOneValue or isXAxis 
+				or isXYAxis or isXZAxis then
+					valueX
+				elseif isYAxis or isYZAxis then
+					valueY
+				else
+					valueZ
 			return numSerializer(val, buf, pos + 2, size)
 		end
 	end
@@ -171,7 +184,8 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 		-- char/tryte COULD be cheaper (1 + 2 (const) + 5 (float) + 5 (float) is worst case)
 		-- the checks are VERY expensive (from a line perspective) though
 		isNumber = (
-			numWrite[valueX] or numWrite[valueY] or numWrite[valueZ]
+			numWrite[valueX] or numWrite[valueY] 
+				or numWrite[valueZ]
 		)
 	end
 	
@@ -239,12 +253,15 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		return builtinDeserialConst[YZ_AXIS], pos + 1
 	end
 
-	local cachedId = if id > 189 then (id - 189) * 256 + 64
-		else id - 157
+	local cachedId = if id > 189 then
+			(id - 189) * 256 + 64
+		else
+			id - 157
 
 	local cachedConstant = READ[cachedId]
 	if cachedConstant then
-		return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
+		return cachedConstant, 
+			pos + (if cachedId > 64 then 2 else 1)
 	end
 
 	if id == SCALAR_NUMBER then
