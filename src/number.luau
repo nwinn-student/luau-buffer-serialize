@@ -60,8 +60,10 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 
 	local cachedConstant: number? = WRITE[value]
 	if cachedConstant then
-		local newSize = if cachedConstant <= 32 then 1
-			else 2
+		local newSize = if cachedConstant <= 32 then
+				1
+			else
+				2
 		
 		if not buf then
 			buf, size = buffer.create(newSize), newSize
@@ -111,10 +113,14 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 		return buf, pos + 9, size
 	end
 
-	local newSize = if MAX_BYTE >= value and value >= MIN_BYTE then 2
-		elseif MAX_CHAR >= value and value >= MIN_CHAR then 3
-		elseif MAX_THREE >= value and value >= MIN_THREE then 4
-		else 5
+	local newSize = if MAX_BYTE >= value and value >= MIN_BYTE then
+			2
+		elseif MAX_CHAR >= value and value >= MIN_CHAR then
+			3
+		elseif MAX_THREE >= value and value >= MIN_THREE then
+			4
+		else
+			5
 	
 	if not buf then
 		buf, size = buffer.create(newSize), newSize
@@ -146,13 +152,18 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	elseif id == NAN then
 		return 0/0, pos + 1
 	end
+	
+	if id > 99 then
+		local cachedId = if id > 131 then
+				(id - 131) * 256 + 64
+			else
+				id - 105
 
-	local cachedId = if id > 131 then (id - 131) * 256 + 64
-		else id - 99
-
-	local cachedConstant = READ[cachedId]
-	if cachedConstant then
-		return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
+		local cachedConstant: number? = READ[cachedId]
+		if cachedConstant then
+			return cachedConstant, 
+				pos + (if cachedId > 64 then 2 else 1)
+		end
 	end
 
 	if id == BYTE then

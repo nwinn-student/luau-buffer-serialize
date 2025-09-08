@@ -56,12 +56,17 @@ print(`Initial Data: {data}, Final Data: {input}`)
 
 ## Performance
 
-BufferSerializer was compared against Roblox's JSONEncode/Decode and @cipharius's MessagePack.  The benchmark data can be located [here](./bench/compare.luau) and personal benchmark results [here](./bench/compare_results.txt).  Results will differ based on the platform tested on.
+BufferSerializer was compared against @cipharius 's MessagePack implementation in Luau and Roblox's implementation of JSON.
+The benchmark code can be located [here](../bench-results/bench/compare.luau) and personal benchmark results [here](../bench-results/bench/compare_results.txt).  
+Results will differ based on the platform tested on and whether native-support is present.
 
 
 ## Technical Details
 
-For the binary format BufferSerializer is using to (de)serialize, look to [FORMAT.md](./FORMAT.md).  There are 32 approaches left for future applications, whether it be for a new type in Luau or upon enough user requests.  These approaches will be consumed when no unknown approach is left in the type's section of the binary format.
+For the binary format BufferSerializer is using to (de)serialize, look to [FORMAT.md](./FORMAT.md).  
+
+There are 16 approaches left for future applications, whether it be for a new type in Luau or upon enough user requests.  These approaches will be consumed when no unknown approach is left in the type's section of the binary format.
+There are 16 approaches left for extenders of BufferSerializer to define in order to accomidate their own requirements, such as adding the length of tables, re-adding number strings, adding fixed-length strings like MessagePack, and more.  These 16 approaches will never be consumed by future BufferSerializer versions.
 
 `serialize(data: any): buffer`: Takes in a value and spits out the serialized version within a buffer.
 
