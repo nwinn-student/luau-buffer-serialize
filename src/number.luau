@@ -152,17 +152,26 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	elseif id == NAN then
 		return 0/0, pos + 1
 	end
+	
+	if id > 105 then
+		local cachedId = if id > 137 then
+				(id - 137) * 256 + 64
+			else
+				id - 105
 
-	local cachedId = if id > 137 then
-			(id - 137) * 256 + 64
-		else
-			id - 105
-
-	local cachedConstant = READ[cachedId]
-	if cachedConstant then
-		return cachedConstant, 
-			pos + (if cachedId > 64 then 2 else 1)
+		local cachedConstant = READ[cachedId]
+		if cachedConstant then
+			return cachedConstant, 
+				pos + (if cachedId > 64 then 2 else 1)
+		end
+		
+		error(`Failed to parse number constant with id: {
+				cachedId
+			} ({id}) at position {
+				pos
+			}`)
 	end
+	
 
 	if id == BYTE then
 		return buffer.readi8(buf, pos + 1), pos + 2
@@ -178,14 +187,8 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 		return buffer.readi32(buf, pos + 1), pos + 5
 	elseif id == FLOAT then
 		return buffer.readf32(buf, pos + 1), pos + 5
-	elseif id == DOUBLE then
+	else -- id == DOUBLE
 		return buffer.readf64(buf, pos + 1), pos + 9
-	else
-		error(`Failed to parse number constant with id: {
-				cachedId
-			} ({id}) at position {
-				pos
-			}`)
 	end
 end 
 

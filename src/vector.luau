@@ -252,18 +252,26 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 	elseif id == YZ_AXIS then
 		return builtinDeserialConst[YZ_AXIS], pos + 1
 	end
-
-	local cachedId = if id > 189 then
-			(id - 189) * 256 + 64
-		else
-			id - 157
-
-	local cachedConstant = READ[cachedId]
-	if cachedConstant then
-		return cachedConstant, 
-			pos + (if cachedId > 64 then 2 else 1)
+	
+	if id > 157 then
+		local cachedId = if id > 189 then
+				(id - 189) * 256 + 64
+			else
+				id - 157
+		
+		local cachedConstant = READ[cachedId]
+		if cachedConstant then
+			return cachedConstant, 
+				pos + (if cachedId > 64 then 2 else 1)
+		end
+		
+		error(`Failed to parse vector constant with id: {
+				cachedId
+			} ({id}) at position {
+				pos
+			}`)
 	end
-
+	
 	if id == SCALAR_NUMBER then
 		local vecVal = builtinDeserialConst[buffer.readu8(buf, pos + 1)]
 		
@@ -319,9 +327,9 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 			zVal :: number
 		), pos
 	else
-		error(`Failed to parse vector constant with id: {
-				cachedId
-			} (id) at position {
+		error(`Failed to parse vector using byte: {
+				id
+			} at position {
 				pos
 			}`)
 	end

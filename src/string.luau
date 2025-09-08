@@ -92,19 +92,27 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 	if id == EMPTY then
 		return '', pos + 1
 	end
+	
+	if id > STRING_15 then
+		local cachedId = if id > 91 then
+				(id - 91) * 256 + 64
+			else
+				id - STRING_15
 
-	local cachedId = if id > 91 then
-			(id - 91) * 256 + 64
-		else
-			id - STRING_15
-
-	local cachedConstant: string? = READ[cachedId]
-	if cachedConstant then
-		return cachedConstant, 
-			pos + (if cachedId > 64 then 2 else 1)
+		local cachedConstant: string? = READ[cachedId]
+		if cachedConstant then
+			return cachedConstant, 
+				pos + (if cachedId > 64 then 2 else 1)
+		end
+		
+		error(`Failed to parse string constant with id: {
+					cachedId
+				} ({id}) at position {
+					pos
+				}`)
 	end
 	
-	if id > INT and id <= STRING_15 then
+	if id > INT then
 		return buffer.readstring(buf, pos + 1, id - INT),
 			pos + id - INT + 1
 	end
@@ -117,14 +125,8 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 			buffer.readu16(buf, pos + 1)
 		elseif id == THREE_BYTE then
 			buffer.readbits(buf, (pos + 1)*8, 24)
-		elseif id == INT then
-			buffer.readu32(buf, pos + 1)
-		else 
-			error(`Failed to parse string constant with id: {
-					cachedId
-				} (id) at position {
-					pos
-				}`)
+		else -- id == INT
+			buffer.readu32(buf, pos + 1)		
 	
 	return buffer.readstring(buf, pos + lenSize + 1, len), 
 		pos + len + 1 + lenSize
