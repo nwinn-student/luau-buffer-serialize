@@ -19,8 +19,10 @@ local Userdata = {
 
 		local cachedConstant: number? = WRITE[value]
 		if cachedConstant then
-			local newSize = if cachedConstant <= 16 then 1
-				else 2
+			local newSize = if cachedConstant <= 16 then
+					1
+				else
+					2
 			
 			if not buf then
 				buf, size = buffer.create(newSize), newSize

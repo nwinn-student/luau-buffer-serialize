@@ -26,8 +26,10 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 
 	local cachedConstant: number? = WRITE[value]
 	if cachedConstant then
-		local newSize = if cachedConstant <= 64 then 1
-			else 2
+		local newSize = if cachedConstant <= 64 then
+				1
+			else
+				2
 		
 		if not buf then
 			buf, size = buffer.create(newSize), newSize
@@ -48,10 +50,14 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 
 	local len = #value
 
-	local newSize = if len < 256 then 2
-		elseif len < 65_536 then 3
-		elseif len < 16_777_216 then 4
-		else 5
+	local newSize = if len < 256 then
+			2
+		elseif len < 65_536 then
+			3
+		elseif len < 16_777_216 then
+			4
+		else
+			5
 	
 	if not buf then
 		buf, size = buffer.create(len + newSize), len + newSize
@@ -112,7 +118,8 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 		return nil, pos + 1 -- for future version
 	end
 
-	return buffer.readstring(buf, pos + lenSize + 1, len), pos + len + 1 + lenSize
+	return buffer.readstring(buf, pos + lenSize + 1, len), 
+		pos + len + 1 + lenSize
 end
 
 local String = {

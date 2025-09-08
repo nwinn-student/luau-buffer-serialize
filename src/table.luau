@@ -270,9 +270,10 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			buffer.writeu8(buf, oldPos - 1, DICT)
 		else
 			buffer.writeu8(buf, oldPos - 1, 
-				if not endArray 
-				then ARRAY 
-				else TABLE)
+				if not endArray then
+					ARRAY 
+				else
+					TABLE)
 		end
 		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
@@ -341,14 +342,22 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 		
 		local value: any = nil
 		local oldPos = pos
-		local case = if valId <= 2 then 1 -- boolean
-			elseif valId <= 8 then 2 -- buffer
-			elseif valId <= 87 then 3 -- string
-			elseif valId <= 135 then 4 -- number
-			elseif valId <= 193 then 5 -- vector
-			elseif valId <= 201 then 0 -- table (none currently that can get here)
-			elseif valId <= 223 then 6 -- userdata
-			else 0 -- for future
+		local case = if valId <= 2 then
+				1 -- boolean
+			elseif valId <= 8 then
+				2 -- buffer
+			elseif valId <= 87 then
+				3 -- string
+			elseif valId <= 135 then
+				4 -- number
+			elseif valId <= 193 then
+				5 -- vector
+			elseif valId <= 201 then
+				0 -- table (none currently that can get here)
+			elseif valId <= 223 then
+				6 -- userdata
+			else
+				0 -- for future
 		
 		if case ~= 0 then
 			value, pos = deserialSwitch[case](buf, pos)
