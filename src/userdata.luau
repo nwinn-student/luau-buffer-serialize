@@ -63,12 +63,17 @@ local Userdata = {
 	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
 
-		local cachedId = if id > 219 then (id - 219) * 256 + 64
-			else id - 203
+		if id > 203 then
+				local cachedId = if id > 219 then
+					(id - 219) * 256 + 64
+				else
+					id - 203
 
-		local cachedConstant = READ[cachedId]
-		if cachedConstant then
-			return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
+			local cachedConstant = READ[cachedId]
+			if cachedConstant then
+				return cachedConstant, 
+					pos + (if cachedId > 64 then 2 else 1)
+			end
 		end
 
 		if Reader then

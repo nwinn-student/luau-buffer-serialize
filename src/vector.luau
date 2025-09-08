@@ -239,12 +239,17 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		return builtinDeserialConst[YZ_AXIS], pos + 1
 	end
 
-	local cachedId = if id > 189 then (id - 189) * 256 + 64
-		else id - 157
-
-	local cachedConstant = READ[cachedId]
-	if cachedConstant then
-		return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
+	if id > 157 then
+		local cachedId = if id > 189 then
+				(id - 189) * 256 + 64
+			else
+				id - 157
+		
+		local cachedConstant: vector? = READ[cachedId]
+		if cachedConstant then
+			return cachedConstant, 
+				pos + (if cachedId > 64 then 2 else 1)
+		end
 	end
 
 	if id == SCALAR_NUMBER then
