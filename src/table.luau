@@ -354,14 +354,22 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 		
 		local value: any = nil
 		local oldPos = pos
-		local case = if valId <= 2 then 1 -- boolean
-			elseif valId <= 8 then 2 -- buffer
-			elseif valId <= 87 then 3 -- string
-			elseif valId <= 135 then 4 -- number
-			elseif valId <= 193 then 5 -- vector
-			elseif valId <= 201 then 0 -- table (none currently that can get here)
-			elseif valId <= 223 then 6 -- userdata
-			else 0 -- for future
+		local case = if valId <= 2 then
+				1 -- boolean
+			elseif valId <= 8 then
+				2 -- buffer
+			elseif valId <= 87 then
+				3 -- string
+			elseif valId <= 135 then
+				4 -- number
+			elseif valId <= 193 then
+				5 -- vector
+			elseif valId <= 201 then
+				0 -- table (none currently that can get here)
+			elseif valId <= 223 then
+				6 -- userdata
+			else
+				0 -- for future
 		
 		if case ~= 0 then
 			value, pos = deserialSwitch[case](buf, pos)
@@ -384,9 +392,12 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 		local id = buffer.readu8(buf, pos)
 		
 		if isConnected then
-			id = if id == CONNECT_TABLE then TABLE
-				elseif id == CONNECT_ARRAY then ARRAY
-				else DICT
+			id = if id == CONNECT_TABLE then
+					TABLE
+				elseif id == CONNECT_ARRAY then
+					ARRAY
+				else
+					DICT
 			isConnected = false
 		end
 		
