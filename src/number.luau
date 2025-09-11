@@ -26,6 +26,8 @@ local MAX_INT = 2^31-1
 
 local MAX_FLOAT = 2^127
 
+local vecX = vector.create(1, 0)
+
 local READ = {}
 local WRITE = {} -- 1 to 1055
 
@@ -103,9 +105,10 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 		elseif pos + 9 > size then
 			buf, size = inflate(buf, pos + 9, size)
 		end
-		buffer.writef32(buf, pos + 1, value)
-		if buffer.readf32(buf, pos + 1) == value then
+		
+		if (vecX * value).x == value then
 			buffer.writeu8(buf, pos, FLOAT)
+			buffer.writef32(buf, pos + 1, value)
 			return buf, pos + 5, size
 		end
 		buffer.writeu8(buf, pos, DOUBLE)
