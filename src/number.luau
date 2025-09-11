@@ -76,7 +76,7 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 		if newSize == 1 then
 			buffer.writeu8(buf, pos, cachedConstant + 99)
 		else
-			local constVal = cachedConstant - 64
+			local constVal = cachedConstant - 32
 			buffer.writeu8(buf, pos, 132 + (constVal // 256) )
 			buffer.writeu8(buf, pos+1, constVal)
 		end
@@ -158,14 +158,14 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	
 	if id > 99 then
 		local cachedId = if id > 131 then
-				(id - 131) * 256 + 64
+				(id - 132) * 256 + 32 + buffer.readu8(buf, pos + 1)
 			else
-				id - 105
+				id - 99
 
 		local cachedConstant: number? = READ[cachedId]
 		if cachedConstant then
 			return cachedConstant, 
-				pos + (if cachedId > 64 then 2 else 1)
+				pos + (if cachedId > 32 then 2 else 1)
 		end
 	end
 

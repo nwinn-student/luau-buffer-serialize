@@ -33,7 +33,7 @@ local Userdata = {
 			if newSize == 1 then
 				buffer.writeu8(buf, pos, cachedConstant + 203)
 			else
-				local constVal = cachedConstant - 64
+				local constVal = cachedConstant - 16
 				buffer.writeu8(buf, pos, 220 + (constVal // 256) )
 				buffer.writeu8(buf, pos+1, constVal)
 			end
@@ -67,14 +67,14 @@ local Userdata = {
 
 		if id > 203 then
 				local cachedId = if id > 219 then
-					(id - 219) * 256 + 64
+					(id - 220) * 256 + 16 + buffer.readu8(buf, pos + 1)
 				else
 					id - 203
 
 			local cachedConstant = READ[cachedId]
 			if cachedConstant then
 				return cachedConstant, 
-					pos + (if cachedId > 64 then 2 else 1)
+					pos + (if cachedId > 16 then 2 else 1)
 			end
 		end
 
