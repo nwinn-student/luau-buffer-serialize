@@ -98,7 +98,7 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 		if newSize == 1 then
 			buffer.writeu8(buf, pos, cachedConstant + 157)
 		else
-			local constVal = cachedConstant - 64
+			local constVal = cachedConstant - 32
 			buffer.writeu8(buf, pos, 190 + (constVal // 256) )
 			buffer.writeu8(buf, pos+1, constVal)
 		end
@@ -254,14 +254,14 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 	
 	if id > 157 then
 		local cachedId = if id > 189 then
-				(id - 189) * 256 + 64
+				(id - 190) * 256 + 32 + buffer.readu8(buf, pos + 1)
 			else
 				id - 157
 		
 		local cachedConstant = READ[cachedId]
 		if cachedConstant then
 			return cachedConstant, 
-				pos + (if cachedId > 64 then 2 else 1)
+				pos + (if cachedId > 32 then 2 else 1)
 		end
 		
 		error(`Failed to parse vector constant with id: {
