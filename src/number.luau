@@ -26,6 +26,8 @@ local MAX_INT = 2^31-1
 
 local MAX_FLOAT = 2^127
 
+local vecX = vector.create(1, 0)
+
 local READ = {}
 local WRITE = {} -- 1 to 1055
 
@@ -74,7 +76,7 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 		if newSize == 1 then
 			buffer.writeu8(buf, pos, cachedConstant + 105)
 		else
-			local constVal = cachedConstant - 64
+			local constVal = cachedConstant - 32
 			buffer.writeu8(buf, pos, 138 + (constVal // 256) )
 			buffer.writeu8(buf, pos + 1, constVal)
 		end
@@ -103,9 +105,10 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 		elseif pos + 9 > size then
 			buf, size = inflate(buf, pos + 9, size)
 		end
-		buffer.writef32(buf, pos + 1, value)
-		if buffer.readf32(buf, pos + 1) == value then
+		
+		if (vecX * value).x == value then
 			buffer.writeu8(buf, pos, FLOAT)
+			buffer.writef32(buf, pos + 1, value)
 			return buf, pos + 5, size
 		end
 		buffer.writeu8(buf, pos, DOUBLE)
@@ -155,14 +158,14 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	
 	if id > 105 then
 		local cachedId = if id > 137 then
-				(id - 137) * 256 + 64
+				(id - 138) * 256 + 32 + buffer.readu8(buf, pos + 1)
 			else
 				id - 105
 
 		local cachedConstant = READ[cachedId]
 		if cachedConstant then
 			return cachedConstant, 
-				pos + (if cachedId > 64 then 2 else 1)
+				pos + (if cachedId > 32 then 2 else 1)
 		end
 		
 		error(`Failed to parse number constant with id: {
