@@ -91,7 +91,7 @@ BufferSerializer.deserialize = function(value: buffer): any
 			5 -- vector
 		elseif pointer <= 201 then
 			6 -- table
-		elseif pointer <= 223 then
+		elseif pointer <= 215 then
 			7 -- userdata
 		else 
 			0 -- add more if statements if needed for future
@@ -137,7 +137,7 @@ BufferSerializer.pair = function(id: number, value: any): ()
 		elseif typeV == "vector" then
 			1055
 		elseif typeV == "userdata" then
-			1039
+			521
 		else
 			0
 

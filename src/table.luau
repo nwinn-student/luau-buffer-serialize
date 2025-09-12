@@ -354,7 +354,7 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 				5 -- vector
 			elseif valId <= 201 then
 				0 -- table (none currently that can get here)
-			elseif valId <= 223 then
+			elseif valId <= 215 then
 				6 -- userdata
 			else
 				0 -- for future
