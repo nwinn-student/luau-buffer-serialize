@@ -7,7 +7,7 @@ local function test(cond: boolean, msg: string)
 		return
 	end
 	passed = false
-	print(`[TEST] FAILED: {msg}`)
+	print(`[TEST] FAILED: {msg} {debug.traceback("", 2)}`)
 end
 
 
