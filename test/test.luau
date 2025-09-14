@@ -62,18 +62,21 @@ local test = {
 		return buf
 	end,
 	serial = function(ori: buffer, new: buffer)
-		if buffer.len(ori) ~= buffer.len(new) then
+		local testFail = false
+		
+		local oriSize = buffer.len(ori)
+		local newSize = buffer.len(new)
+		
+		if oriSize ~= newSize then
 			print(`[TEST] FAILED: Expected size {
-					buffer.len(ori)
+					oriSize
 				} (got {
-					buffer.len(new)
-				}) {
-					debug.traceback("", 2)
-				}`)
+					newSize
+				})`)
 			environments[debug.info(2, "s")] = false
-			return false
+			testFail = true
 		end
-		for i=0, buffer.len(ori) - 1 do
+		for i=0, math.min(oriSize, newSize) - 1 do
 			local oriByte = buffer.readu8(ori, i)
 			local newByte = buffer.readu8(new, i)
 			if oriByte ~= newByte then
@@ -81,14 +84,15 @@ local test = {
 						oriByte
 					} at position {i} (got {
 						newByte
-					}) {
-						debug.traceback("", 2)
-					}`)
+					})`)
 				environments[debug.info(2, "s")] = false
-				return false
+				testFail = true
 			end
 		end
-		return true
+		
+		if testFail then
+			print(debug.traceback("", 2):sub(2 ,-1))
+		end
 	end,
 	compare = function(ori: any, new: any)
 		if ori == new then
@@ -102,7 +106,7 @@ local test = {
 			return
 		end
 		
-		print(`Expected {strOri} (got {strNew}) {
+		print(`[TEST] FAILED: Expected {strOri} (got {strNew}) {
 				debug.traceback("", 2)
 			}`)
 		environments[debug.info(2, "s")] = false
