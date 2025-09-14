@@ -63,7 +63,7 @@ local test = {
 	end,
 	serial = function(ori: buffer, new: buffer)
 		if buffer.len(ori) ~= buffer.len(new) then
-			print(`[TEST] FAILED: Expected {
+			print(`[TEST] FAILED: Expected size {
 					buffer.len(ori)
 				} (got {
 					buffer.len(new)
