@@ -52,6 +52,42 @@ test.compare(string.rep("\0", 2^8), deserialize(Sir_Char))
 test.compare(string.rep("\0", 2^16), deserialize(Sir_Tryte))
 test.compare(string.rep("\0", 2^24), deserialize(Sir_Int))
 
+-- constants [show risks]
+local function ds(v: any): any 
+	return deserialize(serialize(v))
+end
+
+local pair = require("../src").pair
+
+-- Serializes both to the same value
+-- Fails to correctly deserialize
+pair(1, "1")
+pair(1, "2")
+
+pair(32, "3")
+pair(64, "4")
+pair(128, "5")
+pair(1343, "6")
+
+-- FLAW!
+test.serial(serialize("1"), test.newBuffer(10, 1, 49))
+test.compare("1", ds("1")) -- "1" ~= "2"
+
+test.serial(serialize("2"), test.newBuffer(19))
+test.compare("2", ds("2"))
+
+test.serial(serialize("3"), test.newBuffer(50))
+test.compare("3", ds("3"))
+
+test.serial(serialize("4"), test.newBuffer(82))
+test.compare("4", ds("4"))
+
+test.serial(serialize("5"), test.newBuffer(83, 64))
+test.compare("5", ds("5"))
+
+test.serial(serialize("6"), test.newBuffer(87, 255))
+test.compare("6", ds("6"))
+
 test.complete("STRING")
 
 return {}
