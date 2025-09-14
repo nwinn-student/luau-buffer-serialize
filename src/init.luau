@@ -163,6 +163,10 @@ BufferSerializer.pair = function(id: number, value: any): ()
 				require("@self/userdata")) :: Pair)
 		pairModules[typeV] = mod
 	end
+	
+	if mod.Read[id] ~= nil then
+		mod.Write[mod.Read[id]] = nil
+	end
 	mod.Read[id] = value
 	mod.Write[value] = id
 end
