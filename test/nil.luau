@@ -9,7 +9,7 @@ local nilDeserialize = require("../src/nil").deserialize
 
 local Sir_Nil = nilSerialize(nil, buffer.create(1), 0, 1)
 
-test.deserial(nil, nilDeserialize(Sir_Nil, 0))
+test.compare(nil, nilDeserialize(Sir_Nil, 0))
 test.serial(Sir_Nil, test.newBuffer(0))
 
 
@@ -19,7 +19,7 @@ local deserialize = require("../src").deserialize
 
 Sir_Nil = serialize(nil)
 
-test.deserial(nil, deserialize(Sir_Nil))
+test.compare(nil, deserialize(Sir_Nil))
 test.serial(Sir_Nil, test.newBuffer(0))
 
 test.complete("NIL")

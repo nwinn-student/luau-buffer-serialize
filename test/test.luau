@@ -90,11 +90,19 @@ local test = {
 		end
 		return true
 	end,
-	deserial = function(ori: any, new: any)
+	compare = function(ori: any, new: any)
 		if ori == new then
 			return
 		end
-		print(`Expected {stringify(ori)} (got {stringify(new)}) {
+		
+		local strOri = stringify(ori)
+		local strNew = stringify(new)
+		
+		if strOri == strNew then
+			return
+		end
+		
+		print(`Expected {strOri} (got {strNew}) {
 				debug.traceback("", 2)
 			}`)
 		environments[debug.info(2, "s")] = false
