@@ -59,34 +59,40 @@ end
 
 local pair = require("../src").pair
 
--- Serializes both to the same value
--- Fails to correctly deserialize
-pair(1, "1")
-pair(1, "2")
+-- Regular tests
+pair(32, "1")
+pair(64, "2")
+pair(128, "3")
+pair(1343, "4")
 
-pair(32, "3")
-pair(64, "4")
-pair(128, "5")
-pair(1343, "6")
+test.serial(serialize("1"), test.newBuffer(50))
+test.serial(serialize("2"), test.newBuffer(82))
+test.serial(serialize("3"), test.newBuffer(83, 64))
+test.serial(serialize("4"), test.newBuffer(87, 255))
 
--- FLAW!
-test.serial(serialize("1"), test.newBuffer(10, 1, 49))
-test.compare("1", ds("1")) -- "1" ~= "2"
-
-test.serial(serialize("2"), test.newBuffer(19))
+test.compare("1", ds("1"))
 test.compare("2", ds("2"))
-
-test.serial(serialize("3"), test.newBuffer(50))
 test.compare("3", ds("3"))
-
-test.serial(serialize("4"), test.newBuffer(82))
 test.compare("4", ds("4"))
 
-test.serial(serialize("5"), test.newBuffer(83, 64))
+-- Serializes multiple values to the same id
+--	To show that the latest is used
+pair(1, "5")
+pair(1, "6")
+
+test.serial(serialize("5"), test.newBuffer(10, 1, 53))
 test.compare("5", ds("5"))
 
-test.serial(serialize("6"), test.newBuffer(87, 255))
+test.serial(serialize("6"), test.newBuffer(19))
 test.compare("6", ds("6"))
+
+
+-- Serializes the same value to multiple ids
+--	To show that the lastest is used
+pair(33, "1")
+
+test.serial(serialize("1"), test.newBuffer(51))
+test.compare("1", ds("1"))
 
 test.complete("STRING")
 
