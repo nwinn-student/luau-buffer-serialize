@@ -149,6 +149,16 @@ BufferSerializer.pair = function(id: number, value: any): ()
 		`Invalid id {id} (must be between 1 and {maxId})`)
 	assert(value == value, 
 		`Invalid value {value} (must be non-nan)`)
+	assert(typeV ~= "number" or value ~= 0 and value ~= 1, 
+		`Invalid value {value} (cannot be a built-in [0 or 1])`)
+	assert(typeV ~= "string" or value ~= "",
+		`Invalid value {value} (cannot be a built-in [""])`)
+	assert(typeV ~= "vector"
+			or value ~= vector.zero and value ~= vector.one
+			and value ~= vector.create(0,0,1) and value ~= vector.create(0,1,0)
+			and value ~= vector.create(0,1,1) and value ~= vector.create(1,0,0)
+			and value ~= vector.create(1,0,1) and value ~= vector.create(1,1,0),
+		`Invalid value {value} (cannot be a built-in)`)
 	
 	local mod: Pair = pairModules[typeV]
 	if not mod then
