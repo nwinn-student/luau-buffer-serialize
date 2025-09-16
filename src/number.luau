@@ -2,15 +2,15 @@
 --!strict
 local inflate = require("./inflate")
 
-local ZERO = 88
-local ONE = 89
-local BYTE = 90
-local CHAR = 91
-local THREE_BYTE = 92
-local INT = 93
-local FLOAT = 94
-local DOUBLE = 95
-local NAN = 96
+local ZERO = 97
+local ONE = 98
+local BYTE = 99
+local CHAR = 100
+local THREE_BYTE = 101
+local INT = 102
+local FLOAT = 103
+local DOUBLE = 104
+local NAN = 105
 
 local MIN_BYTE = -2^7
 local MAX_BYTE = 2^7-1
@@ -74,11 +74,11 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 		end
 
 		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + 99)
+			buffer.writeu8(buf, pos, cachedConstant + 105)
 		else
 			local constVal = cachedConstant - 32
-			buffer.writeu8(buf, pos, 132 + (constVal // 256) )
-			buffer.writeu8(buf, pos+1, constVal)
+			buffer.writeu8(buf, pos, 138 + (constVal // 256) )
+			buffer.writeu8(buf, pos + 1, constVal)
 		end
 
 		return buf, pos + newSize, size
@@ -161,18 +161,25 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 		return 0/0, pos + 1
 	end
 	
-	if id > 99 then
-		local cachedId = if id > 131 then
-				(id - 132) * 256 + 32 + buffer.readu8(buf, pos + 1)
+	if id > 105 then
+		local cachedId = if id > 137 then
+				(id - 138) * 256 + 32 + buffer.readu8(buf, pos + 1)
 			else
-				id - 99
+				id - 105
 
-		local cachedConstant: number? = READ[cachedId]
+		local cachedConstant = READ[cachedId]
 		if cachedConstant then
 			return cachedConstant, 
 				pos + (if cachedId > 32 then 2 else 1)
 		end
+		
+		error(`Failed to parse number constant with id: {
+				cachedId
+			} ({id}) at position {
+				pos
+			}`)
 	end
+	
 
 	if id == BYTE then
 		return buffer.readi8(buf, pos + 1), pos + 2
@@ -188,10 +195,8 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 		return buffer.readi32(buf, pos + 1), pos + 5
 	elseif id == FLOAT then
 		return buffer.readf32(buf, pos + 1), pos + 5
-	elseif id == DOUBLE then
+	else -- id == DOUBLE
 		return buffer.readf64(buf, pos + 1), pos + 9
-	else
-		return nil, pos + 1 -- data corruption
 	end
 end 
 

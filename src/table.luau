@@ -272,7 +272,7 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 			buffer.writeu8(buf, oldPos - 1, 
 				if not endArray then
 					ARRAY 
-				else
+				else 
 					TABLE)
 		end
 		if pos + 1 > size then
@@ -344,30 +344,31 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 		local oldPos = pos
 		local case = if valId <= 2 then
 				1 -- boolean
-			elseif valId <= 8 then
+			elseif valId <= 7 then
 				2 -- buffer
-			elseif valId <= 87 then
+			elseif valId <= 96 then
 				3 -- string
-			elseif valId <= 135 then
+			elseif valId <= 141 then
 				4 -- number
 			elseif valId <= 193 then
 				5 -- vector
 			elseif valId <= 201 then
-				0 -- table (none currently that can get here)
+				error(`Failed to parse table using byte: {
+						valId
+					} at position {
+						pos
+					}`)
 			elseif valId <= 223 then
 				6 -- userdata
 			else
-				0 -- for future
+				-- For future / extend
+				error(`Failed to parse byte: {
+						valId
+					} at position {
+						pos
+					}`)
 		
-		if case ~= 0 then
-			value, pos = deserialSwitch[case](buf, pos)
-		else
-			pos += 1
-		end
-		
-		if value == nil then
-			return nil -- data corrupted
-		end
+		value, pos = deserialSwitch[case](buf, pos)
 		
 		if pos - 2 > oldPos then
 			existingCache(value)
@@ -384,7 +385,11 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 		local hasArray = id == ARRAY or id == TABLE
 		
 		if not hasArray and id ~= DICT then
-			return nil -- data corruption
+			error(`Failed to parse table using byte: {
+					id
+				} at position {
+					pos
+				} (expected {ARRAY}, {TABLE}, or {DICT})`)
 		end
 		
 		if hasArray then
@@ -407,24 +412,22 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 					continue
 				end
 				
-				local value
-				
 				-- check if existing
 				if valId == EQ_EXISTING then
-					value = existing[buffer.readu16(buf, pos + 1)]
+					local value = existing[buffer.readu16(buf, pos + 1)]
 					pos += 3
 					if value == nil then
-						return nil
+						error(`Failed to parse {
+								buffer.readu16(buf, pos + 1)
+							}th existing value at position {
+								pos
+							}`)
 					end
 					data[index] = value
 					continue
 				end
 				
-				value = deserialCache(valId)
-				if value == nil then
-					return nil
-				end
-				data[index] = value
+				data[index] = deserialCache(valId)
 			end
 		end
 		
@@ -435,43 +438,43 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 				return data
 			end
 			
-			local key, value
+			local key
 			
 			-- check if existing
 			if valId == EQ_EXISTING then
 				key = existing[buffer.readu16(buf, pos + 1)]
 				if key == nil then
-					return nil
+					error(`Failed to parse {
+							buffer.readu16(buf, pos + 1)
+						}th existing value at position {
+							pos
+						}`)
 				end
 				pos += 3
 			end
 			
-			if not key then
+			if key == nil then
 				key = deserialCache(valId)
-				if key == nil then
-					return nil
-				end
 			end
 			
 			valId = buffer.readu8(buf, pos)
 			
 			-- check if existing
 			if valId == EQ_EXISTING then
-				value = existing[buffer.readu16(buf, pos + 1)]
+				local value = existing[buffer.readu16(buf, pos + 1)]
 				if value == nil then
-					return nil
+					error(`Failed to parse {
+							buffer.readu16(buf, pos + 1)
+						}th existing value at position {
+							pos
+						}`)
 				end
 				pos += 3
 				data[key] = value
 				continue
 			end
 			
-			value = deserialCache(valId)
-			if value == nil then
-				return nil
-			end
-			
-			data[key] = value
+			data[key] = deserialCache(valId)
 		end
 	end
 	
