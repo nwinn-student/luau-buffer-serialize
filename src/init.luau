@@ -164,6 +164,11 @@ BufferSerializer.pair = function(id: number, value: any): ()
 		pairModules[typeV] = mod
 	end
 	
+	-- Same value, different id
+	if mod.Write[value] ~= nil then
+		mod.Read[mod.Write[value]] = nil
+	end
+	-- Same id, different value
 	if mod.Read[id] ~= nil then
 		mod.Write[mod.Read[id]] = nil
 	end
