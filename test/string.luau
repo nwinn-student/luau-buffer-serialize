@@ -86,13 +86,23 @@ test.compare("5", ds("5"))
 test.serial(serialize("6"), test.newBuffer(19))
 test.compare("6", ds("6"))
 
-
 -- Serializes the same value to multiple ids
 --	To show that the lastest is used
-pair(33, "1")
+pair(33, "1") -- 32 -> 33
 
 test.serial(serialize("1"), test.newBuffer(51))
 test.compare("1", ds("1"))
+
+-- Attempts to deserialize an invalid constant
+--	50 is an previously valid string constant
+--	Simulates migration from a value from 1 id to another
+--		but failure to account for backwards compatibility
+test.compare(nil, deserialize(test.newBuffer(50)))
+
+-- Attempts to deserialize a value from before it was made a constant
+local Sir_Seven = serialize("7")
+pair(7, "7")
+test.compare("7", deserialize(Sir_Seven)) -- nothing changes
 
 test.complete("STRING")
 
