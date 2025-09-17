@@ -16,9 +16,7 @@ local WRITE = {} -- 1 to 1343
 local function strSerializer(value: string, buf: buffer, pos :number, size: number)
 
 	if value == "" then
-		if not buf then
-			buf, size = buffer.create(1), 1
-		elseif pos + 1 > size then
+		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
 		buffer.writeu8(buf, pos, EMPTY)
@@ -32,9 +30,7 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 			else
 				2
 		
-		if not buf then
-			buf, size = buffer.create(newSize), newSize
-		elseif pos + newSize > size then
+		if pos + newSize > size then
 			buf, size = inflate(buf, pos + newSize, size)
 		end
 
@@ -62,9 +58,7 @@ local function strSerializer(value: string, buf: buffer, pos :number, size: numb
 		else
 			5
 	
-	if not buf then
-		buf, size = buffer.create(len + newSize), len + newSize
-	elseif pos + len + newSize > size then
+	if pos + len + newSize > size then
 		buf, size = inflate(buf, pos + len + newSize, size)
 	end
 	

@@ -7,6 +7,10 @@
 ]]--
 @native
 local function inflate(data: buffer, minSize: number, oldSize: number)
+	if oldSize == 0 then
+		return buffer.create(minSize), minSize
+	end
+	
 	while minSize > oldSize do
 		oldSize *= 2
 	end

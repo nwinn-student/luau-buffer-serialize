@@ -35,25 +35,19 @@ local WRITE = {} -- 1 to 1055
 local function numSerializer(value: number, buf: buffer, pos: number, size: number)
 
 	if value == 0 then
-		if not buf then
-			buf, size = buffer.create(1), 1
-		elseif pos + 1 > size then
+		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
 		buffer.writeu8(buf, pos, ZERO)
 		return buf, pos + 1, size
 	elseif value == 1 then
-		if not buf then
-			buf, size = buffer.create(1), 1
-		elseif pos + 1 > size then
+		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
 		buffer.writeu8(buf, pos, ONE)
 		return buf, pos + 1, size
 	elseif value ~= value then
-		if not buf then
-			buf, size = buffer.create(1), 1
-		elseif pos + 1 > size then
+		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
 		buffer.writeu8(buf, pos, NAN)
@@ -67,9 +61,7 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 			else
 				2
 		
-		if not buf then
-			buf, size = buffer.create(newSize), newSize
-		elseif pos + newSize > size then
+		if pos + newSize > size then
 			buf, size = inflate(buf, pos + newSize, size)
 		end
 
@@ -88,9 +80,7 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 	if value % 1 ~= 0 or value > MAX_INT or value < MIN_INT then
 
 		if MAX_FLOAT < value or value < -MAX_FLOAT then
-			if not buf then
-				buf, size = buffer.create(9), 9
-			elseif pos + 9 > size then
+			if pos + 9 > size then
 				buf, size = inflate(buf, pos + 9, size)
 			end
 			buffer.writeu8(buf, pos, DOUBLE)
@@ -101,9 +91,7 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 		-- Ensures that the output WILL be the same as the input
 		-- even if it results in a slower path
 		if (vecX * value).x == value then
-			if not buf then
-				buf, size = buffer.create(5), 5
-			elseif pos + 5 > size then
+			if pos + 5 > size then
 				buf, size = inflate(buf, pos + 5, size)
 			end
 			buffer.writeu8(buf, pos, FLOAT)
@@ -111,9 +99,7 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 			return buf, pos + 5, size
 		end
 		
-		if not buf then
-			buf, size = buffer.create(9), 9
-		elseif pos + 9 > size then
+		if pos + 9 > size then
 			buf, size = inflate(buf, pos + 9, size)
 		end
 		buffer.writeu8(buf, pos, DOUBLE)
@@ -130,9 +116,7 @@ local function numSerializer(value: number, buf: buffer, pos: number, size: numb
 		else
 			5
 	
-	if not buf then
-		buf, size = buffer.create(newSize), newSize
-	elseif pos + newSize > size then
+	if pos + newSize > size then
 		buf, size = inflate(buf, pos + newSize, size)
 	end
 	buffer.writeu8(buf, pos, ZERO + newSize)
