@@ -9,9 +9,7 @@ local inflate = require("./inflate")
 ]]--
 return {
 	serialize = function(value: boolean, buf: buffer, pos: number, size: number)
-		if not buf then
-			buf, size = buffer.create(1), 1
-		elseif pos + 1 > size then
+		if not buf or pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
 
