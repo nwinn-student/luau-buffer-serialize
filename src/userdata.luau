@@ -24,7 +24,7 @@ local Userdata = {
 				else
 					2
 			
-			if not buf or pos + newSize > size then
+			if pos + newSize > size then
 				buf, size = inflate(buf, pos + newSize, size)
 			end
 
@@ -40,7 +40,7 @@ local Userdata = {
 		end
 
 		if Writer then
-			if not buf or pos + 1 > size then
+			if pos + 1 > size then
 				buf, size = inflate(buf, pos + 1, size)
 			end
 			buffer.writeu8(buf, pos, CUSTOM)
@@ -50,7 +50,7 @@ local Userdata = {
 				return buf, pos, size
 			end
 		end
-		if not buf or pos + 1 > size then
+		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
 		buffer.writeu8(buf, pos, NIL)

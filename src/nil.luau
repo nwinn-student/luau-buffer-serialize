@@ -9,7 +9,7 @@ local inflate = require("./inflate")
 ]]--
 return {
 	serialize = function(value: nil, buf: buffer, pos: number, size: number)
-		if not buf or pos + 1 > size then
+		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
 
