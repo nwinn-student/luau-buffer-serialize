@@ -15,9 +15,7 @@ return {
 		local len = buffer.len(value)
 
 		if len == 0 then
-			if not buf then
-				buf, size = buffer.create(1), 1
-			elseif pos + 1 > size then
+			if pos + 1 > size then
 				buf, size = inflate(buf, pos + 1, size)
 			end
 			buffer.writeu8(buf, pos, EMPTY)
@@ -33,9 +31,7 @@ return {
 			else
 				5
 		
-		if not buf then
-			buf, size = buffer.create(len + newSize), len + newSize
-		elseif pos + len + newSize > size then
+		if pos + len + newSize > size then
 			buf, size = inflate(buf, pos + len + newSize, size)
 		end
 		buffer.writeu8(buf, pos, 2 + newSize)
