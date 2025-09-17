@@ -5,16 +5,16 @@ local test = require("./test")
 
 
 -- Check that boolean.luau works properly
-local booleanSerialize = require("../src/boolean").serialize
-local booleanDeserialize = require("../src/boolean").deserialize
+local booleanSerialize = test.newSerializer(false)
+local booleanDeserialize = test.newDeserializer(false)
 
-local True_Bool = booleanSerialize(true, buffer.create(1), 0, 1)
-local False_Bool = booleanSerialize(false, buffer.create(1), 0, 1)
+local True_Bool = booleanSerialize(true)
+local False_Bool = booleanSerialize(false)
 
-test.compare(true, booleanDeserialize(True_Bool, 0))
+test.compare(true, booleanDeserialize(True_Bool))
 test.serial(True_Bool, test.newBuffer(1))
 
-test.compare(false, booleanDeserialize(False_Bool, 0))
+test.compare(false, booleanDeserialize(False_Bool))
 test.serial(False_Bool, test.newBuffer(2))
 
 

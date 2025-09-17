@@ -4,12 +4,12 @@
 local test = require("./test")
 
 -- Check that nil.luau works properly
-local nilSerialize = require("../src/nil").serialize
-local nilDeserialize = require("../src/nil").deserialize
+local nilSerialize = test.newSerializer(nil)
+local nilDeserialize = test.newDeserializer(nil)
 
-local Sir_Nil = nilSerialize(nil, buffer.create(1), 0, 1)
+local Sir_Nil = nilSerialize(nil)
 
-test.compare(nil, nilDeserialize(Sir_Nil, 0))
+test.compare(nil, nilDeserialize(Sir_Nil))
 test.serial(Sir_Nil, test.newBuffer(0))
 
 
