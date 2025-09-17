@@ -110,6 +110,60 @@ local test = {
 				debug.traceback("", 2)
 			}`)
 		environments[debug.info(2, "s")] = false
+	end,
+	newSerializer = function(v: any)
+		
+		type Serializer = (any, buffer, number, number)->(buffer, number, number)
+		
+		local typeV = type(v)
+		
+		local serializer = (if typeV == "nil" then
+				require("../src/nil").serialize
+			elseif typeV == "boolean" then
+				require("../src/boolean").serialize
+			elseif typeV == "buffer" then
+				require("../src/buffer").serialize
+			elseif typeV == "string" then
+				require("../src/string").serialize
+			elseif typeV == "number" then
+				require("../src/number").serialize
+			elseif typeV == "vector" then
+				require("../src/vector").serialize
+			elseif typeV == "table" then
+				require("../src/table").serialize
+			else
+				require("../src/userdata").serialize) :: Serializer
+		
+		return function(v: any)
+			return serializer(v, nil :: any, 0, 0)
+		end
+	end,
+	newDeserializer = function(v: any)
+		
+		type Deserializer = (buffer, number)->(any, number)
+		
+		local typeV = type(v)
+		
+		local deserializer = (if typeV == "nil" then
+				require("../src/nil").deserialize
+			elseif typeV == "boolean" then
+				require("../src/boolean").deserialize
+			elseif typeV == "buffer" then
+				require("../src/buffer").deserialize
+			elseif typeV == "string" then
+				require("../src/string").deserialize
+			elseif typeV == "number" then
+				require("../src/number").deserialize
+			elseif typeV == "vector" then
+				require("../src/vector").deserialize
+			elseif typeV == "table" then
+				require("../src/table").deserialize
+			else
+				require("../src/userdata").deserialize) :: Deserializer
+		
+		return function(v: any)
+			return deserializer(v, 0)
+		end
 	end
 }
 
