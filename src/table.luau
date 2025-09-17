@@ -111,6 +111,9 @@ function tabSerializer(value: {[any]: any}, buf: buffer, pos: number, size: numb
 					break
 				end
 				if isEmpty then
+					if pos + 1 > size then
+						buf, size = inflate(buf, pos + 1, size)
+					end
 					buffer.writeu8(buf, pos, EMPTY)
 					pos += 1
 					return
