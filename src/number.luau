@@ -34,23 +34,18 @@ local WRITE = {} -- 1 to 1055
 @native
 local function numSerializer(value: number, buf: buffer, pos: number, size: number)
 
-	if value == 0 then
+	if value == 0 or value == 1 or value ~= value then
 		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
-		buffer.writeu8(buf, pos, ZERO)
-		return buf, pos + 1, size
-	elseif value == 1 then
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
-		buffer.writeu8(buf, pos, ONE)
-		return buf, pos + 1, size
-	elseif value ~= value then
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
-		buffer.writeu8(buf, pos, NAN)
+		
+		buffer.writeu8(buf, pos, if value == 0 then
+				ZERO
+			elseif value == 1 then
+				ONE
+			else 
+				NAN)
+		
 		return buf, pos + 1, size
 	end
 
