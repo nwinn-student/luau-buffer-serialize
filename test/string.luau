@@ -106,9 +106,7 @@ test.compare("7", deserialize(Sir_Seven)) -- nothing changes
 
 -- Attempt to pair a constant string to a built-in string
 -- built-in string [""] is of higher priority
-pair(5, "")
-test.serial(serialize(""), test.newBuffer(9))
-test.compare("", ds(""))
+test.compare(false, pcall(pair, 5, ""))
 
 test.complete("STRING")
 

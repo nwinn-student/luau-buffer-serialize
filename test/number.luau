@@ -129,9 +129,7 @@ test.compare(8, deserialize(Sir_Eight)) -- nothing changes
 
 -- Attempt to pair a constant number to a built-in number
 -- built-in number [1] is of higher priority
-pair(5, 1)
-test.serial(serialize(1), test.newBuffer(89))
-test.compare(1, ds(1))
+test.compare(false, pcall(pair, 5, 1))
 
 test.complete("NUMBER")
 
