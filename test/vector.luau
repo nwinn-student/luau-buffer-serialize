@@ -162,6 +162,9 @@ test.compare(vector.create(7,7,7), deserialize(Sir_Seven)) -- nothing changes
 -- built-in vector [vector.zero] is of higher priority
 test.compare(false, pcall(pair, 5, vector.zero))
 
+require("../src/vector").resetRead()
+require("../src/vector").resetWrite()
+
 test.complete("VECTOR")
 
 return {}

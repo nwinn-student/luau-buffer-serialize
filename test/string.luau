@@ -108,6 +108,9 @@ test.compare("7", deserialize(Sir_Seven)) -- nothing changes
 -- built-in string [""] is of higher priority
 test.compare(false, pcall(pair, 5, ""))
 
+require("../src/string").resetRead()
+require("../src/string").resetWrite()
+
 test.complete("STRING")
 
 return {}

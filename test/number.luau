@@ -131,6 +131,9 @@ test.compare(8, deserialize(Sir_Eight)) -- nothing changes
 -- built-in number [1] is of higher priority
 test.compare(false, pcall(pair, 5, 1))
 
+require("../src/number").resetRead()
+require("../src/number").resetWrite()
+
 test.complete("NUMBER")
 
 return {}
