@@ -91,4 +91,7 @@ The dictSize variable represents the amount of bytes used to store all of the ke
 - [X] char_constant_next [220-223]: The next byte stores the id of a userdata constant (Takes 2 bytes)
 
 `future`
-- [ ] future_approaches [227-255]: Approaches reserved for new types or expanding upon prior.
+- [ ] future_approaches [227-239]: Approaches reserved for new types or expanding upon prior.
+
+`extend`
+- [ ] extend_approaches [240-255]: Approaches reserved for BufferSerializer extenders.
