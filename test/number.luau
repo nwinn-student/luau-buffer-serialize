@@ -2,6 +2,17 @@
 -- Runs tests for ../BufferSerializer/number
 
 local test = require("./test")
+local ZERO = 88
+local ONE = 89
+local BYTE = 90
+local CHAR = 91
+local TRYTE = 92
+local INT = 93
+local FLOAT = 94
+local DOUBLE = 95
+local NAN = 96
+local CONST_INIT = 99
+local CONST_NEXT = 132
 
 -- Check that number.luau works properly
 local serialize = require("../src").serialize
@@ -18,15 +29,15 @@ local Sir_Double = serialize(2^-256)
 local Sir_NaN = serialize(0/0)
 
 -- serialization
-test.serial(Sir_Zero, test.newBuffer(88))
-test.serial(Sir_One, test.newBuffer(89))
-test.serial(Sir_Byte, test.newBuffer(90, 2^1))
-test.serial(Sir_Char, test.newBuffer(91, 0, 1))
-test.serial(Sir_Tryte, test.newBuffer(92, 0, 0, 1))
-test.serial(Sir_Int, test.newBuffer(93, 0, 0, 0, 1))
-test.serial(Sir_Float, test.newBuffer(94, 0, 0, 128, 59))
-test.serial(Sir_Double, test.newBuffer(95, 0, 0, 0, 0 ,0, 0, 240, 47))
-test.serial(Sir_NaN, test.newBuffer(96))
+test.serial(Sir_Zero, test.newBuffer(ZERO))
+test.serial(Sir_One, test.newBuffer(ONE))
+test.serial(Sir_Byte, test.newBuffer(BYTE, 2^1))
+test.serial(Sir_Char, test.newBuffer(CHAR, 0, 1))
+test.serial(Sir_Tryte, test.newBuffer(TRYTE, 0, 0, 1))
+test.serial(Sir_Int, test.newBuffer(INT, 0, 0, 0, 1))
+test.serial(Sir_Float, test.newBuffer(FLOAT, 0, 0, 128, 59))
+test.serial(Sir_Double, test.newBuffer(DOUBLE, 0, 0, 0, 0 ,0, 0, 240, 47))
+test.serial(Sir_NaN, test.newBuffer(NAN))
 
 -- deserialization
 test.compare(0, deserialize(Sir_Zero))
@@ -49,13 +60,13 @@ local pair = require("../src").pair
 -- Regular tests
 pair(16, 2)
 pair(32, 3)
-pair(128, 4)
-pair(1055, 5)
+pair(32 + 96, 4) -- 128
+pair(32 + 4*256 - 1, 5) -- 1055
 
-test.serial(serialize(2), test.newBuffer(115))
-test.serial(serialize(3), test.newBuffer(131))
-test.serial(serialize(4), test.newBuffer(132, 96))
-test.serial(serialize(5), test.newBuffer(135, 255))
+test.serial(serialize(2), test.newBuffer(CONST_INIT + 16))
+test.serial(serialize(3), test.newBuffer(CONST_INIT + 32))
+test.serial(serialize(4), test.newBuffer(CONST_NEXT, 96))
+test.serial(serialize(5), test.newBuffer(CONST_NEXT + 3, 255))
 
 test.compare(2, ds(2))
 test.compare(3, ds(3))
@@ -67,24 +78,24 @@ test.compare(5, ds(5))
 pair(1, 6)
 pair(1, 7)
 
-test.serial(serialize(6), test.newBuffer(90, 6))
+test.serial(serialize(6), test.newBuffer(BYTE, 6))
 test.compare(6, ds(6))
 
-test.serial(serialize(7), test.newBuffer(100))
+test.serial(serialize(7), test.newBuffer(CONST_INIT + 1))
 test.compare(7, ds(7))
 
 -- Serializes the same value to multiple ids
 --	To show that the lastest is used
 pair(17, 2) -- 16 -> 17
 
-test.serial(serialize(2), test.newBuffer(116))
+test.serial(serialize(2), test.newBuffer(CONST_INIT + 17))
 test.compare(2, ds(2))
 
 -- Attempts to deserialize an invalid constant
 --	50 is an previously valid number constant
 --	Simulates migration from a value from 1 id to another
 --		but failure to account for backwards compatibility
-test.compare(nil, deserialize(test.newBuffer(115)))
+test.compare(nil, deserialize(test.newBuffer(CONST_INIT + 16)))
 
 -- Attempts to deserialize a value from before it was made a constant
 local Sir_Eight = serialize(8)

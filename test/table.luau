@@ -2,6 +2,14 @@
 -- Runs tests for ../BufferSerializer/nil
 
 local test = require("./test")
+local EMPTY = 194
+local TABLE = 195
+local EXIST = 196
+local ARRAY = 197
+local DICT = 198
+local ARRAYEND = 199
+local TABLEEND = 200
+
 local recurse = {}
 recurse[1] = recurse
 
@@ -18,12 +26,12 @@ local Sir_Exist = serialize({"aaa","aaa"})
 local Sir_Recurs = serialize(recurse)
 
 -- serialization
-test.serial(Sir_Empty, test.newBuffer(194))
-test.serial(Sir_Table, test.newBuffer(195, 89, 199, 88, 89, 200))
-test.serial(Sir_Array, test.newBuffer(197, 89, 200))
-test.serial(Sir_Dict, test.newBuffer(198, 88, 89, 200))
-test.serial(Sir_Exist, test.newBuffer(197, 10, 3, 97, 97, 97, 196, 1, 0, 200))
-test.serial(Sir_Recurs, test.newBuffer(197, 196, 0, 0, 200))
+test.serial(Sir_Empty, test.newBuffer(EMPTY))
+test.serial(Sir_Table, test.newBuffer(TABLE, 89, ARRAYEND, 88, 89, TABLEEND))
+test.serial(Sir_Array, test.newBuffer(ARRAY, 89, TABLEEND))
+test.serial(Sir_Dict, test.newBuffer(DICT, 88, 89, TABLEEND))
+test.serial(Sir_Exist, test.newBuffer(ARRAY, 10, 3, 97, 97, 97, EXIST, 1, 0, TABLEEND))
+test.serial(Sir_Recurs, test.newBuffer(ARRAY, EXIST, 0, 0, TABLEEND))
 
 -- deserialization
 test.compare({}, deserialize(Sir_Empty))

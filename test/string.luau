@@ -2,6 +2,13 @@
 -- Runs tests for ../BufferSerializer/string
 
 local test = require("./test")
+local EMPTY = 9
+local BYTE = 10
+local CHAR = 11
+local TRYTE = 12
+local INT = 13
+local CONST_INIT = 18
+local CONST_NEXT = 83
 
 -- Check that string.luau works properly
 local serialize = require("../src").serialize
@@ -14,11 +21,11 @@ local Sir_Tryte = serialize(string.rep("\0", 2^16))
 local Sir_Int = serialize(string.rep("\0", 2^24))
 
 -- serialization
-test.serial(Sir_Empty, test.newBuffer(9))
-test.serial(Sir_Byte, test.sizedBuffer(34, 10, 32))
-test.serial(Sir_Char, test.sizedBuffer(259, 11, 0, 1))
-test.serial(Sir_Tryte, test.sizedBuffer(65540, 12, 0, 0, 1))
-test.serial(Sir_Int, test.sizedBuffer(16777221, 13, 0, 0, 0, 1))
+test.serial(Sir_Empty, test.newBuffer(EMPTY))
+test.serial(Sir_Byte, test.sizedBuffer(34, BYTE, 32))
+test.serial(Sir_Char, test.sizedBuffer(259, CHAR, 0, 1))
+test.serial(Sir_Tryte, test.sizedBuffer(65540, TRYTE, 0, 0, 1))
+test.serial(Sir_Int, test.sizedBuffer(16777221, INT, 0, 0, 0, 1))
 
 -- deserialization
 test.compare("", deserialize(Sir_Empty))
@@ -37,13 +44,13 @@ local pair = require("../src").pair
 -- Regular tests
 pair(32, "1")
 pair(64, "2")
-pair(128, "3")
-pair(1343, "4")
+pair(64 + 64, "3") -- 128
+pair(64 + 5*256 - 1, "4") -- 1343
 
-test.serial(serialize("1"), test.newBuffer(50))
-test.serial(serialize("2"), test.newBuffer(82))
-test.serial(serialize("3"), test.newBuffer(83, 64))
-test.serial(serialize("4"), test.newBuffer(87, 255))
+test.serial(serialize("1"), test.newBuffer(CONST_INIT + 32))
+test.serial(serialize("2"), test.newBuffer(CONST_INIT + 64))
+test.serial(serialize("3"), test.newBuffer(CONST_NEXT, 64))
+test.serial(serialize("4"), test.newBuffer(CONST_NEXT + 4, 255))
 
 test.compare("1", ds("1"))
 test.compare("2", ds("2"))
@@ -55,24 +62,24 @@ test.compare("4", ds("4"))
 pair(1, "5")
 pair(1, "6")
 
-test.serial(serialize("5"), test.newBuffer(10, 1, 53))
+test.serial(serialize("5"), test.newBuffer(BYTE, 1, 53))
 test.compare("5", ds("5"))
 
-test.serial(serialize("6"), test.newBuffer(19))
+test.serial(serialize("6"), test.newBuffer(CONST_INIT + 1))
 test.compare("6", ds("6"))
 
 -- Serializes the same value to multiple ids
 --	To show that the lastest is used
 pair(33, "1") -- 32 -> 33
 
-test.serial(serialize("1"), test.newBuffer(51))
+test.serial(serialize("1"), test.newBuffer(CONST_INIT + 33))
 test.compare("1", ds("1"))
 
 -- Attempts to deserialize an invalid constant
 --	50 is an previously valid string constant
 --	Simulates migration from a value from 1 id to another
 --		but failure to account for backwards compatibility
-test.compare(nil, deserialize(test.newBuffer(50)))
+test.compare(nil, deserialize(test.newBuffer(CONST_INIT + 32)))
 
 -- Attempts to deserialize a value from before it was made a constant
 local Sir_Seven = serialize("7")
