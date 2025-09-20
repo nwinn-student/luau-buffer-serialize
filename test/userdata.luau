@@ -57,7 +57,7 @@ pair(1, Five)
 pair(1, Six)
 
 test.serial(serialize(Five), test.newBuffer(NIL))
-test.compare("userdata", type(ds(Five))) -- it will be unspecified newproxy
+test.compare(true, Five ~= ds(Five)) -- it will be unspecified newproxy
 
 test.serial(serialize(Six), test.newBuffer(CONST_INIT + 1))
 test.compare(Six, ds(Six))
@@ -70,10 +70,10 @@ test.serial(serialize(One), test.newBuffer(CONST_INIT + 9))
 test.compare(One, ds(One))
 
 -- Attempts to deserialize an invalid constant
---	50 is an previously valid string constant
+--	CONST_INIT + 8 is an previously valid userdata constant
 --	Simulates migration from a value from 1 id to another
 --		but failure to account for backwards compatibility
-test.compare(nil, deserialize(test.newBuffer(CONST_INIT + 8)))
+test.compare(true, One ~= deserialize(test.newBuffer(CONST_INIT + 8)))
 
 -- Attempts to deserialize a value from before it was made a constant
 local Sir_Seven = serialize(Seven)

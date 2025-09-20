@@ -92,7 +92,7 @@ test.serial(serialize(2), test.newBuffer(CONST_INIT + 17))
 test.compare(2, ds(2))
 
 -- Attempts to deserialize an invalid constant
---	50 is an previously valid number constant
+--	CONST_INIT + 16 is an previously valid number constant
 --	Simulates migration from a value from 1 id to another
 --		but failure to account for backwards compatibility
 test.compare(nil, deserialize(test.newBuffer(CONST_INIT + 16)))

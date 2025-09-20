@@ -113,7 +113,7 @@ test.serial(serialize(vcreate(2,2,2)), test.newBuffer(CONST_NEXT, 1))
 test.compare(vcreate(2,2,2), ds(vcreate(2,2,2)))
 
 -- Attempts to deserialize an invalid constant
---	50 is an previously valid vector constant
+--	CONST_INIT + 32 is an previously valid vector constant
 --	Simulates migration from a value from 1 id to another
 --		but failure to account for backwards compatibility
 test.compare(nil, deserialize(test.newBuffer(CONST_INIT + 32)))
