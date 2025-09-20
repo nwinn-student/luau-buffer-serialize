@@ -4,39 +4,14 @@
 local test = require("./test")
 
 -- Check that string.luau works properly
-local strSerialize = test.newSerializer("")
-local strDeserialize = test.newDeserializer("")
-
-local Sir_Empty = strSerialize("")
-local Sir_Byte = strSerialize(string.rep("\0", 2^5))
-local Sir_Char = strSerialize(string.rep("\0", 2^8))
-local Sir_Tryte = strSerialize(string.rep("\0", 2^16))
-local Sir_Int = strSerialize(string.rep("\0", 2^24))
-
--- serialization
-test.serial(Sir_Empty, test.newBuffer(9))
-test.serial(Sir_Byte, test.sizedBuffer(34, 10, 32))
-test.serial(Sir_Char, test.sizedBuffer(259, 11, 0, 1))
-test.serial(Sir_Tryte, test.sizedBuffer(65540, 12, 0, 0, 1))
-test.serial(Sir_Int, test.sizedBuffer(16777221, 13, 0, 0, 0, 1))
-
--- deserialization
-test.compare("", strDeserialize(Sir_Empty))
-test.compare(string.rep("\0", 2^5), strDeserialize(Sir_Byte))
-test.compare(string.rep("\0", 2^8), strDeserialize(Sir_Char))
-test.compare(string.rep("\0", 2^16), strDeserialize(Sir_Tryte))
-test.compare(string.rep("\0", 2^24), strDeserialize(Sir_Int))
-
-
--- Check that init.luau works with string.luau properly
 local serialize = require("../src").serialize
 local deserialize = require("../src").deserialize
 
-Sir_Empty = serialize("")
-Sir_Byte = serialize(string.rep("\0", 2^5))
-Sir_Char = serialize(string.rep("\0", 2^8))
-Sir_Tryte = serialize(string.rep("\0", 2^16))
-Sir_Int = serialize(string.rep("\0", 2^24))
+local Sir_Empty = serialize("")
+local Sir_Byte = serialize(string.rep("\0", 2^5))
+local Sir_Char = serialize(string.rep("\0", 2^8))
+local Sir_Tryte = serialize(string.rep("\0", 2^16))
+local Sir_Int = serialize(string.rep("\0", 2^24))
 
 -- serialization
 test.serial(Sir_Empty, test.newBuffer(9))

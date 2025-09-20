@@ -4,54 +4,18 @@
 local test = require("./test")
 
 -- Check that number.luau works properly
-local numSerialize = test.newSerializer(1)
-local numDeserialize = test.newDeserializer(1)
-
-local Sir_Zero = numSerialize(0)
-local Sir_One = numSerialize(1)
-local Sir_Byte = numSerialize(2^1)
-local Sir_Char = numSerialize(2^8)
-local Sir_Tryte = numSerialize(2^16)
-local Sir_Int = numSerialize(2^24)
-local Sir_Float = numSerialize(2^-8)
-local Sir_Double = numSerialize(2^-256)
-local Sir_NaN = numSerialize(0/0)
-
--- serialization
-test.serial(Sir_Zero, test.newBuffer(88))
-test.serial(Sir_One, test.newBuffer(89))
-test.serial(Sir_Byte, test.newBuffer(90, 2^1))
-test.serial(Sir_Char, test.sizedBuffer(3, 91, 0, 1))
-test.serial(Sir_Tryte, test.sizedBuffer(4, 92, 0, 0, 1))
-test.serial(Sir_Int, test.sizedBuffer(5, 93, 0, 0, 0, 1))
-test.serial(Sir_Float, test.sizedBuffer(5, 94, 0, 0, 128, 59))
-test.serial(Sir_Double, test.sizedBuffer(9, 95, 0, 0, 0, 0 ,0, 0, 240, 47))
-test.serial(Sir_NaN, test.newBuffer(96))
-
--- deserialization
-test.compare(0, numDeserialize(Sir_Zero))
-test.compare(1, numDeserialize(Sir_One))
-test.compare(2^1, numDeserialize(Sir_Byte))
-test.compare(2^8, numDeserialize(Sir_Char))
-test.compare(2^16, numDeserialize(Sir_Tryte))
-test.compare(2^24, numDeserialize(Sir_Int))
-test.compare(2^-8, numDeserialize(Sir_Float))
-test.compare(2^-256, numDeserialize(Sir_Double))
-test.compare(0/0, numDeserialize(Sir_NaN))
-
--- Check that init.luau works with number.luau properly
 local serialize = require("../src").serialize
 local deserialize = require("../src").deserialize
 
-Sir_Zero = serialize(0)
-Sir_One = serialize(1)
-Sir_Byte = serialize(2^1)
-Sir_Char = serialize(2^8)
-Sir_Tryte = serialize(2^16)
-Sir_Int = serialize(2^24)
-Sir_Float = serialize(2^-8)
-Sir_Double = serialize(2^-256)
-Sir_NaN = serialize(0/0)
+local Sir_Zero = serialize(0)
+local Sir_One = serialize(1)
+local Sir_Byte = serialize(2^1)
+local Sir_Char = serialize(2^8)
+local Sir_Tryte = serialize(2^16)
+local Sir_Int = serialize(2^24)
+local Sir_Float = serialize(2^-8)
+local Sir_Double = serialize(2^-256)
+local Sir_NaN = serialize(0/0)
 
 -- serialization
 test.serial(Sir_Zero, test.newBuffer(88))

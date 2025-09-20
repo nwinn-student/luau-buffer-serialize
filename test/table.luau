@@ -6,44 +6,16 @@ local recurse = {}
 recurse[1] = recurse
 
 -- Check that table.luau works properly
-local tabSerialize = test.newSerializer({})
-local tabDeserialize = test.newDeserializer({})
-
-local Sir_Empty = tabSerialize({})
-local Sir_Table = tabSerialize({[0] = 1, 1})
-local Sir_Array = tabSerialize({1})
-local Sir_Dict = tabSerialize({[0] = 1})
-local Sir_Exist = tabSerialize({"aaa","aaa"})
-local Sir_Recurs = tabSerialize(recurse)
-
--- serialization
-test.serial(Sir_Empty, test.newBuffer(194))
-test.serial(Sir_Table, test.sizedBuffer(64, 195, 89, 199, 88, 89, 200))
-test.serial(Sir_Array, test.sizedBuffer(64, 197, 89, 200))
-test.serial(Sir_Dict, test.sizedBuffer(64, 198, 88, 89, 200))
-test.serial(Sir_Exist, test.sizedBuffer(64, 197, 10, 3, 97, 97, 97, 196, 1, 0, 200))
-test.serial(Sir_Recurs, test.sizedBuffer(64, 197, 196, 0, 0, 200))
-
--- deserialization
-test.compare({}, tabDeserialize(Sir_Empty))
-test.compare({[0] = 1, 1}, tabDeserialize(Sir_Table))
-test.compare({1}, tabDeserialize(Sir_Array))
-test.compare({[0] = 1}, tabDeserialize(Sir_Dict))
-test.compare({"aaa","aaa"}, tabDeserialize(Sir_Exist))
---test.compare(recurse, tabDeserialize(Sir_Recurs))
-
-
--- Check that init.luau works with table.luau properly
 local serialize = require("../src").serialize
 local deserialize = require("../src").deserialize
 
-Sir_Empty = serialize({})
-Sir_Empty = serialize({})
-Sir_Table = serialize({[0] = 1, 1})
-Sir_Array = serialize({1})
-Sir_Dict = serialize({[0] = 1})
-Sir_Exist = serialize({"aaa","aaa"})
-Sir_Recurs = serialize(recurse)
+local Sir_Empty = serialize({})
+local Sir_Empty = serialize({})
+local Sir_Table = serialize({[0] = 1, 1})
+local Sir_Array = serialize({1})
+local Sir_Dict = serialize({[0] = 1})
+local Sir_Exist = serialize({"aaa","aaa"})
+local Sir_Recurs = serialize(recurse)
 
 -- serialization
 test.serial(Sir_Empty, test.newBuffer(194))
