@@ -17,19 +17,16 @@ end
 
 local BufferSerializer = {}
 
-
-
-local serialModules = table.freeze({
-	["nil"] = require("@self/nil").serialize,
-	boolean = require("@self/boolean").serialize,
-	buffer = require("@self/buffer").serialize,
-	string = require("@self/string").serialize,
-	number = require("@self/number").serialize,
-	vector = require("@self/vector").serialize,
-	table = require("@self/table").serialize,
-	userdata = require("@self/userdata").serialize
-})
-local deserialModules = table.freeze({
+local modules = table.freeze({
+	["nil"] = require("@self/nil"),
+	boolean = require("@self/boolean"),
+	buffer = require("@self/buffer"),
+	string = require("@self/string"),
+	number = require("@self/number"),
+	vector = require("@self/vector"),
+	table = require("@self/table"),
+	userdata = require("@self/userdata"),
+	
 	[0] = require("@self/nil").deserialize,
 	require("@self/boolean").deserialize,
 	require("@self/buffer").deserialize,
@@ -38,12 +35,6 @@ local deserialModules = table.freeze({
 	require("@self/vector").deserialize,
 	require("@self/table").deserialize,
 	require("@self/userdata").deserialize
-})
-local pairModules = table.freeze({
-	string = require("@self/string"),
-	number = require("@self/number"),
-	vector = require("@self/vector"),
-	userdata = require("@self/userdata")
 })
 
 type Serialize = (value: any, buf: buffer?, pos: number, size: number)
@@ -68,7 +59,7 @@ BufferSerializer.serialize = function(value: any): buffer
 		typeValue = "nil"
 	end
 
-	local serial: Serialize = serialModules[typeValue]
+	local serial: Serialize = modules[typeValue].serialize
 	
 	return trim(serial(value, nil, 0, 0))
 end
@@ -101,7 +92,7 @@ BufferSerializer.deserialize = function(value: buffer): any
 		else 
 			0 -- add more if statements if needed for future
 
-	local deserial: Deserialize = deserialModules[pointer]
+	local deserial: Deserialize = modules[pointer]
 
 	local originalData = deserial(value, 0)
 	return originalData
@@ -145,7 +136,7 @@ BufferSerializer.pair = function(id: number, value: any): ()
 			and value ~= vector.create(1,0,1) and value ~= vector.create(1,1,0),
 		`Invalid value {value} (cannot be a built-in)`)
 	
-	local mod: Pair = pairModules[typeV]
+	local mod: Pair = modules[typeV]
 	
 	-- Same value, different id
 	if mod.Write[value] ~= nil then
