@@ -11,23 +11,23 @@ type Switch<VAR, F> = {
 	[VAR]: F,
 }
 
-local serialSwitch: Switch<string, Serialize> = {
+local serialSwitch: Switch<string, Serialize> = table.freeze({
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
 	string = require("./string").serialize,
 	number = require("./number").serialize,
 	vector = require("./vector").serialize,
 	userdata = require("./userdata").serialize
-}
+})
 
-local deserialSwitch: Switch<number, Deserialize> = {
+local deserialSwitch: Switch<number, Deserialize> = table.freeze({
 	require("./boolean").deserialize,
 	require("./buffer").deserialize,
 	require("./string").deserialize,
 	require("./number").deserialize,
 	require("./vector").deserialize,
 	require("./userdata").deserialize
-}
+})
 
 local EMPTY = 194
 local TABLE = 195
@@ -485,7 +485,7 @@ function tabDeserializer(buf: buffer, pos: number): ({[any]: any}?, number)
 	return data, pos + 1
 end
 
-return {
+return table.freeze({
 	serialize = tabSerializer,
 	deserialize = tabDeserializer,
-}
+})

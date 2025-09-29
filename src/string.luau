@@ -8,8 +8,9 @@ local CHAR = 11
 local THREE_BYTE = 12
 local INT = 13
 
-local READ = {}
-local WRITE = {} -- 1 to 1343
+-- Shrink mode is not well documented as of writing
+local READ = setmetatable({}, {__mode="s"})
+local WRITE = setmetatable({}, {__mode="s"}) -- 1 to 1343
 
 @native
 local function strSerializer(value: string, buf: buffer, pos :number, size: number)
@@ -131,8 +132,6 @@ local String = {
 ]]--
 function String.resetRead()
 	table.clear(READ)
-	READ = {}
-	String.Read = READ
 end
 --[[
 	Clears and replaces the write table
@@ -141,8 +140,6 @@ end
 ]]--
 function String.resetWrite()
 	table.clear(WRITE)
-	WRITE = {}
-	String.Write = WRITE
 end
 
-return String
+return table.freeze(String)

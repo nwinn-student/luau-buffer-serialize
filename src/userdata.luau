@@ -5,8 +5,9 @@ local inflate = require("./inflate")
 local CUSTOM = 202
 local NIL = 203
 
-local READ = {}
-local WRITE = {} -- 1 to 1039
+-- Shrink mode is not well documented as of writing
+local READ = setmetatable({}, {__mode="s"})
+local WRITE = setmetatable({}, {__mode="s"}) -- 1 to 1039
 local Reader
 local Writer
 
@@ -99,8 +100,6 @@ local Userdata = {
 ]]--
 function Userdata.resetRead()
 	table.clear(READ)
-	READ = {}
-	Userdata.Read = READ
 end
 --[[
 	Clears and replaces the write table
@@ -109,8 +108,6 @@ end
 ]]--
 function Userdata.resetWrite()
 	table.clear(WRITE)
-	WRITE = {}
-	Userdata.Write = WRITE
 end
 
-return Userdata
+return table.freeze(Userdata)

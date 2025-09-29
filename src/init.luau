@@ -186,4 +186,4 @@ BufferSerializer.pair = function(id: number, value: any): ()
 	mod.Write[value] = id
 end
 
-return BufferSerializer
+return table.freeze(BufferSerializer)
