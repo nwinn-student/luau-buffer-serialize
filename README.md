@@ -65,7 +65,7 @@ Results will differ based on the platform tested on and whether native-support i
 
 For the binary format BufferSerializer is using to (de)serialize, look to [FORMAT.md](./FORMAT.md).  
 
-There are 16 approaches left for future applications, whether it be for a new type in Luau or upon enough user requests.  These approaches will be consumed when no unknown approach is left in the type's section of the binary format.
+There are 24 approaches left for future applications, whether it be for a new type in Luau or upon enough user requests.  These approaches will be consumed when no unknown approach is left in the type's section of the binary format.
 There are 16 approaches left for extenders of BufferSerializer to define in order to accomidate their own requirements, such as adding the length of tables, re-adding number strings, adding fixed-length strings like MessagePack, and more.  These 16 approaches will never be consumed by future BufferSerializer versions.
 
 `serialize(data: any): buffer`: Takes in a value and spits out the serialized version within a buffer.
@@ -86,9 +86,9 @@ Constants are used to save the as much output size as possible given **fixed** i
 | `string` | 64 | 1 byte |
 | `number` | 32 | 1 byte |
 | `vector` | 32 | 1 byte |
-| `userdata` | 16 | 1 byte |
+| `userdata` | 10 | 1 byte |
 |  |  |  |
 | `string` | 1280 | 2 bytes |
 | `number` | 1024 | 2 bytes |
 | `vector` | 1024 | 2 bytes |
-| `userdata` | 1024 | 2 bytes |
+| `userdata` | 512 | 2 bytes |
