@@ -11,14 +11,14 @@ type Switch<VAR, F> = {
 	[VAR]: F,
 }
 
-local serialSwitch: Switch<string, Serialize> = table.freeze({
+local serialSwitch = table.freeze({
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
 	string = require("./string").serialize,
 	number = require("./number").serialize,
 	vector = require("./vector").serialize,
 	userdata = require("./userdata").serialize
-})
+}) :: Switch<string, Serialize>
 
 local deserialSwitch: Switch<number, Deserialize> = table.freeze({
 	require("./boolean").deserialize,
