@@ -22,8 +22,8 @@ local NUMBER = 148
 local SCALAR_NUMBER = 149
 
 -- Shrink mode is not well documented as of writing
-local READ = setmetatable({}, {__mode="s"})
-local WRITE = setmetatable({}, {__mode="s"}) -- 1 to 1055
+local READ = {}
+local WRITE = {} -- 1 to 1055
 
 local builtinSerialConst = table.freeze({
 	-- Used for serialization

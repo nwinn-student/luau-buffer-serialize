@@ -9,8 +9,8 @@ local THREE_BYTE = 12
 local INT = 13
 
 -- Shrink mode is not well documented as of writing
-local READ = setmetatable({}, {__mode="s"})
-local WRITE = setmetatable({}, {__mode="s"}) -- 1 to 1343
+local READ = {}
+local WRITE = {} -- 1 to 1343
 
 @native
 local function strSerializer(value: string, buf: buffer, pos :number, size: number)

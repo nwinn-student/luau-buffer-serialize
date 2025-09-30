@@ -6,8 +6,8 @@ local CUSTOM = 202
 local NIL = 203
 
 -- Shrink mode is not well documented as of writing
-local READ = setmetatable({}, {__mode="s"})
-local WRITE = setmetatable({}, {__mode="s"}) -- 1 to 1039
+local READ = {}
+local WRITE = {} -- 1 to 1039
 local Reader
 local Writer
 

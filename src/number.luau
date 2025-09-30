@@ -29,8 +29,8 @@ local MAX_FLOAT = 2^127
 local vecX = vector.create(1, 0)
 
 -- Shrink mode is not well documented as of writing
-local READ = setmetatable({}, {__mode="s"})
-local WRITE = setmetatable({}, {__mode="s"}) -- 1 to 1055
+local READ = {}
+local WRITE = {} -- 1 to 1055
 
 @native
 local function numSerializer(value: number, buf: buffer, pos: number, size: number)
