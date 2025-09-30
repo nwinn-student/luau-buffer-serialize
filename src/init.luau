@@ -59,11 +59,6 @@ BufferSerializer.serialize = function(value: any): buffer
 		typeValue = "nil"
 	end
 
-	-- A later version of Luau should let me swap the first any w/ "number"
-	-- and work as expected.  An even later version should just work
-	-- since type(...) has a fixed number of returns.
-	-- The only unaccounted for ones, "function" and "thread"
-	-- are already filtered by the above code (or should be)
 	local serial: Serialize = (modules[typeValue :: any] :: any).serialize
 	
 	return trim(serial(value, nil, 0, 0))
@@ -141,7 +136,6 @@ BufferSerializer.pair = function(id: number, value: any): ()
 			and value ~= vector.create(1,0,1) and value ~= vector.create(1,1,0),
 		`Invalid value {value} (cannot be a built-in)`)
 	
-	-- Same as serialize, a later version should fix it.
 	local mod: Pair = modules[typeV :: any] :: any
 	
 	-- Same value, different id
