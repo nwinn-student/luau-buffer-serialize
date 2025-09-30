@@ -8,7 +8,6 @@ local CHAR = 11
 local THREE_BYTE = 12
 local INT = 13
 
--- Shrink mode is not well documented as of writing
 local READ = {}
 local WRITE = {} -- 1 to 1343
 
