@@ -99,8 +99,6 @@ local Userdata = {
 ]]--
 function Userdata.resetRead()
 	table.clear(READ)
-	READ = {}
-	Userdata.Read = READ
 end
 --[[
 	Clears and replaces the write table
@@ -109,8 +107,6 @@ end
 ]]--
 function Userdata.resetWrite()
 	table.clear(WRITE)
-	WRITE = {}
-	Userdata.Write = WRITE
 end
 
-return Userdata
+return table.freeze(Userdata)

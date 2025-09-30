@@ -189,8 +189,6 @@ local Number = {
 ]]--
 function Number.resetRead()
 	table.clear(READ)
-	READ = {}
-	Number.Read = READ
 end
 --[[
 	Clears and replaces the write table
@@ -199,8 +197,6 @@ end
 ]]--
 function Number.resetWrite()
 	table.clear(WRITE)
-	WRITE = {}
-	Number.Write = WRITE
 end
 
-return Number
+return table.freeze(Number)
