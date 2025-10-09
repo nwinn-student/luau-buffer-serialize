@@ -39,7 +39,7 @@ test.compare({[0] = 1, 1}, deserialize(Sir_Table))
 test.compare({1}, deserialize(Sir_Array))
 test.compare({[0] = 1}, deserialize(Sir_Dict))
 test.compare({"aaa","aaa"}, deserialize(Sir_Exist))
---test.compare(recurse, deserialize(Sir_Recurs))
+test.compare(recurse, deserialize(Sir_Recurs))
 
 
 test.complete("TABLE")

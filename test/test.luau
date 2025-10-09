@@ -2,9 +2,17 @@
 --!optimize 2
 
 local environments = {}
+local meta = {
+	add = function(self, val)
+		table.insert(self, val)
+		return self
+	end
+}
+meta.__index = meta
 
 -- tossed together since it doesn't really matter
-local function stringify(value: any)
+-- how do we handle cyclic? and how do we identify different cyclics?
+local function stringify(value: any, parTree: any?)
 	local typeValue = type(value)
 	
 	local strValue = tostring(value)
@@ -18,13 +26,21 @@ local function stringify(value: any)
 	end
 	
 	if typeValue == "buffer" then
-		return `"{buffer.tostring(value)}"`
+		return `buffer"{buffer.tostring(value)}"`
 	end
 	
+	parTree = parTree or setmetatable({}, meta)
+	for i,v in parTree do
+		if v == value then
+			return `*CYCLIC#{i}*`
+		end
+	end
+	
+	parTree:add(value)
 	-- must be table...
 	local s = "{ "
     for k, v in value do
-        s ..= `[{stringify(k)}] = {stringify(v)},`
+        s ..= `[{stringify(k, parTree)}] = {stringify(v, parTree)},`
     end
     return s .. "} "
 end
@@ -101,7 +117,7 @@ local test = {
 		
 		local strOri = stringify(ori)
 		local strNew = stringify(new)
-		
+				
 		if strOri == strNew then
 			return
 		end
