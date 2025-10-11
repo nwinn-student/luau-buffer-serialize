@@ -113,7 +113,6 @@ local String = {
 	
 	@ Mainly used to reduce memory usage
 ]]
---
 function String.resetRead()
 	table.clear(READ)
 	READ = {}
@@ -124,7 +123,6 @@ end
 	
 	@ Mainly used to reduce memory usage
 ]]
---
 function String.resetWrite()
 	table.clear(WRITE)
 	WRITE = {}

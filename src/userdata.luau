@@ -92,7 +92,6 @@ local Userdata = {
 	
 	@ Mainly used to reduce memory usage
 ]]
---
 function Userdata.resetRead()
 	table.clear(READ)
 	READ = {}
@@ -103,7 +102,6 @@ end
 	
 	@ Mainly used to reduce memory usage
 ]]
---
 function Userdata.resetWrite()
 	table.clear(WRITE)
 	WRITE = {}

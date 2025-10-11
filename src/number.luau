@@ -170,7 +170,6 @@ local Number = {
 	
 	@ Mainly used to reduce memory usage
 ]]
---
 function Number.resetRead()
 	table.clear(READ)
 	READ = {}
@@ -181,7 +180,6 @@ end
 	
 	@ Mainly used to reduce memory usage
 ]]
---
 function Number.resetWrite()
 	table.clear(WRITE)
 	WRITE = {}

@@ -289,7 +289,6 @@ local Vector = {
 	
 	@ Mainly used to reduce memory usage
 ]]
---
 function Vector.resetRead()
 	table.clear(READ)
 	READ = {}
@@ -300,7 +299,6 @@ end
 	
 	@ Mainly used to reduce memory usage
 ]]
---
 function Vector.resetWrite()
 	table.clear(WRITE)
 	WRITE = {}

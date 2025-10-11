@@ -7,7 +7,6 @@ local inflate = require("./inflate")
 		into a single byte for storage
 	Deserializes a buffer into a boolean value if applicable
 ]]
---
 return {
 	serialize = function(value: boolean, buf: buffer, pos: number, size: number)
 		if pos + 1 > size then
