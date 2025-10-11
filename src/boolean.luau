@@ -6,7 +6,7 @@ local inflate = require("./inflate")
 	Serializes true/false values 
 		into a single byte for storage
 	Deserializes a buffer into a boolean value if applicable
-]]--
+]]
 return {
 	serialize = function(value: boolean, buf: buffer, pos: number, size: number)
 		if pos + 1 > size then
@@ -17,7 +17,6 @@ return {
 		return buf, pos + 1, size
 	end,
 	deserialize = function(buf: buffer, pos: number)
-		return buffer.readu8(buf, pos) == 1, 
-			pos + 1
+		return buffer.readu8(buf, pos) == 1, pos + 1
 	end,
 }

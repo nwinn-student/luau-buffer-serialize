@@ -1,0 +1,5 @@
+syntax = "Luau"
+column_width = 82
+
+[sort_requires]
+enabled = true
