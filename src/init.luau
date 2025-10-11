@@ -59,7 +59,7 @@ BufferSerializer.serialize = function(value: any): buffer
 				require("@self/vector")
 			elseif typeValue == "table" then
 				require("@self/table")
-			else
+			else                       
 				require("@self/userdata")
 		
 		serial = temp.serialize :: Serialize
@@ -81,11 +81,11 @@ BufferSerializer.deserialize = function(value: buffer): any
 
 	pointer = if pointer <= 2 then
 			1 -- boolean
-		elseif pointer <= 8 then
+		elseif pointer <= 7 then
 			2 -- buffer
-		elseif pointer <= 87 then
+		elseif pointer <= 96 then
 			3 -- string
-		elseif pointer <= 135 then
+		elseif pointer <= 141 then
 			4 -- number
 		elseif pointer <= 193 then
 			5 -- vector
@@ -98,7 +98,8 @@ BufferSerializer.deserialize = function(value: buffer): any
 
 	local deserial: Deserialize = deserialModules[pointer]
 	if not deserial then
-		local temp = if pointer == 0 then require("@self/nil")
+		local temp = if pointer == 0 then
+				require("@self/nil")
 			elseif pointer == 1 then
 				require("@self/boolean")
 			elseif pointer == 2 then
@@ -122,6 +123,8 @@ BufferSerializer.deserialize = function(value: buffer): any
 	return originalData
 end
 
+type Constantable = string | number | vector
+
 --[[
 	Connects a constant value to an identifier.
 	@ Only certain types are supported.
@@ -129,9 +132,10 @@ end
 	@param id the identifier
 	@param value the value
 ]]--
-BufferSerializer.pair = function(id: number, value: any): ()
+BufferSerializer.pair = function(id: number, value: Constantable): ()
 	local typeV = type(value)
-	local maxId = if typeV == "string" then 1343
+	local maxId = if typeV == "string" then
+			1343
 		elseif typeV == "number" then
 			1055
 		elseif typeV == "vector" then
@@ -142,7 +146,7 @@ BufferSerializer.pair = function(id: number, value: any): ()
 			0
 
 	assert(maxId ~= 0, 
-		`Invalid type {typeV} (must be string | number | vector | userdata)`)
+		`Invalid type {typeV} (must be Constantable or userdata)`)
 	assert(type(id) == "number" and id % 1 == 0 and id == id, 
 		`Invalid id {id} (must be integer)`)
 	assert(id >= 1 and id <= maxId, 
