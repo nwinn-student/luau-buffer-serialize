@@ -2,7 +2,12 @@
 --!strict
 local inflate = require("./inflate")
 
-type Serialize = (data: any, buf: buffer, pos: number, size: number) -> (buffer, number, number)
+type Serialize = (
+	data: any,
+	buf: buffer,
+	pos: number,
+	size: number
+) -> (buffer, number, number)
 
 type Deserialize = (buf: buffer, pos: number) -> (any, number)
 
@@ -37,7 +42,12 @@ local ARRAY_END = 199
 local TABLE_END = 200
 
 @native
-function tabSerializer(value: { [any]: any }, buf: buffer, pos: number, size: number)
+function tabSerializer(
+	value: { [any]: any },
+	buf: buffer,
+	pos: number,
+	size: number
+)
 	do
 		local isEmpty = true
 		for _, _ in value do

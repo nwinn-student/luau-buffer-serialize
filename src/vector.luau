@@ -68,7 +68,12 @@ local function getType(value: number): number
 end
 
 @native
-local function vecSerializer(value: vector, buf: buffer, pos: number, size: number)
+local function vecSerializer(
+	value: vector,
+	buf: buffer,
+	pos: number,
+	size: number
+)
 	local builtin: number? = builtinSerialConst[value]
 	if builtin then
 		if pos + 1 > size then
@@ -114,7 +119,14 @@ local function vecSerializer(value: vector, buf: buffer, pos: number, size: numb
 		local isXZAxis = valueX == valueZ and valueY == 0
 		local isYZAxis = valueY == valueZ and valueX == 0
 
-		if isOneValue or isXAxis or isYAxis or isZAxis or isXYAxis or isYZAxis then
+		if
+			isOneValue
+			or isXAxis
+			or isYAxis
+			or isZAxis
+			or isXYAxis
+			or isYZAxis
+		then
 			-- 3+ bytes
 			if pos + 3 > size then
 				buf, size = inflate(buf, pos + 3, size)
@@ -224,7 +236,9 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 	end
 
 	if id > 157 then
-		local cachedId = if id > 189 then (id - 190) * 256 + 32 + buffer.readu8(buf, pos + 1) else id - 157
+		local cachedId = if id > 189
+			then (id - 190) * 256 + 32 + buffer.readu8(buf, pos + 1)
+			else id - 157
 
 		local cachedConstant: vector? = READ[cachedId]
 		if cachedConstant then
@@ -241,10 +255,18 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		end
 		return nil, pos + 1 -- data corruption
 	elseif id == BYTE then
-		return vector.create(buffer.readi8(buf, pos + 1), buffer.readi8(buf, pos + 2), buffer.readi8(buf, pos + 3)),
+		return vector.create(
+			buffer.readi8(buf, pos + 1),
+			buffer.readi8(buf, pos + 2),
+			buffer.readi8(buf, pos + 3)
+		),
 			pos + 4
 	elseif id == CHAR then
-		return vector.create(buffer.readi16(buf, pos + 1), buffer.readi16(buf, pos + 3), buffer.readi16(buf, pos + 5)),
+		return vector.create(
+			buffer.readi16(buf, pos + 1),
+			buffer.readi16(buf, pos + 3),
+			buffer.readi16(buf, pos + 5)
+		),
 			pos + 7
 	elseif id == THREE_BYTE then
 		local xVal = buffer.readbits(buf, (pos + 1) * 8, 24)
@@ -258,7 +280,11 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		),
 			pos + 10
 	elseif id == FLOAT then
-		return vector.create(buffer.readf32(buf, pos + 1), buffer.readf32(buf, pos + 5), buffer.readf32(buf, pos + 9)),
+		return vector.create(
+			buffer.readf32(buf, pos + 1),
+			buffer.readf32(buf, pos + 5),
+			buffer.readf32(buf, pos + 9)
+		),
 			pos + 13
 	elseif id == NUMBER then
 		local xVal, yVal, zVal

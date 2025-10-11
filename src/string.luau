@@ -12,7 +12,12 @@ local READ = {}
 local WRITE = {} -- 1 to 1343
 
 @native
-local function strSerializer(value: string, buf: buffer, pos: number, size: number)
+local function strSerializer(
+	value: string,
+	buf: buffer,
+	pos: number,
+	size: number
+)
 	if value == "" then
 		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
@@ -42,7 +47,11 @@ local function strSerializer(value: string, buf: buffer, pos: number, size: numb
 
 	local len = #value
 
-	local newSize = if len < 256 then 2 elseif len < 65_536 then 3 elseif len < 16_777_216 then 4 else 5
+	local newSize = if len < 256
+		then 2
+		elseif len < 65_536 then 3
+		elseif len < 16_777_216 then 4
+		else 5
 
 	if pos + len + newSize > size then
 		buf, size = inflate(buf, pos + len + newSize, size)
@@ -72,7 +81,9 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 	end
 
 	if id > 18 then
-		local cachedId = if id > 82 then (id - 83) * 256 + 64 + buffer.readu8(buf, pos + 1) else id - 18
+		local cachedId = if id > 82
+			then (id - 83) * 256 + 64 + buffer.readu8(buf, pos + 1)
+			else id - 18
 
 		local cachedConstant: string? = READ[cachedId]
 		if cachedConstant then
@@ -110,7 +121,7 @@ local String = {
 
 --[[
 	Clears and replaces the read table
-	
+
 	@ Mainly used to reduce memory usage
 ]]
 function String.resetRead()

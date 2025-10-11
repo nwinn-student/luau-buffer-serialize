@@ -21,7 +21,12 @@ local serialModules = {}
 local deserialModules = {}
 local pairModules = {}
 
-type Serialize = (value: any, buf: buffer?, pos: number, size: number) -> (buffer, number, number)
+type Serialize = (
+	value: any,
+	buf: buffer?,
+	pos: number,
+	size: number
+) -> (buffer, number, number)
 type Deserialize = (value: buffer, pos: number) -> (any, number)
 type Pair = {
 	[any]: any,
@@ -119,12 +124,27 @@ BufferSerializer.pair = function(id: number, value: any): ()
 		elseif typeV == "userdata" then 1039
 		else 0
 
-	assert(maxId ~= 0, `Invalid type {typeV} (must be string | number | vector | userdata)`)
-	assert(type(id) == "number" and id % 1 == 0 and id == id, `Invalid id {id} (must be integer)`)
-	assert(id >= 1 and id <= maxId, `Invalid id {id} (must be between 1 and {maxId})`)
+	assert(
+		maxId ~= 0,
+		`Invalid type {typeV} (must be string | number | vector | userdata)`
+	)
+	assert(
+		type(id) == "number" and id % 1 == 0 and id == id,
+		`Invalid id {id} (must be integer)`
+	)
+	assert(
+		id >= 1 and id <= maxId,
+		`Invalid id {id} (must be between 1 and {maxId})`
+	)
 	assert(value == value, `Invalid value {value} (must be non-nan)`)
-	assert(typeV ~= "number" or value ~= 0 and value ~= 1, `Invalid value {value} (cannot be a built-in [0 or 1])`)
-	assert(typeV ~= "string" or value ~= "", `Invalid value {value} (cannot be a built-in [""])`)
+	assert(
+		typeV ~= "number" or value ~= 0 and value ~= 1,
+		`Invalid value {value} (cannot be a built-in [0 or 1])`
+	)
+	assert(
+		typeV ~= "string" or value ~= "",
+		`Invalid value {value} (cannot be a built-in [""])`
+	)
 	assert(
 		typeV ~= "vector"
 			or value ~= vector.zero

@@ -5,10 +5,18 @@ local inflate = require("./inflate")
 local CUSTOM = 202
 local NIL = 203
 
+type Reader = (buf: buffer, pos: number) -> (unknown, number)
+type Writer = (
+	value: unknown,
+	buf: buffer,
+	pos: number,
+	size: number
+) -> (buffer, number, number)
+
 local READ = {}
 local WRITE = {} -- 1 to 1039
-local Reader: ((buf: buffer, pos: number) -> (unknown, number))?
-local Writer: ((value: unknown, buf: buffer, pos: number, size: number) -> (buffer, number, number))?
+local Reader: Reader?
+local Writer: Writer?
 
 local Userdata = {
 	Read = READ,
@@ -59,7 +67,9 @@ local Userdata = {
 		local id = buffer.readu8(buf, pos)
 
 		if id > 203 then
-			local cachedId = if id > 219 then (id - 220) * 256 + 16 + buffer.readu8(buf, pos + 1) else id - 203
+			local cachedId = if id > 219
+				then (id - 220) * 256 + 16 + buffer.readu8(buf, pos + 1)
+				else id - 203
 
 			local cachedConstant = READ[cachedId]
 			if cachedConstant then
@@ -79,10 +89,10 @@ local Userdata = {
 		-- We cannot return nil or it will corrupt
 		return newproxy(), pos + 1
 	end,
-	setReader = function(reader: (buf: buffer, pos: number) -> (unknown, number))
+	setReader = function(reader: Reader)
 		Reader = reader
 	end,
-	setWriter = function(writer: (value: unknown, buf: buffer, pos: number, size: number) -> (buffer, number, number))
+	setWriter = function(writer: Writer)
 		Writer = writer
 	end,
 }

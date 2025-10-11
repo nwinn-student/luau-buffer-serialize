@@ -32,13 +32,22 @@ local READ = {}
 local WRITE = {} -- 1 to 1055
 
 @native
-local function numSerializer(value: number, buf: buffer, pos: number, size: number)
+local function numSerializer(
+	value: number,
+	buf: buffer,
+	pos: number,
+	size: number
+)
 	if value == 0 or value == 1 or value ~= value then
 		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
 
-		buffer.writeu8(buf, pos, if value == 0 then ZERO elseif value == 1 then ONE else NAN)
+		buffer.writeu8(
+			buf,
+			pos,
+			if value == 0 then ZERO elseif value == 1 then ONE else NAN
+		)
 
 		return buf, pos + 1, size
 	end
@@ -128,7 +137,9 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	end
 
 	if id > 99 then
-		local cachedId = if id > 131 then (id - 132) * 256 + 32 + buffer.readu8(buf, pos + 1) else id - 99
+		local cachedId = if id > 131
+			then (id - 132) * 256 + 32 + buffer.readu8(buf, pos + 1)
+			else id - 99
 
 		local cachedConstant: number? = READ[cachedId]
 		if cachedConstant then
