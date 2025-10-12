@@ -9,6 +9,7 @@ Thank you for your interest in contributing to BufferSerializer!
 - [Reporting Issues](#reporting-issues)
 - [Pull Requests](#pull-requests)
 - [Code Review](#code-review)
+
 ## Questions?
 If you have any questions, feel free to create a new discussion or reach out to the maintainers.
 
@@ -17,6 +18,7 @@ Please refer to the [README.md](./README.md) for detailed information about the 
 Additional technical details regarding the format can be found in [FORMAT.md](./FORMAT.md) and examples in the [examples](./examples) directory.  Potential risks are outlined in [RISKS.md](./RISKS.md).
 
 Please feel free to suggest improvements to the documentation in a new issue or pull request.
+If you find any part of the documentation unclear, please let us know.
 
 ## How to Contribute Code
 
@@ -37,17 +39,23 @@ Please feel free to suggest improvements to the documentation in a new issue or 
 
 - Search existing issues first.
 - Provide a clear title, description, and steps to reproduce.
+- Include relevant logs or screenshots.
+- Suggest possible solutions if you have any.
 
 ## Pull Requests
 
 - Reference related issues.
 - Include relevant screenshots or code snippets.
-- Run benchmarks if performance is affected.
+- Run benchmarks if performance is affected, and include results.
+- Ensure all tests pass.
+- Follow the coding standards outlined above.
 - Keep your branch up to date with `main`.
+- Write clear commit messages.
 - Respond to feedback.
 
 ## Code Review
 - Be respectful and constructive.
+- Ask questions if something is unclear.
 - Discuss changes openly.
 - Approve when ready, do not rush to merge.
 
