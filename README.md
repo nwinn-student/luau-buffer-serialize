@@ -1,14 +1,15 @@
 # Buffer Serializer
 
+[![Luau Version](https://img.shields.io/badge/Luau-0.670+-blue.svg)](https://github.com/luau-lang/luau/releases)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL_3.0-yellow.svg)](https://opensource.org/licenses/GPL-3.0)
+
 #### Table of Contents
 - [Purpose](#purpose)
-- [Requirements](#requirements)
 - [Usage Cases](#usage-cases)
 - [Example](#example)
 - [Performance](#performance)
 - [Technical Details](#technical-details)
 - [Constant Amount Supported](#constant-amount-supported)
-
 
 ## Purpose
 
@@ -27,10 +28,6 @@ Reformatting using JSON as a reference is much simpler than understanding how Bu
 <sub>[1]: Tables that point to other tables that at some point, point back to the initial pointing table.</sub>
 
 <sub>[2]: Large datasets are datasets with at least 61_440 unique values, including dictionary keys and excluding constants.  Distant cyclic tables are cyclic tables that are at least 4_096 unique values apart.</sub>
-
-
-### Requirements
-[Luau 0.670+](https://github.com/luau-lang/luau/releases): As internal methods use @self to refer to each other.
 
 ### Usage Cases
 A user needs to prepare data for storing in a database, they will use BufferSerializer to convert the table with the data into a buffer, then passing the buffer to a lossless compressor module such as [LibDeflate](https://github.com/safeteeWow/LibDeflate) and store the value.
