@@ -1,4 +1,4 @@
-## Technical Details
+## Technical Details 
 
 All approaches that take more than one byte are specified, alongside how many bytes they may take.
 
