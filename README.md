@@ -21,6 +21,7 @@ In order to make the most out of BufferSerializer, it is highly recommended to r
 
 Reformatting using JSON as a reference is much simpler than understanding how BufferSerializer internals function in order to reduce the output size.  Most improvements to the JSON version of the format will improve the output of BufferSerializer.  The more information known regarding the dataset, the smaller the output size can be, and at some point, schema-based serializers will be more optimal, and beyond that a custom-made serializer based on the specific information.  BufferSerializer sits right before schema-based serializers in that it assumes less knowledge is known regarding the format and the little known can be conveyed through constants and userdata functions.
 
+[//]: # (TODO: Move the following to RISKS.md, as limitations are considered risks.)
 #### Limitations
  - Although cyclic tables<sup>[1]</sup> are supported, large datasets with distant<sup>[2]</sup> cyclic tables will fatally error.  Although possible, the solution would be too costly.
  - Constants need to be handled with care in order to avoid corruption when migrating.
