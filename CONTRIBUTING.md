@@ -1,5 +1,4 @@
 # Contributing to BufferSerializer
-BufferSerialize is an open-source project, and we welcome contributions from the community.
 Thank you for your interest in contributing to BufferSerializer!
 
 ## Table of Contents
