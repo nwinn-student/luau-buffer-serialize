@@ -2,7 +2,7 @@
 Thank you for your interest in contributing to BufferSerializer!
 
 ## Table of Contents
-- [Questions?](#questions)
+- [Questions](#questions)
 - [Documentation](#documentation)
 - [How to Contribute Code](#how-to-contribute-code)
 - [Coding Standards](#coding-standards)
@@ -10,7 +10,7 @@ Thank you for your interest in contributing to BufferSerializer!
 - [Pull Requests](#pull-requests)
 - [Code Review](#code-review)
 
-## Questions?
+## Questions
 If you have any questions, feel free to create a new discussion or reach out to the maintainers.
 
 ## Documentation
