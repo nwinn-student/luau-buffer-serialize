@@ -9,7 +9,7 @@ Thank you for your interest in contributing to BufferSerializer!
 - [Coding Standards](#coding-standards)
 - [Reporting Issues](#reporting-issues)
 - [Pull Requests](#pull-requests)
-
+- [Code Review](#code-review)
 ## Questions?
 If you have any questions, feel free to create a new discussion or reach out to the maintainers.
 
