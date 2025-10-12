@@ -22,12 +22,12 @@ If you find any part of the documentation unclear, please let us know.
 
 ## How to Contribute Code
 
-1. **Fork the repository** and create a branch from `main`.
-2. **Write clear, concise code**
+1. Fork the repository and create a branch from `main`.
+2. Write clear, concise code.
 3. Run [Stylua](https://github.com/JohnnyMorganz/StyLua) for formatting and luau-analyze to catch common issues.
    1. Stylua can be run with `stylua .` in the root directory, assuming Stylua is installed.
    2. Luau-analyze can be run with `luau-analyze .` in the root directory, assuming luau-analyze is installed.
-4. **Submit a pull request** with a clear description.
+4. Submit a pull request with a clear description.
 
 ## Coding Standards
 
