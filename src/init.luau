@@ -85,7 +85,7 @@ BufferSerializer.deserialize = function(value: buffer): any
 		elseif pointer <= 135 then 4 -- number
 		elseif pointer <= 193 then 5 -- vector
 		elseif pointer <= 201 then 6 -- table
-		elseif pointer <= 223 then 7 -- userdata
+		elseif pointer <= 215 then 7 -- userdata
 		else 0 -- add more if statements if needed for future
 
 	local deserial: Deserialize = deserialModules[pointer]
@@ -121,7 +121,7 @@ BufferSerializer.pair = function(id: number, value: any): ()
 		then 1343
 		elseif typeV == "number" then 1055
 		elseif typeV == "vector" then 1055
-		elseif typeV == "userdata" then 1039
+		elseif typeV == "userdata" then 521
 		else 0
 
 	assert(

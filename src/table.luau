@@ -351,9 +351,8 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			elseif valId <= 135 then 4 -- number
 			elseif valId <= 193 then 5 -- vector
 			elseif valId <= 201 then 0 -- table (none currently that can get here)
-			elseif valId <= 223 then 6 -- userdata
+			elseif valId <= 215 then 6 -- userdata
 			else 0 -- for future
-
 		if case ~= 0 then
 			value, pos = deserialSwitch[case](buf, pos)
 		else

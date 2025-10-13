@@ -14,7 +14,7 @@ type Writer = (
 ) -> (buffer, number, number)
 
 local READ = {}
-local WRITE = {} -- 1 to 1039
+local WRITE = {} -- 1 to 521
 local Reader: Reader?
 local Writer: Writer?
 
@@ -26,8 +26,7 @@ local Userdata = {
 	serialize = function(value: any, buf: buffer, pos: number, size: number)
 		local cachedConstant: number? = WRITE[value]
 		if cachedConstant then
-			local newSize = if cachedConstant <= 16 then 1 else 2
-
+			local newSize = if cachedConstant <= 10 then 1 else 2
 			if pos + newSize > size then
 				buf, size = inflate(buf, pos + newSize, size)
 			end
@@ -35,8 +34,8 @@ local Userdata = {
 			if newSize == 1 then
 				buffer.writeu8(buf, pos, cachedConstant + 203)
 			else
-				local constVal = cachedConstant - 16
-				buffer.writeu8(buf, pos, 220 + (constVal // 256))
+				local constVal = cachedConstant - 10
+				buffer.writeu8(buf, pos, 214 + (constVal // 256))
 				buffer.writeu8(buf, pos + 1, constVal)
 			end
 
@@ -67,13 +66,13 @@ local Userdata = {
 		local id = buffer.readu8(buf, pos)
 
 		if id > 203 then
-			local cachedId = if id > 219
-				then (id - 220) * 256 + 16 + buffer.readu8(buf, pos + 1)
+				local cachedId = if id > 213
+				then (id - 214) * 256 + 10 + buffer.readu8(buf, pos + 1)
 				else id - 203
 
 			local cachedConstant = READ[cachedId]
 			if cachedConstant then
-				return cachedConstant, pos + (if cachedId > 16 then 2 else 1)
+				return cachedConstant, pos + (if cachedId > 10 then 2 else 1)
 			end
 		end
 
