@@ -6,7 +6,7 @@ local inflate = require("./inflate")
 	Serializes nil values 
 		into a single byte for storage
 	Deserializes a buffer into a nil value if applicable
-]]--
+]]
 return {
 	serialize = function(value: nil, buf: buffer, pos: number, size: number)
 		if pos + 1 > size then
