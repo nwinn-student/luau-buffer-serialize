@@ -67,10 +67,8 @@ function tabSerializer(
 	local roundRobinLength = 0
 	local roundRobinIndex = 61440
 
-	local constants = {}
-
-	local serialTable: (data: { [any]: any }) -> ()
-
+	local serialTable: (data: { [any]: any })->()
+	
 	buf, size = buffer.create(64), 64
 
 	@native
@@ -132,12 +130,8 @@ function tabSerializer(
 
 		local oldPos = pos
 		buf, pos, size = serialSwitch[typeName](data, buf, pos, size)
-
-		if pos - oldPos == 1 then
-			constants[data] = buffer.readu8(buf, oldPos)
-		elseif pos - oldPos == 2 then
-			constants[data] = buffer.readu16(buf, oldPos)
-		elseif data == data then
+		
+		if pos - oldPos > 2 and data == data then
 			existingCache(data)
 		end
 	end
@@ -170,25 +164,10 @@ function tabSerializer(
 					pos += 3
 					continue
 				end
-				cached = constants[element]
-				if cached then
-					local newSize = cached > 255 and 2 or 1
-					if pos + newSize > size then
-						buf, size = inflate(buf, pos + newSize, size)
-					end
-					if newSize == 1 then
-						buffer.writeu8(buf, pos, cached)
-					else
-						buffer.writeu16(buf, pos, cached)
-					end
-					pos += newSize
-					continue
-				end
 
 				local typeElement = type(element)
 
 				if typeElement == "function" or typeElement == "thread" then
-					constants[element] = 0 -- NIL
 					if pos + 1 > size then
 						buf, size = inflate(buf, pos + 1, size)
 					end
@@ -228,21 +207,7 @@ function tabSerializer(
 				buffer.writeu8(buf, pos, EQ_EXISTING)
 				buffer.writeu16(buf, pos + 1, cached)
 				pos += 3
-			end
-
-			local constCached = constants[key]
-			if constCached and not cached then
-				local newSize = constCached > 255 and 2 or 1
-				if pos + newSize > size then
-					buf, size = inflate(buf, pos + newSize, size)
-				end
-				if newSize == 1 then
-					buffer.writeu8(buf, pos, constCached)
-				else
-					buffer.writeu16(buf, pos, constCached)
-				end
-				pos += newSize
-			elseif not cached then
+			else
 				-- store key
 				serialCache(key, typeKey)
 			end
@@ -256,20 +221,6 @@ function tabSerializer(
 				buffer.writeu8(buf, pos, EQ_EXISTING)
 				buffer.writeu16(buf, pos + 1, cached)
 				pos += 3
-				continue
-			end
-			cached = constants[element]
-			if cached then
-				local newSize = cached > 255 and 2 or 1
-				if pos + newSize > size then
-					buf, size = inflate(buf, pos + newSize, size)
-				end
-				if newSize == 1 then
-					buffer.writeu8(buf, pos, cached)
-				else
-					buffer.writeu16(buf, pos, cached)
-				end
-				pos += newSize
 				continue
 			end
 
@@ -295,7 +246,6 @@ function tabSerializer(
 	if roundRobinLength > 0 then
 		table.clear(roundRobinCache)
 	end
-	table.clear(constants)
 
 	return buf, pos, size
 end
