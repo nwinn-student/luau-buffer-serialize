@@ -75,6 +75,12 @@ local Userdata = {
 			if cachedConstant then
 				return cachedConstant, pos + (if cachedId > 16 then 2 else 1)
 			end
+			
+			error(`Failed to parse userdata constant with id: {
+					cachedId
+				} ({id}) at position {
+					pos
+				}`)
 		end
 
 		if Reader then

@@ -6,20 +6,20 @@ local numSerializer = require("./number").serialize
 local numDeserializer = require("./number").deserialize
 local numWrite = require("./number").Write
 
-local ZERO = 136
-local ONE = 137
-local X_AXIS = 138
-local Y_AXIS = 139
-local Z_AXIS = 140
-local XY_AXIS = 141
-local XZ_AXIS = 142
-local YZ_AXIS = 143
-local BYTE = 144
-local CHAR = 145
-local THREE_BYTE = 146
-local FLOAT = 147
-local NUMBER = 148
-local SCALAR_NUMBER = 149
+local ZERO = 142
+local ONE = 143
+local X_AXIS = 144
+local Y_AXIS = 145
+local Z_AXIS = 146
+local XY_AXIS = 147
+local XZ_AXIS = 148
+local YZ_AXIS = 149
+local BYTE = 150
+local CHAR = 151
+local THREE_BYTE = 152
+local FLOAT = 153
+local NUMBER = 154
+local SCALAR_NUMBER = 155
 
 local READ = {}
 local WRITE = {} -- 1 to 1055
@@ -244,16 +244,29 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		if cachedConstant then
 			return cachedConstant, pos + (if cachedId > 32 then 2 else 1)
 		end
+
+		error(`Failed to parse vector constant with id: {
+				cachedId
+			} ({id}) at position {
+				pos
+			}`)
 	end
 
 	if id == SCALAR_NUMBER then
 		local vecVal = builtinDeserialConst[buffer.readu8(buf, pos + 1)]
+
+		if not vecVal then
+			error(`Failed to parse built-in vector constant with id: {
+					buffer.readu8(buf, pos + 1)
+				} at position {
+					pos
+				}`)
+		end
+
 		local numVal
 		numVal, pos = numDeserializer(buf, pos + 2)
-		if vecVal and numVal then
-			return numVal * vecVal, pos
-		end
-		return nil, pos + 1 -- data corruption
+
+		return (numVal :: number) * vecVal, pos
 	elseif id == BYTE then
 		return vector.create(
 			buffer.readi8(buf, pos + 1),
@@ -291,14 +304,18 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		xVal, pos = numDeserializer(buf, pos + 1)
 		yVal, pos = numDeserializer(buf, pos)
 		zVal, pos = numDeserializer(buf, pos)
-
-		if xVal and yVal and zVal then
-			return vector.create(xVal, yVal, zVal), pos
-		end
-		-- fill with 0's instead?
-		return nil, pos + 1 -- data corrupted
+		
+		return vector.create(
+			xVal :: number,
+			yVal :: number,
+			zVal :: number
+		), pos
 	else
-		return nil, pos + 1 -- data corrupted
+		error(`Failed to parse vector using byte: {
+				id
+			} at position {
+				pos
+			}`)
 	end
 end
 

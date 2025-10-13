@@ -80,9 +80,9 @@ BufferSerializer.deserialize = function(value: buffer): any
 
 	pointer = if pointer <= 2
 		then 1 -- boolean
-		elseif pointer <= 8 then 2 -- buffer
-		elseif pointer <= 87 then 3 -- string
-		elseif pointer <= 135 then 4 -- number
+		elseif pointer <= 7 then 2 -- buffer
+		elseif pointer <= 96 then 3 -- string
+		elseif pointer <= 141 then 4 -- number
 		elseif pointer <= 193 then 5 -- vector
 		elseif pointer <= 201 then 6 -- table
 		elseif pointer <= 223 then 7 -- userdata
@@ -108,6 +108,8 @@ BufferSerializer.deserialize = function(value: buffer): any
 	return originalData
 end
 
+type Constantable = string | number | vector
+
 --[[
 	Connects a constant value to an identifier.
 	@ Only certain types are supported.
@@ -115,7 +117,7 @@ end
 	@param id the identifier
 	@param value the value
 ]]
-BufferSerializer.pair = function(id: number, value: any): ()
+BufferSerializer.pair = function(id: number, value: Constantable): ()
 	local typeV = type(value)
 	local maxId = if typeV == "string"
 		then 1343

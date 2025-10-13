@@ -2,11 +2,12 @@
 --!strict
 local inflate = require("./inflate")
 
-local EMPTY = 9
-local BYTE = 10
-local CHAR = 11
-local THREE_BYTE = 12
-local INT = 13
+local EMPTY = 8
+local BYTE = 9
+local CHAR = 10
+local THREE_BYTE = 11
+local INT = 12
+local STRING_15 = 27
 
 local READ = {}
 local WRITE = {} -- 1 to 1343
@@ -35,10 +36,10 @@ local function strSerializer(
 		end
 
 		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + 18)
+			buffer.writeu8(buf, pos, cachedConstant + STRING_15)
 		else
 			local constVal = cachedConstant - 64
-			buffer.writeu8(buf, pos, 83 + (constVal // 256))
+			buffer.writeu8(buf, pos, 92 + (constVal // 256))
 			buffer.writeu8(buf, pos + 1, constVal)
 		end
 
@@ -47,8 +48,9 @@ local function strSerializer(
 
 	local len = #value
 
-	local newSize = if len < 256
-		then 2
+	local newSize = if len < 16
+		then 1
+		elseif len < 256 then 2
 		elseif len < 65_536 then 3
 		elseif len < 16_777_216 then 4
 		else 5
@@ -56,7 +58,14 @@ local function strSerializer(
 	if pos + len + newSize > size then
 		buf, size = inflate(buf, pos + len + newSize, size)
 	end
-	buffer.writeu8(buf, pos, 8 + newSize)
+
+	if len < 16 then
+		buffer.writeu8(buf, pos, INT + len)
+		buffer.writestring(buf, pos + 1, value :: string, len)
+		return buf, pos + 1 + len, size
+	end
+
+	buffer.writeu8(buf, pos, 7 + newSize)
 
 	if len < 256 then
 		buffer.writeu8(buf, pos + 1, len)
@@ -80,35 +89,41 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 		return "", pos + 1
 	end
 
-	if id > 18 then
-		local cachedId = if id > 82
-			then (id - 83) * 256 + 64 + buffer.readu8(buf, pos + 1)
-			else id - 18
+	if id > STRING_15 then
+		local cachedId = if id > 91
+			then (id - 92) * 256 + 64 + buffer.readu8(buf, pos + 1)
+			else id - STRING_15
 
 		local cachedConstant: string? = READ[cachedId]
 		if cachedConstant then
 			return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
 		end
+
+		error(`Failed to parse string constant with id: {
+					cachedId
+				} ({id}) at position {
+					pos
+				}`)
+	end
+
+	if id > INT then
+		return buffer.readstring(buf, pos + 1, id - INT),
+			pos + id - INT + 1
 	end
 
 	local lenSize = id - EMPTY
 
-	local len: number
+	local len = if id == BYTE then
+			buffer.readu8(buf, pos + 1)
+		elseif id == CHAR then
+			buffer.readu16(buf, pos + 1)
+		elseif id == THREE_BYTE then
+			buffer.readbits(buf, (pos + 1)*8, 24)
+		else -- id == INT
+			buffer.readu32(buf, pos + 1)
 
-	if id == BYTE then
-		len = buffer.readu8(buf, pos + 1)
-	elseif id == CHAR then
-		len = buffer.readu16(buf, pos + 1)
-	elseif id == THREE_BYTE then
-		len = buffer.readbits(buf, (pos + 1) * 8, 24)
-	elseif id == INT then
-		len = buffer.readu32(buf, pos + 1)
-	else
-		-- DATA CORRUPTED (for now)
-		return nil, pos + 1 -- for future version
-	end
-
-	return buffer.readstring(buf, pos + lenSize + 1, len), pos + len + 1 + lenSize
+	return buffer.readstring(buf, pos + lenSize + 1, len), 
+		pos + len + 1 + lenSize
 end
 
 local String = {
