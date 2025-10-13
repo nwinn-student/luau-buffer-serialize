@@ -26,7 +26,7 @@ local modules = table.freeze({
 	vector = require("@self/vector"),
 	table = require("@self/table"),
 	userdata = require("@self/userdata"),
-	
+
 	[0] = require("@self/nil").deserialize,
 	require("@self/boolean").deserialize,
 	require("@self/buffer").deserialize,
@@ -37,13 +37,17 @@ local modules = table.freeze({
 	require("@self/userdata").deserialize
 })
 
-type Serialize = (value: any, buf: buffer?, pos: number, size: number)
-	-> (buffer, number, number)
+type Serialize = (
+	value: any,
+	buf: buffer?,
+	pos: number,
+	size: number
+) -> (buffer, number, number)
 type Deserialize = (value: buffer, pos: number) -> (any, number)
 type Pair = {
-	[any]: any, 
-	Read: {[any]: any}, 
-	Write: {[any]: any}
+	[any]: any,
+	Read: { [any]: any },
+	Write: { [any]: any },
 }
 
 --[[
@@ -52,7 +56,7 @@ type Pair = {
 	@param value the value to serialize
 	
 	@return a buffer representing the serialized value
-]]--
+]]
 BufferSerializer.serialize = function(value: any): buffer
 	local typeValue = type(value)
 	if typeValue == "function" or typeValue == "thread" then
@@ -60,7 +64,7 @@ BufferSerializer.serialize = function(value: any): buffer
 	end
 
 	local serial: Serialize = (modules[typeValue :: any] :: any).serialize
-	
+
 	return trim(serial(value, nil, 0, 0))
 end
 
@@ -70,27 +74,22 @@ end
 	@param value the buffer containing the original value
 	
 	@return the original value
-]]--
+]]
 BufferSerializer.deserialize = function(value: buffer): any
 	local pointer = buffer.readu8(value, 0)
-	if pointer == 0 then return nil end
+	if pointer == 0 then
+		return nil
+	end
 
-	pointer = if pointer <= 2 then
-			1 -- boolean
-		elseif pointer <= 8 then
-			2 -- buffer
-		elseif pointer <= 87 then
-			3 -- string
-		elseif pointer <= 135 then
-			4 -- number
-		elseif pointer <= 193 then
-			5 -- vector
-		elseif pointer <= 201 then
-			6 -- table
-		elseif pointer <= 223 then
-			7 -- userdata
-		else 
-			0 -- add more if statements if needed for future
+	pointer = if pointer <= 2
+		then 1 -- boolean
+		elseif pointer <= 8 then 2 -- buffer
+		elseif pointer <= 87 then 3 -- string
+		elseif pointer <= 135 then 4 -- number
+		elseif pointer <= 193 then 5 -- vector
+		elseif pointer <= 201 then 6 -- table
+		elseif pointer <= 223 then 7 -- userdata
+		else 0 -- add more if statements if needed for future
 
 	local deserial: Deserialize = modules[pointer]
 
@@ -104,40 +103,52 @@ end
 	
 	@param id the identifier
 	@param value the value
-]]--
+]]
 BufferSerializer.pair = function(id: number, value: any): ()
 	local typeV = type(value)
-	local maxId = if typeV == "string" then 1343
-		elseif typeV == "number" then
-			1055
-		elseif typeV == "vector" then
-			1055
-		elseif typeV == "userdata" then
-			1039
-		else
-			0
+	local maxId = if typeV == "string"
+		then 1343
+		elseif typeV == "number" then 1055
+		elseif typeV == "vector" then 1055
+		elseif typeV == "userdata" then 1039
+		else 0
 
-	assert(maxId ~= 0, 
-		`Invalid type {typeV} (must be string | number | vector | userdata)`)
-	assert(type(id) == "number" and id % 1 == 0 and id == id, 
-		`Invalid id {id} (must be integer)`)
-	assert(id >= 1 and id <= maxId, 
-		`Invalid id {id} (must be between 1 and {maxId})`)
-	assert(value == value, 
-		`Invalid value {value} (must be non-nan)`)
-	assert(typeV ~= "number" or value ~= 0 and value ~= 1, 
-		`Invalid value {value} (cannot be a built-in [0 or 1])`)
-	assert(typeV ~= "string" or value ~= "",
-		`Invalid value {value} (cannot be a built-in [""])`)
-	assert(typeV ~= "vector"
-			or value ~= vector.zero and value ~= vector.one
-			and value ~= vector.create(0,0,1) and value ~= vector.create(0,1,0)
-			and value ~= vector.create(0,1,1) and value ~= vector.create(1,0,0)
-			and value ~= vector.create(1,0,1) and value ~= vector.create(1,1,0),
-		`Invalid value {value} (cannot be a built-in)`)
-	
+	assert(
+		maxId ~= 0,
+		`Invalid type {typeV} (must be string | number | vector | userdata)`
+	)
+	assert(
+		type(id) == "number" and id % 1 == 0 and id == id,
+		`Invalid id {id} (must be integer)`
+	)
+	assert(
+		id >= 1 and id <= maxId,
+		`Invalid id {id} (must be between 1 and {maxId})`
+	)
+	assert(value == value, `Invalid value {value} (must be non-nan)`)
+	assert(
+		typeV ~= "number" or value ~= 0 and value ~= 1,
+		`Invalid value {value} (cannot be a built-in [0 or 1])`
+	)
+	assert(
+		typeV ~= "string" or value ~= "",
+		`Invalid value {value} (cannot be a built-in [""])`
+	)
+	assert(
+		typeV ~= "vector"
+			or value ~= vector.zero
+				and value ~= vector.one
+				and value ~= vector.create(0, 0, 1)
+				and value ~= vector.create(0, 1, 0)
+				and value ~= vector.create(0, 1, 1)
+				and value ~= vector.create(1, 0, 0)
+				and value ~= vector.create(1, 0, 1)
+				and value ~= vector.create(1, 1, 0),
+		`Invalid value {value} (cannot be a built-in)`
+	)
+
 	local mod: Pair = modules[typeV :: any] :: any
-	
+
 	-- Same value, different id
 	if mod.Write[value] ~= nil then
 		mod.Read[mod.Write[value]] = nil

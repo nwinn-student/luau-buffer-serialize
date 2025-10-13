@@ -22,15 +22,12 @@ return table.freeze({
 			return buf, pos + 1, size
 		end
 
-		local newSize = if len < 256 then
-				2
-			elseif len < 65_536 then
-				3
-			elseif len < 16_777_216 then
-				4
-			else
-				5
-		
+		local newSize = if len < 256
+			then 2
+			elseif len < 65_536 then 3
+			elseif len < 16_777_216 then 4
+			else 5
+
 		if pos + len + newSize > size then
 			buf, size = inflate(buf, pos + len + newSize, size)
 		end
@@ -41,7 +38,7 @@ return table.freeze({
 		elseif len < 65_536 then
 			buffer.writeu16(buf, pos + 1, len)
 		elseif len < 16_777_216 then
-			buffer.writebits(buf, (pos + 1)*8, (pos + 1)*8 + 16, len)
+			buffer.writebits(buf, (pos + 1) * 8, (pos + 1) * 8 + 16, len)
 		else
 			buffer.writeu32(buf, pos + 1, len)
 		end
@@ -78,5 +75,5 @@ return table.freeze({
 		local value = buffer.create(len)
 		buffer.copy(value, 0, buf, pos, len)
 		return value, pos + len
-	end
+	end,
 })
