@@ -17,9 +17,25 @@ end
 
 local BufferSerializer = {}
 
-local serialModules = {}
-local deserialModules = {}
-local pairModules = {}
+local modules = table.freeze({
+	["nil"] = require("@self/nil"),
+	boolean = require("@self/boolean"),
+	buffer = require("@self/buffer"),
+	string = require("@self/string"),
+	number = require("@self/number"),
+	vector = require("@self/vector"),
+	table = require("@self/table"),
+	userdata = require("@self/userdata"),
+
+	[0] = require("@self/nil").deserialize,
+	require("@self/boolean").deserialize,
+	require("@self/buffer").deserialize,
+	require("@self/string").deserialize,
+	require("@self/number").deserialize,
+	require("@self/vector").deserialize,
+	require("@self/table").deserialize,
+	require("@self/userdata").deserialize
+})
 
 type Serialize = (
 	value: any,
@@ -47,21 +63,8 @@ BufferSerializer.serialize = function(value: any): buffer
 		typeValue = "nil"
 	end
 
-	local serial: Serialize = serialModules[typeValue]
-	if not serial then
-		local temp = if typeValue == "nil"
-			then require("@self/nil")
-			elseif typeValue == "boolean" then require("@self/boolean")
-			elseif typeValue == "buffer" then require("@self/buffer")
-			elseif typeValue == "string" then require("@self/string")
-			elseif typeValue == "number" then require("@self/number")
-			elseif typeValue == "vector" then require("@self/vector")
-			elseif typeValue == "table" then require("@self/table")
-			else require("@self/userdata")
+	local serial: Serialize = (modules[typeValue :: any] :: any).serialize
 
-		serial = temp.serialize :: Serialize
-		serialModules[typeValue] = serial
-	end
 	return trim(serial(value, nil, 0, 0))
 end
 
@@ -88,21 +91,7 @@ BufferSerializer.deserialize = function(value: buffer): any
 		elseif pointer <= 223 then 7 -- userdata
 		else 0 -- add more if statements if needed for future
 
-	local deserial: Deserialize = deserialModules[pointer]
-	if not deserial then
-		local temp = if pointer == 0
-			then require("@self/nil")
-			elseif pointer == 1 then require("@self/boolean")
-			elseif pointer == 2 then require("@self/buffer")
-			elseif pointer == 3 then require("@self/string")
-			elseif pointer == 4 then require("@self/number")
-			elseif pointer == 5 then require("@self/vector")
-			elseif pointer == 6 then require("@self/table")
-			else require("@self/userdata")
-
-		deserial = temp.deserialize
-		deserialModules[pointer] = deserial
-	end
+	local deserial: Deserialize = modules[pointer]
 
 	local originalData = deserial(value, 0)
 	return originalData
@@ -158,18 +147,7 @@ BufferSerializer.pair = function(id: number, value: any): ()
 		`Invalid value {value} (cannot be a built-in)`
 	)
 
-	local mod: Pair = pairModules[typeV]
-	if not mod then
-		-- ...
-		mod = (
-			if typeV == "string"
-				then require("@self/string")
-				elseif typeV == "number" then require("@self/number")
-				elseif typeV == "vector" then require("@self/vector")
-				else require("@self/userdata")
-		) :: Pair
-		pairModules[typeV] = mod
-	end
+	local mod: Pair = modules[typeV :: any] :: any
 
 	-- Same value, different id
 	if mod.Write[value] ~= nil then
@@ -183,4 +161,4 @@ BufferSerializer.pair = function(id: number, value: any): ()
 	mod.Write[value] = id
 end
 
-return BufferSerializer
+return table.freeze(BufferSerializer)

@@ -126,8 +126,6 @@ local String = {
 ]]
 function String.resetRead()
 	table.clear(READ)
-	READ = {}
-	String.Read = READ
 end
 --[[
 	Clears and replaces the write table
@@ -136,8 +134,6 @@ end
 ]]
 function String.resetWrite()
 	table.clear(WRITE)
-	WRITE = {}
-	String.Write = WRITE
 end
 
-return String
+return table.freeze(String)

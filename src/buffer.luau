@@ -10,7 +10,7 @@ local INT = 7
 
 local EMPTY_BUFFER = buffer.create(0)
 
-return {
+return table.freeze({
 	serialize = function(value: buffer, buf: buffer, pos: number, size: number)
 		local len = buffer.len(value)
 
@@ -76,4 +76,4 @@ return {
 		buffer.copy(value, 0, buf, pos, len)
 		return value, pos + len
 	end,
-}
+})

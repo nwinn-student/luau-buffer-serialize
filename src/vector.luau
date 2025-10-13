@@ -24,7 +24,7 @@ local SCALAR_NUMBER = 149
 local READ = {}
 local WRITE = {} -- 1 to 1055
 
-local builtinSerialConst = {
+local builtinSerialConst = table.freeze({
 	-- Used for serialization
 	[vector.zero] = ZERO,
 	[vector.one] = ONE,
@@ -34,8 +34,8 @@ local builtinSerialConst = {
 	[vector.create(1, 1, 0)] = XY_AXIS,
 	[vector.create(1, 0, 1)] = XZ_AXIS,
 	[vector.create(0, 1, 1)] = YZ_AXIS,
-}
-local builtinDeserialConst = {
+})
+local builtinDeserialConst = table.freeze({
 	-- Used for deserialization, indexing this is 30% faster
 	-- than calling vector.create (vector.one/zero is 120% faster)
 	[ONE] = vector.one,
@@ -45,7 +45,7 @@ local builtinDeserialConst = {
 	[XY_AXIS] = vector.create(1, 1, 0),
 	[XZ_AXIS] = vector.create(1, 0, 1),
 	[YZ_AXIS] = vector.create(0, 1, 1),
-}
+})
 
 local MIN_BYTE = -2 ^ 7
 local MAX_BYTE = 2 ^ 7 - 1
@@ -317,8 +317,6 @@ local Vector = {
 ]]
 function Vector.resetRead()
 	table.clear(READ)
-	READ = {}
-	Vector.Read = READ
 end
 --[[
 	Clears and replaces the write table
@@ -327,8 +325,6 @@ end
 ]]
 function Vector.resetWrite()
 	table.clear(WRITE)
-	WRITE = {}
-	Vector.Write = WRITE
 end
 
-return Vector
+return table.freeze(Vector)
