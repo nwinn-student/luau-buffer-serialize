@@ -41,7 +41,7 @@ type Pair = {
 	
 	@return a buffer representing the serialized value
 ]]
-BufferSerializer.serialize = function(value: any): buffer
+function BufferSerializer.serialize(value: any): buffer
 	local typeValue = type(value)
 	if typeValue == "function" or typeValue == "thread" then
 		typeValue = "nil"
@@ -72,7 +72,7 @@ end
 	
 	@return the original value
 ]]
-BufferSerializer.deserialize = function(value: buffer): any
+function BufferSerializer.deserialize(value: buffer): any
 	local pointer = buffer.readu8(value, 0)
 	if pointer == 0 then
 		return nil
@@ -115,7 +115,7 @@ end
 	@param id the identifier
 	@param value the value
 ]]
-BufferSerializer.pair = function(id: number, value: any): ()
+function BufferSerializer.pair(id: number, value: any): ()
 	local typeV = type(value)
 	local maxId = if typeV == "string"
 		then 1343
