@@ -5,9 +5,6 @@
 	Use `python path/to/luau/tools/perfgraph.py profile.out > profile.svg` to generate a flamegraph.
 	Open profile.svg in a web browser to view the flamegraph.
 
-	It is recommended to place the tools folder from the Luau repository inside this repository.
-	It is also recommended to use the following bash command to run the profiler and generate the flamegraph in one go:
-
 	For Windows (PowerShell):
 	```bash
 	luau --profile bench/profile.luau ; python tools/perfgraph.py profile.out > profile.svg ; .\profile.svg
@@ -31,30 +28,45 @@ for i = 1, 30 do
 	numberArray[i] = i
 end
 
-local mixedData = {
+local duplicateArray = {}
+for i = 1, 30 do
+	duplicateArray[i] = "Hello World!"
+end
+
+local mixedData
+mixedData = {
 	number = 123.456,
 	string = "Hello, world!",
 	boolean = true,
-	table = { 1, 2, 3, key = "value" },
+	buffer = buffer.create(10),
+	vector = vector.create(1, 2),
+	table = { 1, 2, 3, function() end, key = "value" },
 	nested = {
 		{ a = 1, b = 2 },
 		{ c = 3, d = 4 },
 	},
+	recursive = mixedData,
+	userdata = newproxy(),
 }
 
 -- Modify this data to test different scenarios
 local function runNumberArray()
-	for i = 1, 1000 do
-		ds(numberArray)
-	end
+	ds(numberArray)
+end
+local function runDuplicateArray()
+	ds(duplicateArray)
 end
 local function runMixedData()
-	for i = 1, 1000 do
-		ds(mixedData)
-	end
+	ds(mixedData)
 end
 
-runNumberArray()
-runMixedData()
+function Profile(runTimes: number)
+	for i = 1, runTimes do
+		runNumberArray()
+		runMixedData()
+		runDuplicateArray()
+	end
+end
+Profile(1000)
 
 return profile
