@@ -16,7 +16,7 @@
 ]]
 local profile = {}
 
-local BufferSerializer = require("../src")
+local BufferSerializer = require("@BufferSerializer")
 
 local function ds(a: any)
 	return BufferSerializer.deserialize(BufferSerializer.serialize(a))
