@@ -2,8 +2,8 @@
     "aliases": {
         "BufferSerializer": "./src",
         "Bench": "./resources/luau-bench",
-        "json": "./resources/json.lua",
-        "msgpack": "./resources/msgpack.lua",
+        "json": "./resources/json",
+        "msgpack": "./resources/msgpack",
         "data": "./resources/data"
     }
 }
