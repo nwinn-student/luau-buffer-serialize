@@ -1,5 +1,7 @@
 --!nocheck
 --!nolint
+local proxyrequire = {}
+
 local fs = require("@lune/fs")
 
 -- Simple alias finding
@@ -72,5 +74,7 @@ local function discoverAndReadScript(filePath: string): string
 
 	return scriptContents
 end
+
+proxyrequire.discoverAndReadScript = discoverAndReadScript
 
 return discoverAndReadScript

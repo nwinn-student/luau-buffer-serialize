@@ -33,6 +33,7 @@ function summarize(self: Bench.BenchData, name: string)
 	local outStr = `{self.Output}`
 	local totalStr = `{benchPrecision(self.Speed.Total, 2)}`
 
+	-- name, if longer than 10 should be truncated (..)
 	print(
 		`{name}{string.rep(" ", 10 - #name)} | {benchPrecision(
 			self.Speed.Average,

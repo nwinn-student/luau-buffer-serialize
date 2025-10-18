@@ -31,23 +31,26 @@ local proxyrequire = luau.load(fs.readFile("tools/proxyrequire.luau"), {
 	},
 })()
 
-print(proxyrequire("@Bench"))
-
 local cache = {}
-local SHARED_ENV = {
-	require = nil,
-	print = nil,
+local SHARED_ENV
+SHARED_ENV = table.freeze({
+	require = function(name: string)
+		print(process.cwd)
+		-- how do i get which script is calling?
+		local fileData = proxyrequire(name)
+		luau.load(fileData, {
+			debugName = "@" .. name,
+			environment = SHARED_ENV,
+		})()
+
+		return nil
+	end,
+	--print = nil,
 	getfenv = nil,
 	setfenv = nil,
 	loadstring = nil,
-}
+})
 
-function cacheRequire(name: string)
-	local fileData = fs.readFile(name)
-	luau.load(fileData, {
-		debugName = "@" .. name,
-		environment = SHARED_ENV,
-	})
-end
+SHARED_ENV.require("tools/sample")
 
 return parallel
