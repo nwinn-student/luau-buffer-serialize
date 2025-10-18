@@ -1,25 +1,18 @@
 local parallelbench = {}
 
 --[[
-	For later**
-	https://github.com/lune-org/docs/blob/main/modules/sandbox.luau
-
 	Used to speed up benchmark times and still get good results
 
 	To run:
 	cd to/repo/path
 	lune run tools/parallelbench.luau --codegen
 
-	To gen:
+	To build:
 	lune build tools/parallelbench.luau -o parallelbench
 
 	To run exe:
-	.\parallelbench.exe
-
-	I have made the tests for serialization go from 11 seconds to 5 seconds
-	I can certainly push it to lower by parallelizing the tests themselves.
-	Potentially batches of 256.
-	The issue is going to be processing the results using the current approach.
+	./parallelbench --codegen
+	OR equivalent
 ]]
 
 local process = require("@lune/process")
@@ -95,7 +88,6 @@ for _, input in args do
 	end
 	if input == "-vr" or input == "--verbose-results" then
 		isVerbose = true
-		print("Setting verbose to true currently does nothing")
 		continue
 	end
 	if
@@ -126,7 +118,7 @@ local files = fs.readDir(directory)
 function processCreate(fileName: string)
 	return process.create(
 		"luau",
-		{ options, `{directory}/{fileName}` },
+		{ options, `{directory}/{fileName}`, "-a", tostring(isVerbose) },
 		{ cwd = process.cwd, shell = true, stdio = "inherit" }
 	)
 end
@@ -195,20 +187,26 @@ until #tasks == 0
 stdio.write(stdio.color("green"))
 
 -- Find separation point?
-for scheme, msg in Log do
-	if #msg.Deserial == 0 and #msg.Serial == 0 then
+for scheme, actions in Log do
+	if #actions.Deserial == 0 and #actions.Serial == 0 then
 		continue
 	end
 	print("Scheme: ", scheme)
-	if #msg.Serial > 0 then
+	if #actions.Serial > 0 then
 		print("Serial:")
-		table.sort(msg.Serial)
-		print("\t" .. table.concat(msg.Serial, "\n\t"))
+		table.sort(actions.Serial)
+		local msg = if isVerbose
+			then table.concat(actions.Serial, "\n")
+			else "\t" .. table.concat(actions.Serial, "\n\t")
+		print(msg)
 	end
-	if #msg.Deserial > 0 then
+	if #actions.Deserial > 0 then
 		print("Deserial:")
-		table.sort(msg.Deserial)
-		print("\t" .. table.concat(msg.Deserial, "\n\t"))
+		table.sort(actions.Deserial)
+		local msg = if isVerbose
+			then table.concat(actions.Deserial, "\n")
+			else "\t" .. table.concat(actions.Deserial, "\n\t")
+		print(msg)
 	end
 end
 

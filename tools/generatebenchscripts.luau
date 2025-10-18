@@ -29,17 +29,33 @@ for _, path in files do
 			`temp/bs-ser-{path}`,
 			string.format(
 				[[
+				-- Generated file...
+				local args = {}
+
+				do
+					local temp: {string} = {...}
+					if temp[1] == "true" then
+						args.verbose = true
+					end
+					-- .. more
+				end
+
 				local Bench = require("@Bench")
 				local BufferSerializer = require("@BufferSerializer")
 				local summarize = require("@summarize")
-				summarize(
-					Bench(
-						BufferSerializer.serialize,
-						require("@json").decode(require("@data/%s"))
-					):updateOutput(),
-					"%s"
-				)
+
+				local results = Bench(
+					BufferSerializer.serialize,
+					require("@json").decode(require("@data/%s"))
+				):updateOutput()
+
+				if args.verbose then
+					results:withName("%s"):print()
+				else
+					summarize(results, "%s")
+				end
 			]],
+				luauPath,
 				luauPath,
 				luauPath
 			)
@@ -48,17 +64,33 @@ for _, path in files do
 			`temp/bs-deser-{path}`,
 			string.format(
 				[[
+				-- Generated file...
+				local args = {}
+
+				do
+					local temp: {string} = {...}
+					if temp[1] == "true" then
+						args.verbose = true
+					end
+					-- .. more
+				end
+
 				local Bench = require("@Bench")
 				local BufferSerializer = require("@BufferSerializer")
 				local summarize = require("@summarize")
-				summarize(
-					Bench(
-						BufferSerializer.deserialize,
-						BufferSerializer.serialize(require("@json").decode(require("@data/%s")))
-					):updateOutput(),
-					"%s"
-				)
+
+				local results = Bench(
+					BufferSerializer.deserialize,
+					BufferSerializer.serialize(require("@json").decode(require("@data/%s")))
+				):updateOutput()
+
+				if args.verbose then
+					results:withName("%s"):print()
+				else
+					summarize(results, "%s")
+				end
 			]],
+				luauPath,
 				luauPath,
 				luauPath
 			)
@@ -67,17 +99,33 @@ for _, path in files do
 			`temp/mp-deser-{path}`,
 			string.format(
 				[[
+				-- Generated file...
+				local args = {}
+
+				do
+					local temp: {string} = {...}
+					if temp[1] == "true" then
+						args.verbose = true
+					end
+					-- .. more
+				end
+
 				local Bench = require("@Bench")
 				local msgpack = require("@msgpack")
 				local summarize = require("@summarize")
-				summarize(
-					Bench(
-						msgpack.decode,
-						msgpack.encode(require("@json").decode(require("@data/%s")))
-					):updateOutput(),
-					"%s"
-				)
+
+				local results = Bench(
+					msgpack.decode,
+					msgpack.encode(require("@json").decode(require("@data/%s")))
+				):updateOutput()
+
+				if args.verbose then
+					results:withName("%s"):print()
+				else
+					summarize(results, "%s")
+				end
 			]],
+				luauPath,
 				luauPath,
 				luauPath
 			)
