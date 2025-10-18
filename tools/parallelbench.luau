@@ -45,9 +45,9 @@ Available options:
   --dir=<n>: executes all scripts within the directory
   -np, --no-run-parallel: runs the benchmarks sequentially
   --skip=<n[,m]>: Skips executing scripts that start with the provided characters
+  -vr, --verbose-results: Displays the expanded results of the benchmark
 
 Unsupported options:
-  -vr, --verbose-results: Displays the expanded results of the benchmark
   -o=<n>,--output=<n>: outputs the results from the benchmarks into file n in Markdown
   --gen-hist: generates a histogram for the CLI
 
