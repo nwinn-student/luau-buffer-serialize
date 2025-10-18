@@ -1,9 +1,12 @@
 {
-    "aliases": {
-        "BufferSerializer": "./src",
-        "Bench": "./resources/luau-bench",
-        "json": "./resources/json",
-        "msgpack": "./resources/msgpack",
-        "data": "./resources/data"
-    }
+  "aliases": {
+    "BufferSerializer": "./src",
+    "Bench": "./resources/luau-bench",
+    "json": "./resources/json",
+    "msgpack": "./resources/msgpack",
+    "data": "./resources/data",
+    "lune": "~/.lune/.typedefs/0.10.2/",
+    "lute": "~/.lute/typedefs/0.1.0/",
+    "summarize": "./tools/summarize"
+  }
 }
