@@ -18,14 +18,21 @@ local parallelbench = {}
 local process = require("@lune/process")
 local args = process.args
 local fs = require("@lune/fs")
+local serde = require("@lune/serde")
 local stdio = require("@lune/stdio")
 local task = require("@lune/task")
 
-local skip: { string } = {}
-local isParallel = true
-local directory = "temp"
-local options = ""
-local isVerbose = false
+local options = {
+	skip = {} :: { string },
+	parallel = true,
+	percore = false,
+	-- FIXME: unsure about linux/darwin
+	cores = tonumber(process.env["NUMBER_OF_PROCESSORS"]) - 1,
+	dir = "temp",
+	verbose = false,
+	options = "",
+	output = {},
+}
 
 function printHelp()
 	print(string.format(
@@ -39,8 +46,12 @@ Available options:
   -h, --help: Display this usage message
   --dir=<n>: executes all scripts within the directory
   -np, --no-run-parallel: runs the benchmarks sequentially
-  --skip=<n[,m]>: Skips executing scripts that start with the provided characters
+  --skip=<n[,m]>: Skips executing scripts that start with the provided characters.
+    | Uses lua pattern matching
   -vr, --verbose-results: Displays the expanded results of the benchmark
+  -ppc, --process-per-core: If parallel, runs one process per core, assuming all are idle
+  --remove-columns=<option,[option...]>: If non-verbose, removes option columns from the output
+    | option: Speed | Memory | Output | Total
 
 Unsupported options:
   -o=<n>,--output=<n>: outputs the results from the benchmarks into file n in Markdown
@@ -64,11 +75,15 @@ for _, input in args do
 		process.exit(0)
 	end
 	if input:sub(1, 5) == "--dir=" then
-		directory = input:sub(7)
+		options.dir = input:sub(7)
 		continue
 	end
 	if input:sub(1, 7) == "--skip=" then
-		skip = input:sub(8):split(",")
+		options.skip = input:sub(8):split(",")
+		continue
+	end
+	if input:sub(1, 17) == "--remove-columns=" then
+		options.output = input:sub(18):split(",")
 		continue
 	end
 	if input:sub(1, 4) == "--o=" or input:sub(1, 9) == "--output=" then
@@ -78,11 +93,15 @@ for _, input in args do
 		print("Generating histograms has yet to be implemented.")
 	end
 	if input == "-np" or input == "--no-run-parallel" then
-		isParallel = false
+		options.parallel = false
+		continue
+	end
+	if input == "-ppc" or input == "--process-per-core" then
+		options.percore = true
 		continue
 	end
 	if input == "-vr" or input == "--verbose-results" then
-		isVerbose = true
+		options.verbose = true
 		continue
 	end
 	if
@@ -97,7 +116,11 @@ for _, input in args do
 		or input == "g1"
 		or input == "g2"
 	then
-		options ..= input .. " "
+		if options.options == "" then
+			options.options = input
+			continue
+		end
+		options.options ..= " " .. input
 		continue
 	end
 
@@ -108,15 +131,18 @@ end
 
 -- Both generatebenchscripts and generatesources MUST be run prior.
 
-local files = fs.readDir(directory)
+local files = fs.readDir(options.dir)
+local encodedOptions = "'" .. serde.encode("json", options) .. "'"
+-- FIXME: could be shell dependent... :<
+encodedOptions = encodedOptions:gsub('"', '\\"')
 
 function processCreate(fileName: string)
 	return process.create("luau", {
-		options,
-		`{directory}/{fileName}`,
+		options.options,
+		`{options.dir}/{fileName}`,
 		"-a",
-		tostring(isVerbose),
 		fileName:sub(fileName:find("ser-") + 4, -6), -- leaves just the file name
+		encodedOptions,
 	}, { cwd = process.cwd, shell = true, stdio = "inherit" })
 end
 
@@ -142,6 +168,9 @@ end
 function spawner(fileName: string)
 	local proc = processCreate(fileName)
 
+	-- if generated scripts error, uncomment below
+	--print(proc.stderr:read())
+	--print(proc.stdout:read())
 	if proc:status().ok then
 		table.insert(
 			Log[getScheme(fileName)][getAction(fileName)],
@@ -156,7 +185,7 @@ function processFile(path: string)
 	if path:sub(-5) ~= ".luau" then
 		return
 	end
-	for _, bypass: string in skip do
+	for _, bypass: string in options.skip do
 		if path:match(`^{bypass}`) then
 			return
 		end
@@ -164,8 +193,15 @@ function processFile(path: string)
 	table.insert(tasks, 0)
 	print(`Running file: {path}`)
 
-	if isParallel then
+	-- Maybe make it run processor - 1 at a time?
+	if options.parallel then
 		task.spawn(spawner, path)
+
+		if options.percore then
+			while #tasks == options.cores do
+				task.wait()
+			end
+		end
 	else
 		spawner(path)
 	end
@@ -191,7 +227,7 @@ for scheme, actions in Log do
 	if #actions.Serial > 0 then
 		print("Serial:")
 		table.sort(actions.Serial)
-		local msg = if isVerbose
+		local msg = if options.verbose
 			then table.concat(actions.Serial, "\n")
 			else "\t" .. table.concat(actions.Serial, "\n\t")
 		print(msg)
@@ -199,7 +235,7 @@ for scheme, actions in Log do
 	if #actions.Deserial > 0 then
 		print("Deserial:")
 		table.sort(actions.Deserial)
-		local msg = if isVerbose
+		local msg = if options.verbose
 			then table.concat(actions.Deserial, "\n")
 			else "\t" .. table.concat(actions.Deserial, "\n\t")
 		print(msg)

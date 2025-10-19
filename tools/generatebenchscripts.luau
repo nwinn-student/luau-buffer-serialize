@@ -30,13 +30,13 @@ for _, path in files do
 				-- Generated file...
 				local args = {}
 
+				local json = require("@json")
+
 				do
 					local temp: {string} = {...}
-					if temp[1] == "true" then
-						args.verbose = true
-					end
-					args.path = temp[2]
-					-- .. more
+
+					args.path = temp[1]
+					args.options = json.decode(temp[2])
 				end
 
 				local Bench = require("@Bench")
@@ -45,13 +45,13 @@ for _, path in files do
 
 				local results = Bench(
 					BufferSerializer.serialize,
-					require("@json").decode(require("@data/" .. args.path))
-				):updateOutput()
+					json.decode(require("@data/" .. args.path))
+				):updateOutput(buffer.len)
 
 				if args.verbose then
 					results:withName(args.path):print()
 				else
-					summarize(results, args.path)
+					summarize(results, args)
 				end
 			]]
 		)
@@ -61,13 +61,13 @@ for _, path in files do
 				-- Generated file...
 				local args = {}
 
+				local json = require("@json")
+
 				do
 					local temp: {string} = {...}
-					if temp[1] == "true" then
-						args.verbose = true
-					end
-					args.path = temp[2]
-					-- .. more
+
+					args.path = temp[1]
+					args.options = json.decode(temp[2])
 				end
 
 				local Bench = require("@Bench")
@@ -76,13 +76,13 @@ for _, path in files do
 
 				local results = Bench(
 					BufferSerializer.deserialize,
-					BufferSerializer.serialize(require("@json").decode(require("@data/" .. args.path)))
+					BufferSerializer.serialize(json.decode(require("@data/" .. args.path)))
 				):updateOutput()
 
 				if args.verbose then
 					results:withName(args.path):print()
 				else
-					summarize(results, args.path)
+					summarize(results, args)
 				end
 			]]
 		)
@@ -92,13 +92,13 @@ for _, path in files do
 				-- Generated file...
 				local args = {}
 
+				local json = require("@json")
+
 				do
 					local temp: {string} = {...}
-					if temp[1] == "true" then
-						args.verbose = true
-					end
-					args.path = temp[2]
-					-- .. more
+
+					args.path = temp[1]
+					args.options = json.decode(temp[2])
 				end
 
 				local Bench = require("@Bench")
@@ -107,13 +107,13 @@ for _, path in files do
 
 				local results = Bench(
 					msgpack.encode,
-					require("@json").decode(require("@data/" .. args.path))
-				):updateOutput()
+					json.decode(require("@data/" .. args.path))
+				):updateOutput(string.len)
 
 				if args.verbose then
 					results:withName(args.path):print()
 				else
-					summarize(results, args.path)
+					summarize(results, args)
 				end
 			]]
 		)
@@ -123,13 +123,13 @@ for _, path in files do
 				-- Generated file...
 				local args = {}
 
+				local json = require("@json")
+
 				do
 					local temp: {string} = {...}
-					if temp[1] == "true" then
-						args.verbose = true
-					end
-					args.path = temp[2]
-					-- .. more
+
+					args.path = temp[1]
+					args.options = json.decode(temp[2])
 				end
 
 				local Bench = require("@Bench")
@@ -138,13 +138,13 @@ for _, path in files do
 
 				local results = Bench(
 					msgpack.decode,
-					msgpack.encode(require("@json").decode(require("@data/" .. args.path)))
+					msgpack.encode(json.decode(require("@data/" .. args.path)))
 				):updateOutput()
 
 				if args.verbose then
 					results:withName(args.path):print()
 				else
-					summarize(results, args.path)
+					summarize(results, args)
 				end
 			]]
 		)
