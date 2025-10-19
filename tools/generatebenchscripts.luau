@@ -87,6 +87,37 @@ for _, path in files do
 			]]
 		)
 		fs.writeFile(
+			`temp/mp-ser-{path}`,
+			[[
+				-- Generated file...
+				local args = {}
+
+				do
+					local temp: {string} = {...}
+					if temp[1] == "true" then
+						args.verbose = true
+					end
+					args.path = temp[2]
+					-- .. more
+				end
+
+				local Bench = require("@Bench")
+				local msgpack = require("@msgpack")
+				local summarize = require("@summarize")
+
+				local results = Bench(
+					msgpack.encode,
+					require("@json").decode(require("@data/" .. args.path))
+				):updateOutput()
+
+				if args.verbose then
+					results:withName(args.path):print()
+				else
+					summarize(results, args.path)
+				end
+			]]
+		)
+		fs.writeFile(
 			`temp/mp-deser-{path}`,
 			[[
 				-- Generated file...

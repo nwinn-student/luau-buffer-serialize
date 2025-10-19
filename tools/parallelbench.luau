@@ -116,7 +116,7 @@ function processCreate(fileName: string)
 		`{directory}/{fileName}`,
 		"-a",
 		tostring(isVerbose),
-		fileName:sub(1, -6), -- remoes .luau
+		fileName:sub(fileName:find("ser-") + 4, -6), -- leaves just the file name
 	}, { cwd = process.cwd, shell = true, stdio = "inherit" })
 end
 
@@ -140,7 +140,6 @@ function getAction(name: string): "Serial" | "Deserial"
 end
 
 function spawner(fileName: string)
-	local startMemory = gcinfo()
 	local proc = processCreate(fileName)
 
 	if proc:status().ok then
