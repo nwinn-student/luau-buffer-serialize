@@ -36,7 +36,7 @@ for _, path in files do
 					local temp: {string} = {...}
 
 					args.path = temp[1]
-					args.options = json.decode(temp[2])
+					args.options = json.decode(table.concat(temp, " ", 2))
 				end
 
 				local Bench = require("@Bench")
@@ -67,7 +67,7 @@ for _, path in files do
 					local temp: {string} = {...}
 
 					args.path = temp[1]
-					args.options = json.decode(temp[2])
+					args.options = json.decode(table.concat(temp, " ", 2))
 				end
 
 				local Bench = require("@Bench")
@@ -98,7 +98,7 @@ for _, path in files do
 					local temp: {string} = {...}
 
 					args.path = temp[1]
-					args.options = json.decode(temp[2])
+					args.options = json.decode(table.concat(temp, " ", 2))
 				end
 
 				local Bench = require("@Bench")
@@ -129,7 +129,7 @@ for _, path in files do
 					local temp: {string} = {...}
 
 					args.path = temp[1]
-					args.options = json.decode(temp[2])
+					args.options = json.decode(table.concat(temp, " ", 2))
 				end
 
 				local Bench = require("@Bench")

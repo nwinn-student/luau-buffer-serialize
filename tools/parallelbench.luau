@@ -34,6 +34,8 @@ local options = {
 	output = {},
 }
 
+-- TODO: Add sorting options for non-verbose results
+-- TODO: Apply sorting/filtering options for verbose too. Adding more options for row-wise filtering
 function printHelp()
 	print(string.format(
 		[[
@@ -44,13 +46,12 @@ When --dir is omitted, all luau files from the ./temp directory are run.
 
 Available options:
   -h, --help: Display this usage message
-  --dir=<n>: executes all scripts within the directory
-  -np, --no-run-parallel: runs the benchmarks sequentially
-  --skip=<n[,m]>: Skips executing scripts that start with the provided characters.
+  --dir<=n>: executes all luau scripts within the directory
+  --cores<=number>: The maximum amount of usable cores (1 = serial, inf = parallel)
+  --skip<=n[,m]>: Skips executing scripts that start with the provided characters.
     | Uses lua pattern matching
   -vr, --verbose-results: Displays the expanded results of the benchmark
-  -ppc, --process-per-core: If parallel, runs one process per core, assuming all are idle
-  --remove-columns=<option,[option...]>: If non-verbose, removes option columns from the output
+  --remove-columns<=option,[option...]>: If non-verbose, removes option columns from the output
     | option: Speed | Memory | Output | Total
 
 Unsupported options:
@@ -89,16 +90,20 @@ for _, input in args do
 	if input:sub(1, 4) == "--o=" or input:sub(1, 9) == "--output=" then
 		print("Outputing the results to a .md file has yet to be implemented.")
 	end
+	if input:sub(1, 8) == "--cores=" then
+		local cores = tonumber(input:sub(9))
+		-- Fractional cores might exist later (cuz it sounds cool)
+		assert(
+			cores and cores > 0,
+			`--cores<=number> must take a number between 1 and inf, got {input:sub(
+				9
+			)}`
+		)
+		options.cores = cores
+		continue
+	end
 	if input == "--gen-hist" then
 		print("Generating histograms has yet to be implemented.")
-	end
-	if input == "-np" or input == "--no-run-parallel" then
-		options.parallel = false
-		continue
-	end
-	if input == "-ppc" or input == "--process-per-core" then
-		options.percore = true
-		continue
 	end
 	if input == "-vr" or input == "--verbose-results" then
 		options.verbose = true
@@ -112,9 +117,9 @@ for _, input in args do
 		or input == "-O0"
 		or input == "-O1"
 		or input == "-O2"
-		or input == "g0"
-		or input == "g1"
-		or input == "g2"
+		or input == "-g0"
+		or input == "-g1"
+		or input == "-g2"
 	then
 		if options.options == "" then
 			options.options = input
@@ -135,6 +140,7 @@ local files = fs.readDir(options.dir)
 local encodedOptions = "'" .. serde.encode("json", options) .. "'"
 -- FIXME: could be shell dependent... :<
 encodedOptions = encodedOptions:gsub('"', '\\"')
+--print(encodedOptions)
 
 function processCreate(fileName: string)
 	return process.create("luau", {
@@ -191,19 +197,14 @@ function processFile(path: string)
 		end
 	end
 	table.insert(tasks, 0)
-	print(`Running file: {path}`)
+	if options.verbose then
+		print(`Running file: {path}`)
+	end
 
-	-- Maybe make it run processor - 1 at a time?
-	if options.parallel then
-		task.spawn(spawner, path)
+	task.spawn(spawner, path)
 
-		if options.percore then
-			while #tasks == options.cores do
-				task.wait()
-			end
-		end
-	else
-		spawner(path)
+	while #tasks == options.cores do
+		task.wait()
 	end
 end
 
