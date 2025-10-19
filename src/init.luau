@@ -111,24 +111,12 @@ end
 --[[
 	Pairs, or links, an id(entifier) to a value.
 
-	- Serialization: The value is converted to the id.
-	 	- "Foo", whose id is 5, is `string: 0x0000020e7de21260`, thus all "Foo"s **must** also
-	 	 reference `string: 0x0000020e7de21260` to be linked with 5.
-	 	- Do not expect equivalent (`==`) userdata objects to have the same reference as other userdata objects.
-	 		- <details><summary>Click me to see how to check/solve</summary>
-
-				To check: `assert( ({ [yourUserdata] = true })[otherUserdata] )`
-
-				There are multiple solutions:
-				1. Cache the userdata so it can be referenced readily, from anywhere, instead of
-				 recreating equivalent userdata.  **Not always applicable**
-				2. Use lightuserdata whenever possible.  **Rarely applicable**
-				3. Create custom userdata writer/reader functions.
-				 See [userdata](./userdata.luau) for more information.
-	 		 </details>
-
-	- Deserialization: The id is converted to the value.
-		- The value **must** be linked to the id at this point.
+	- When a value rawequal to a linked value is serialized, the id is stored instead of the value.
+	 Upon deserialization, the id is replaced with the linked value.
+		- An id **must** be linked to a value at the point of deserialization.
+		- Userdata is not always rawequal, and when possible should be shared directly to ensure proper linkage.
+			- See [userdata.luau](./userdata.luau) for information about supporting userdata that isn't linked, whether
+			 or not by choice.
 
 	Identifiers are used to communicate importance:
 	<!--
