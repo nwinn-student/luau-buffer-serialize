@@ -27,11 +27,6 @@ local directory = "temp"
 local options = ""
 local isVerbose = false
 
---print(process.env["NUMBER_OF_PROCESSORS"])
---print(process.env)
--- how do I find the file of this script? (or exe)
--- _ seems to work for exe
-
 function printHelp()
 	print(string.format(
 		[[
@@ -116,11 +111,13 @@ end
 local files = fs.readDir(directory)
 
 function processCreate(fileName: string)
-	return process.create(
-		"luau",
-		{ options, `{directory}/{fileName}`, "-a", tostring(isVerbose) },
-		{ cwd = process.cwd, shell = true, stdio = "inherit" }
-	)
+	return process.create("luau", {
+		options,
+		`{directory}/{fileName}`,
+		"-a",
+		tostring(isVerbose),
+		fileName:sub(1, -6), -- remoes .luau
+	}, { cwd = process.cwd, shell = true, stdio = "inherit" })
 end
 
 type Log = { [string]: { Serial: { string }, Deserial: { string } } }

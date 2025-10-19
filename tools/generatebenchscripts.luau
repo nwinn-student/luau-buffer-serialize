@@ -23,12 +23,10 @@ end
 fs.writeDir("temp")
 
 for _, path in files do
-	local luauPath = path:sub(1, -6) -- removes .luau
 	task.spawn(function()
 		fs.writeFile(
 			`temp/bs-ser-{path}`,
-			string.format(
-				[[
+			[[
 				-- Generated file...
 				local args = {}
 
@@ -37,6 +35,7 @@ for _, path in files do
 					if temp[1] == "true" then
 						args.verbose = true
 					end
+					args.path = temp[2]
 					-- .. more
 				end
 
@@ -46,24 +45,19 @@ for _, path in files do
 
 				local results = Bench(
 					BufferSerializer.serialize,
-					require("@json").decode(require("@data/%s"))
+					require("@json").decode(require("@data/" .. args.path))
 				):updateOutput()
 
 				if args.verbose then
-					results:withName("%s"):print()
+					results:withName(args.path):print()
 				else
-					summarize(results, "%s")
+					summarize(results, args.path)
 				end
-			]],
-				luauPath,
-				luauPath,
-				luauPath
-			)
+			]]
 		)
 		fs.writeFile(
 			`temp/bs-deser-{path}`,
-			string.format(
-				[[
+			[[
 				-- Generated file...
 				local args = {}
 
@@ -72,6 +66,7 @@ for _, path in files do
 					if temp[1] == "true" then
 						args.verbose = true
 					end
+					args.path = temp[2]
 					-- .. more
 				end
 
@@ -81,24 +76,19 @@ for _, path in files do
 
 				local results = Bench(
 					BufferSerializer.deserialize,
-					BufferSerializer.serialize(require("@json").decode(require("@data/%s")))
+					BufferSerializer.serialize(require("@json").decode(require("@data/" .. args.path)))
 				):updateOutput()
 
 				if args.verbose then
-					results:withName("%s"):print()
+					results:withName(args.path):print()
 				else
-					summarize(results, "%s")
+					summarize(results, args.path)
 				end
-			]],
-				luauPath,
-				luauPath,
-				luauPath
-			)
+			]]
 		)
 		fs.writeFile(
 			`temp/mp-deser-{path}`,
-			string.format(
-				[[
+			[[
 				-- Generated file...
 				local args = {}
 
@@ -107,6 +97,7 @@ for _, path in files do
 					if temp[1] == "true" then
 						args.verbose = true
 					end
+					args.path = temp[2]
 					-- .. more
 				end
 
@@ -116,19 +107,15 @@ for _, path in files do
 
 				local results = Bench(
 					msgpack.decode,
-					msgpack.encode(require("@json").decode(require("@data/%s")))
+					msgpack.encode(require("@json").decode(require("@data/" .. args.path)))
 				):updateOutput()
 
 				if args.verbose then
-					results:withName("%s"):print()
+					results:withName(args.path):print()
 				else
-					summarize(results, "%s")
+					summarize(results, args.path)
 				end
-			]],
-				luauPath,
-				luauPath,
-				luauPath
-			)
+			]]
 		)
 	end)
 end
