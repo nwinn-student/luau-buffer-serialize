@@ -118,29 +118,25 @@ end
 			- See [userdata.luau](./userdata.luau) for information about supporting userdata that isn't linked, whether
 			 or not by choice.
 
-	Identifiers are used to communicate importance:
-	<!--
-	 TODO: cost unclear, add clarity.
-	 TODO: Potentially remove the importance notice, and just explain the below table
-	 TODO: Possibly move the comments about constants into here from README.md
-	-->
-	<sub>Higher importance means lower cost when serializing, thus a smaller output size</sub>
+	- Linking a value to an id causes the value to be stored as 1-2 bytes, depending on the number associated
+	 with the id and the value's type.
 
-	1. One byte: Highest importance, few slots available (10s)
-	2. Two bytes: High importance, limited slots (100s or 1000s)
-	3. N bytes: Low importance, no identifier for the value.
+	| **Type**   | **Id Range**    | **Cost** |
+	|------------|-----------------|----------|
+	| `string`   | 1-64            | 1 byte   |
+	| `number`   | 1-32            | 1 byte   |
+	| `vector`   | 1-32            | 1 byte   |
+	| `userdata` | 1-16            | 1 byte   |
+	|            |                 |          |
+	| `string`   | 65-1343         | 2 bytes  |
+	| `number`   | 33-1055         | 2 bytes  |
+	| `vector`   | 33-1055         | 2 bytes  |
+	| `userdata` | 16-1039         | 2 bytes  |
 
-	| **Type**   | **Ids**    | **Cost** |
-	|------------|------------|----------|
-	| `string`   | 1-64       | 1 byte   |
-	| `number`   | 1-32       | 1 byte   |
-	| `vector`   | 1-32       | 1 byte   |
-	| `userdata` | 1-16       | 1 byte   |
-	|            |            |          |
-	| `string`   | 65-1343    | 2 bytes  |
-	| `number`   | 33-1055    | 2 bytes  |
-	| `vector`   | 33-1055    | 2 bytes  |
-	| `userdata` | 16-1039    | 2 bytes  |
+	**Recommendations:**
+	- Calculate the word frequency of your dataset to determine which values to link to what ids.
+	- Ensure that linked values cannot be stored for less than or equal to the associated id cost (in bytes).
+	- Spare a range of ids for future additions.
 
 	<sub>See [README.md](../README.md#constant-amount-supported) for more information</sub>
 
