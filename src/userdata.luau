@@ -13,13 +13,11 @@ type Writer = (
 	size: number
 ) -> (buffer, number, number)
 
-local READ = {}
 local WRITE = {} -- 1 to 1039
 local Reader: Reader?
 local Writer: Writer?
 
 local Userdata = {
-	Read = READ,
 	Write = WRITE,
 	-- Need a way to set the approaches for serial and deserial
 
@@ -94,16 +92,6 @@ local Userdata = {
 	end,
 }
 
---[[
-	Clears and replaces the read table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Userdata.resetRead()
-	table.clear(READ)
-	READ = {}
-	Userdata.Read = READ
-end
 --[[
 	Clears and replaces the write table
 	

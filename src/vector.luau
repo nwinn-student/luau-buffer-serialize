@@ -21,7 +21,6 @@ local FLOAT = 147
 local NUMBER = 148
 local SCALAR_NUMBER = 149
 
-local READ = {}
 local WRITE = {} -- 1 to 1055
 
 local builtinSerialConst = {
@@ -295,23 +294,12 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 end
 
 local Vector = {
-	Read = READ,
 	Write = WRITE,
 
 	serialize = vecSerializer,
 	deserialize = vecDeserializer,
 }
 
---[[
-	Clears and replaces the read table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Vector.resetRead()
-	table.clear(READ)
-	READ = {}
-	Vector.Read = READ
-end
 --[[
 	Clears and replaces the write table
 	

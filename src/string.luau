@@ -8,7 +8,6 @@ local CHAR = 11
 local THREE_BYTE = 12
 local INT = 13
 
-local READ = {}
 local WRITE = {} -- 1 to 1343
 
 @native
@@ -104,23 +103,12 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 end
 
 local String = {
-	Read = READ,
 	Write = WRITE,
 
 	serialize = strSerializer,
 	deserialize = strDeserializer,
 }
 
---[[
-	Clears and replaces the read table
-
-	@ Mainly used to reduce memory usage
-]]
-function String.resetRead()
-	table.clear(READ)
-	READ = {}
-	String.Read = READ
-end
 --[[
 	Clears and replaces the write table
 	

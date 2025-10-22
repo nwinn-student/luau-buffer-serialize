@@ -28,7 +28,6 @@ local MAX_FLOAT = 2 ^ 127
 
 local vecX = vector.create(1, 0)
 
-local READ = {}
 local WRITE = {} -- 1 to 1055
 
 @native
@@ -161,23 +160,12 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 end
 
 local Number = {
-	Read = READ,
 	Write = WRITE,
 
 	serialize = numSerializer,
 	deserialize = numDeserializer,
 }
 
---[[
-	Clears and replaces the read table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Number.resetRead()
-	table.clear(READ)
-	READ = {}
-	Number.Read = READ
-end
 --[[
 	Clears and replaces the write table
 	
