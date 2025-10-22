@@ -83,17 +83,6 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 		return "", pos + 1
 	end
 
-	if id > 18 then
-		local cachedId = if id > 82
-			then (id - 83) * 256 + 64 + buffer.readu8(buf, pos + 1)
-			else id - 18
-
-		local cachedConstant: string? = READ[cachedId]
-		if cachedConstant then
-			return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
-		end
-	end
-
 	local lenSize = id - EMPTY
 
 	local len: number

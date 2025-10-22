@@ -238,17 +238,6 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		return builtinDeserialConst[YZ_AXIS], pos + 1
 	end
 
-	if id > 157 then
-		local cachedId = if id > 189
-			then (id - 190) * 256 + 32 + buffer.readu8(buf, pos + 1)
-			else id - 157
-
-		local cachedConstant: vector? = READ[cachedId]
-		if cachedConstant then
-			return cachedConstant, pos + (if cachedId > 32 then 2 else 1)
-		end
-	end
-
 	if id == SCALAR_NUMBER then
 		local vecVal = builtinDeserialConst[buffer.readu8(buf, pos + 1)]
 		local numVal

@@ -139,17 +139,6 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 		return 0 / 0, pos + 1
 	end
 
-	if id > 99 then
-		local cachedId = if id > 131
-			then (id - 132) * 256 + 32 + buffer.readu8(buf, pos + 1)
-			else id - 99
-
-		local cachedConstant: number? = READ[cachedId]
-		if cachedConstant then
-			return cachedConstant, pos + (if cachedId > 32 then 2 else 1)
-		end
-	end
-
 	if id == BYTE then
 		return buffer.readi8(buf, pos + 1), pos + 2
 	elseif id == CHAR then
