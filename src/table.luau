@@ -399,11 +399,11 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			-- read id, then skip to value
 			if isTwo then
 				local id = buffer.readu16(buf, pos)
-				value = deserialSwitch[case](buf, pos + 2)
+				value, pos = deserialSwitch[case](buf, pos + 2)
 				paired[id] = value
 				return value
 			end
-			value = deserialSwitch[case](buf, pos + 1)
+			value, pos = deserialSwitch[case](buf, pos + 1)
 			paired[valId] = value
 			return value
 		end
