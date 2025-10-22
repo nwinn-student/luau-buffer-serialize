@@ -134,9 +134,35 @@ function tabSerializer(
 		buf, pos, size = serialSwitch[typeName](data, buf, pos, size)
 
 		if pos - oldPos == 1 then
-			constants[data] = buffer.readu8(buf, oldPos)
+			local serValue = buffer.readu8(buf, oldPos)
+			constants[data] = serValue
+			if
+				typeName == "string" and serValue > 13
+				or typeName == "number" and serValue > 96
+				or typeName == "vector" and serValue > 149
+				or typeName == "userdata" and serValue > 203
+			then
+				-- Bypasses the id, only happens once!
+				buf, pos, size =
+					serialSwitch[typeName](data, buf, pos, size, true)
+			end
 		elseif pos - oldPos == 2 then
-			constants[data] = buffer.readu16(buf, oldPos)
+			local serValue = buffer.readu16(buf, oldPos)
+			constants[data] = serValue
+
+			-- will change for reformatstringpack
+			-- string can never be 2 bytes currently except for pairs
+			if
+				typeName == "string"
+				or typeName == "number" and bit32.extract(serValue, 0, 8) > 90
+				or typeName == "vector"
+				or typeName == "userdata"
+					and bit32.extract(serValue, 0, 8) > 202
+			then
+				-- Bypasses the id, only happens once!
+				buf, pos, size =
+					serialSwitch[typeName](data, buf, pos, size, true)
+			end
 		elseif data == data then
 			existingCache(data)
 		end
@@ -311,6 +337,7 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 	local existingIndex = 1
 	local existing: { [number]: any } = { [0] = returnedTab }
 	local roundRobinIndex = 61_440
+	local paired = {}
 
 	local deserialTable: (data: { [any]: any }) -> { [any]: any }?
 
@@ -353,6 +380,33 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			elseif valId <= 201 then 0 -- table (none currently that can get here)
 			elseif valId <= 223 then 6 -- userdata
 			else 0 -- for future
+
+		if
+			case == 3 and valId > 13
+			or case == 4 and valId > 96
+			or case == 5 and valId > 149
+			or case == 6 and valId > 203
+		then
+			local isTwo = case == 3 and valId > 82
+				or case == 4 and valId > 131
+				or case == 5 and valId > 189
+				or valId > 219
+			local pairedValue = paired[valId]
+			if pairedValue then
+				pos += if isTwo then 2 else 1
+				return pairedValue
+			end
+			-- read id, then skip to value
+			if isTwo then
+				local id = buffer.readu16(buf, pos)
+				value = deserialSwitch[case](buf, pos + 2)
+				paired[id] = value
+				return value
+			end
+			value = deserialSwitch[case](buf, pos + 1)
+			paired[valId] = value
+			return value
+		end
 
 		if case ~= 0 then
 			value, pos = deserialSwitch[case](buf, pos)

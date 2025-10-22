@@ -16,7 +16,8 @@ local function strSerializer(
 	value: string,
 	buf: buffer,
 	pos: number,
-	size: number
+	size: number,
+	skipPairs: boolean?
 )
 	if value == "" then
 		if pos + 1 > size then
@@ -26,23 +27,25 @@ local function strSerializer(
 		return buf, pos + 1, size
 	end
 
-	local cachedConstant: number? = WRITE[value]
-	if cachedConstant then
-		local newSize = if cachedConstant <= 64 then 1 else 2
+	if not skipPairs then
+		local cachedConstant: number? = WRITE[value]
+		if cachedConstant then
+			local newSize = if cachedConstant <= 64 then 1 else 2
 
-		if pos + newSize > size then
-			buf, size = inflate(buf, pos + newSize, size)
+			if pos + newSize > size then
+				buf, size = inflate(buf, pos + newSize, size)
+			end
+
+			if newSize == 1 then
+				buffer.writeu8(buf, pos, cachedConstant + 18)
+			else
+				local constVal = cachedConstant - 64
+				buffer.writeu8(buf, pos, 83 + (constVal // 256))
+				buffer.writeu8(buf, pos + 1, constVal)
+			end
+
+			return buf, pos + newSize, size
 		end
-
-		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + 18)
-		else
-			local constVal = cachedConstant - 64
-			buffer.writeu8(buf, pos, 83 + (constVal // 256))
-			buffer.writeu8(buf, pos + 1, constVal)
-		end
-
-		return buf, pos + newSize, size
 	end
 
 	local len = #value

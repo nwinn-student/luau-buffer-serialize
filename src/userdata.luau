@@ -23,24 +23,32 @@ local Userdata = {
 	Write = WRITE,
 	-- Need a way to set the approaches for serial and deserial
 
-	serialize = function(value: any, buf: buffer, pos: number, size: number)
-		local cachedConstant: number? = WRITE[value]
-		if cachedConstant then
-			local newSize = if cachedConstant <= 16 then 1 else 2
+	serialize = function(
+		value: any,
+		buf: buffer,
+		pos: number,
+		size: number,
+		skipPairs: boolean?
+	)
+		if not skipPairs then
+			local cachedConstant: number? = WRITE[value]
+			if cachedConstant then
+				local newSize = if cachedConstant <= 16 then 1 else 2
 
-			if pos + newSize > size then
-				buf, size = inflate(buf, pos + newSize, size)
+				if pos + newSize > size then
+					buf, size = inflate(buf, pos + newSize, size)
+				end
+
+				if newSize == 1 then
+					buffer.writeu8(buf, pos, cachedConstant + 203)
+				else
+					local constVal = cachedConstant - 16
+					buffer.writeu8(buf, pos, 220 + (constVal // 256))
+					buffer.writeu8(buf, pos + 1, constVal)
+				end
+
+				return buf, pos + newSize, size
 			end
-
-			if newSize == 1 then
-				buffer.writeu8(buf, pos, cachedConstant + 203)
-			else
-				local constVal = cachedConstant - 16
-				buffer.writeu8(buf, pos, 220 + (constVal // 256))
-				buffer.writeu8(buf, pos + 1, constVal)
-			end
-
-			return buf, pos + newSize, size
 		end
 
 		if Writer then
