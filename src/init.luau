@@ -62,7 +62,7 @@ BufferSerializer.serialize = function(value: any): buffer
 		serial = temp.serialize :: Serialize
 		serialModules[typeValue] = serial
 	end
-	return trim(serial(value, nil, 0, 0))
+	return trim(serial(value, nil, 0, 0, true))
 end
 
 --[[
