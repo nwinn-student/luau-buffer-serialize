@@ -21,6 +21,8 @@ local serialModules = {}
 local deserialModules = {}
 local pairModules = require("@self/link").values :: { [any]: any }
 
+local calcId = require("@self/link").calculateId
+
 type Serialize = (
 	value: any,
 	buf: buffer?,
@@ -157,35 +159,7 @@ BufferSerializer.pair = function(id: number, value: any): ()
 		`Invalid value {value} (cannot be a built-in)`
 	)
 
-	local count = if typeV == "string"
-		then 64
-		elseif typeV == "number" then 32
-		elseif typeV == "vector" then 32
-		else 16
-
-	local start = if typeV == "string"
-		then 18
-		elseif typeV == "number" then 99
-		elseif typeV == "vector" then 157
-		else 203
-
-	local duostart = if typeV == "string"
-		then 83
-		elseif typeV == "number" then 132
-		elseif typeV == "vector" then 190
-		else 220
-
-	local calcId
-	local newSize = if id <= count then 1 else 2
-
-	if newSize == 1 then
-		calcId = id + start
-	else
-		local constVal = id - count
-		calcId = constVal * 256 + (duostart + constVal // 256)
-	end
-
-	pairModules[value] = calcId
+	pairModules[value] = calcId(id, typeV)
 end
 
 return BufferSerializer
