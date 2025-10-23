@@ -109,6 +109,9 @@ BufferSerializer.deserialize = function(value: buffer): any
 	return originalData
 end
 
+-- narrows the type emitted by `type(any): string` would like for it to error
+type TYPES = "userdata" | "number" | "string" | "vector"
+
 --[[
 	Connects a constant value to an identifier.
 	@ Only certain types are supported.
@@ -117,7 +120,7 @@ end
 	@param value the value
 ]]
 BufferSerializer.pair = function(id: number, value: any): ()
-	local typeV = type(value)
+	local typeV = type(value) :: TYPES
 	local maxId = if typeV == "string"
 		then 1343
 		elseif typeV == "number" then 1055
