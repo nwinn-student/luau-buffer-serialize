@@ -28,15 +28,12 @@ local MAX_FLOAT = 2 ^ 127
 
 local vecX = vector.create(1, 0)
 
-local WRITE = {} -- 1 to 1055
-
 @native
 local function numSerializer(
 	value: number,
 	buf: buffer,
 	pos: number,
-	size: number,
-	skipPairs: boolean?
+	size: number
 )
 	if value == 0 or value == 1 or value ~= value then
 		if pos + 1 > size then
@@ -50,27 +47,6 @@ local function numSerializer(
 		)
 
 		return buf, pos + 1, size
-	end
-
-	if not skipPairs then
-		local cachedConstant: number? = WRITE[value]
-		if cachedConstant then
-			local newSize = if cachedConstant <= 32 then 1 else 2
-
-			if pos + newSize > size then
-				buf, size = inflate(buf, pos + newSize, size)
-			end
-
-			if newSize == 1 then
-				buffer.writeu8(buf, pos, cachedConstant + 99)
-			else
-				local constVal = cachedConstant - 32
-				buffer.writeu8(buf, pos, 132 + (constVal // 256))
-				buffer.writeu8(buf, pos + 1, constVal)
-			end
-
-			return buf, pos + newSize, size
-		end
 	end
 
 	-- Floating points
@@ -160,21 +136,8 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 end
 
 local Number = {
-	Write = WRITE,
-
 	serialize = numSerializer,
 	deserialize = numDeserializer,
 }
-
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Number.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	Number.Write = WRITE
-end
 
 return Number

@@ -19,7 +19,7 @@ local BufferSerializer = {}
 
 local serialModules = {}
 local deserialModules = {}
-local pairModules = {}
+local pairModules = require("@self/link") :: { [any]: any }
 
 type Serialize = (
 	value: any,
@@ -157,20 +157,7 @@ BufferSerializer.pair = function(id: number, value: any): ()
 		`Invalid value {value} (cannot be a built-in)`
 	)
 
-	local mod: Pair = pairModules[typeV]
-	if not mod then
-		-- ...
-		mod = (
-			if typeV == "string"
-				then require("@self/string")
-				elseif typeV == "number" then require("@self/number")
-				elseif typeV == "vector" then require("@self/vector")
-				else require("@self/userdata")
-		) :: Pair
-		pairModules[typeV] = mod
-	end
-
-	mod.Write[value] = id
+	pairModules[value] = id
 end
 
 return BufferSerializer

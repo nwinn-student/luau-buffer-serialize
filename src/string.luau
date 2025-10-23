@@ -8,15 +8,12 @@ local CHAR = 11
 local THREE_BYTE = 12
 local INT = 13
 
-local WRITE = {} -- 1 to 1343
-
 @native
 local function strSerializer(
 	value: string,
 	buf: buffer,
 	pos: number,
-	size: number,
-	skipPairs: boolean?
+	size: number
 )
 	if value == "" then
 		if pos + 1 > size then
@@ -24,27 +21,6 @@ local function strSerializer(
 		end
 		buffer.writeu8(buf, pos, EMPTY)
 		return buf, pos + 1, size
-	end
-
-	if not skipPairs then
-		local cachedConstant: number? = WRITE[value]
-		if cachedConstant then
-			local newSize = if cachedConstant <= 64 then 1 else 2
-
-			if pos + newSize > size then
-				buf, size = inflate(buf, pos + newSize, size)
-			end
-
-			if newSize == 1 then
-				buffer.writeu8(buf, pos, cachedConstant + 18)
-			else
-				local constVal = cachedConstant - 64
-				buffer.writeu8(buf, pos, 83 + (constVal // 256))
-				buffer.writeu8(buf, pos + 1, constVal)
-			end
-
-			return buf, pos + newSize, size
-		end
 	end
 
 	local len = #value
@@ -103,21 +79,8 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 end
 
 local String = {
-	Write = WRITE,
-
 	serialize = strSerializer,
 	deserialize = strDeserializer,
 }
-
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function String.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	String.Write = WRITE
-end
 
 return String

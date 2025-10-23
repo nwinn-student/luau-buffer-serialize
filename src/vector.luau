@@ -4,7 +4,7 @@ local inflate = require("./inflate")
 
 local numSerializer = require("./number").serialize
 local numDeserializer = require("./number").deserialize
-local numWrite = require("./number").Write
+local numWrite = require("./link") :: { number }
 
 local ZERO = 136
 local ONE = 137
@@ -20,8 +20,6 @@ local THREE_BYTE = 146
 local FLOAT = 147
 local NUMBER = 148
 local SCALAR_NUMBER = 149
-
-local WRITE = {} -- 1 to 1055
 
 local builtinSerialConst = {
 	-- Used for serialization
@@ -71,8 +69,7 @@ local function vecSerializer(
 	value: vector,
 	buf: buffer,
 	pos: number,
-	size: number,
-	skipPairs: boolean?
+	size: number
 )
 	local builtin: number? = builtinSerialConst[value]
 	if builtin then
@@ -81,27 +78,6 @@ local function vecSerializer(
 		end
 		buffer.writeu8(buf, pos, builtin)
 		return buf, pos + 1, size
-	end
-
-	if not skipPairs then
-		local cachedConstant: number? = WRITE[value]
-		if cachedConstant then
-			local newSize = if cachedConstant <= 32 then 1 else 2
-
-			if pos + newSize > size then
-				buf, size = inflate(buf, pos + newSize, size)
-			end
-
-			if newSize == 1 then
-				buffer.writeu8(buf, pos, cachedConstant + 157)
-			else
-				local constVal = cachedConstant - 32
-				buffer.writeu8(buf, pos, 190 + (constVal // 256))
-				buffer.writeu8(buf, pos + 1, constVal)
-			end
-
-			return buf, pos + newSize, size
-		end
 	end
 
 	-- now we check scalar
@@ -294,21 +270,8 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 end
 
 local Vector = {
-	Write = WRITE,
-
 	serialize = vecSerializer,
 	deserialize = vecDeserializer,
 }
-
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Vector.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	Vector.Write = WRITE
-end
 
 return Vector

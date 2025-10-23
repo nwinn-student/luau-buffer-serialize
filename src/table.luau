@@ -1,6 +1,7 @@
 --!optimize 2
 --!strict
 local inflate = require("./inflate")
+local link = require("./link") :: { [any]: any }
 
 type Serialize = (
 	data: any,
@@ -15,13 +16,75 @@ type Switch<VAR, F> = {
 	[VAR]: F,
 }
 
+local strSer = require("./string").serialize
+local numSer = require("./number").serialize
+local vecSer = require("./vector").serialize
+local userSer = require("./userdata").serialize
+
+@native
+local function linkSer(
+	buf: buffer,
+	pos: number,
+	size: number,
+	cachedConstant: number,
+	count: number,
+	start: number,
+	duostart: number
+)
+	local newSize = if cachedConstant <= count then 1 else 2
+
+	if pos + newSize > size then
+		buf, size = inflate(buf, pos + newSize, size)
+	end
+
+	if newSize == 1 then
+		buffer.writeu8(buf, pos, cachedConstant + start)
+	else
+		local constVal = cachedConstant - count
+		buffer.writeu8(buf, pos, duostart + (constVal // 256))
+		buffer.writeu8(buf, pos + 1, constVal)
+	end
+
+	return buf, pos + newSize, size, true :: any
+end
+
 local serialSwitch: Switch<string, Serialize> = {
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
-	string = require("./string").serialize,
-	number = require("./number").serialize,
-	vector = require("./vector").serialize,
-	userdata = require("./userdata").serialize,
+	string = @native function(data: any, buf: buffer, pos: number, size: number)
+		local linkValue = link[data]
+		if linkValue then
+			return linkSer(buf, pos, size, linkValue, 64, 18, 83)
+		end
+		return strSer(data, buf, pos, size)
+	end,
+	number = @native function(data: any, buf: buffer, pos: number, size: number)
+		local linkValue = link[data]
+		if linkValue then
+			return linkSer(buf, pos, size, linkValue, 32, 99, 132)
+		end
+		return numSer(data, buf, pos, size)
+	end,
+	vector = @native function(data: any, buf: buffer, pos: number, size: number)
+		local linkValue = link[data]
+		if linkValue then
+			return linkSer(buf, pos, size, linkValue, 32, 157, 190)
+		end
+		return vecSer(data, buf, pos, size)
+	end,
+	userdata = @native function(data: any, buf: buffer, pos: number, size: number)
+		local linkValue = link[data]
+		if linkValue then
+			return linkSer(buf, pos, size, linkValue, 16, 203, 220)
+		end
+		return userSer(data, buf, pos, size)
+	end,
+}
+local unlinkedSwitch: Switch<string, Serialize> = {
+	string = strSer,
+	number = numSer,
+	vector = vecSer,
+	userdata = userSer,
 }
 
 local deserialSwitch: Switch<number, Deserialize> = {
@@ -130,39 +193,25 @@ function tabSerializer(
 			return
 		end
 
-		local oldPos = pos
-		buf, pos, size = serialSwitch[typeName](data, buf, pos, size)
+		local oldPos, triggered = pos, nil
+		buf, pos, size, triggered = serialSwitch[typeName](data, buf, pos, size)
 
 		if pos - oldPos == 1 then
 			local serValue = buffer.readu8(buf, oldPos)
 			constants[data] = serValue
-			if
-				typeName == "string" and serValue > 13
-				or typeName == "number" and serValue > 96
-				or typeName == "vector" and serValue > 149
-				or typeName == "userdata" and serValue > 203
-			then
-				-- Bypasses the id, only happens once!
-				buf, pos, size =
-					serialSwitch[typeName](data, buf, pos, size, true)
+			if not triggered then
+				return
 			end
+
+			buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
 		elseif pos - oldPos == 2 then
 			local serValue = buffer.readu16(buf, oldPos)
 			constants[data] = serValue
-
-			-- will change for reformatstringpack
-			-- string can never be 2 bytes currently except for pairs
-			if
-				typeName == "string"
-				or typeName == "number" and bit32.extract(serValue, 0, 8) > 90
-				or typeName == "vector"
-				or typeName == "userdata"
-					and bit32.extract(serValue, 0, 8) > 202
-			then
-				-- Bypasses the id, only happens once!
-				buf, pos, size =
-					serialSwitch[typeName](data, buf, pos, size, true)
+			if not triggered then
+				return
 			end
+
+			buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
 		elseif data == data then
 			existingCache(data)
 		end

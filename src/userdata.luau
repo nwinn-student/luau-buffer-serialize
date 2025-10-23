@@ -13,42 +13,13 @@ type Writer = (
 	size: number
 ) -> (buffer, number, number)
 
-local WRITE = {} -- 1 to 1039
 local Reader: Reader?
 local Writer: Writer?
 
 local Userdata = {
-	Write = WRITE,
 	-- Need a way to set the approaches for serial and deserial
 
-	serialize = function(
-		value: any,
-		buf: buffer,
-		pos: number,
-		size: number,
-		skipPairs: boolean?
-	)
-		if not skipPairs then
-			local cachedConstant: number? = WRITE[value]
-			if cachedConstant then
-				local newSize = if cachedConstant <= 16 then 1 else 2
-
-				if pos + newSize > size then
-					buf, size = inflate(buf, pos + newSize, size)
-				end
-
-				if newSize == 1 then
-					buffer.writeu8(buf, pos, cachedConstant + 203)
-				else
-					local constVal = cachedConstant - 16
-					buffer.writeu8(buf, pos, 220 + (constVal // 256))
-					buffer.writeu8(buf, pos + 1, constVal)
-				end
-
-				return buf, pos + newSize, size
-			end
-		end
-
+	serialize = function(value: any, buf: buffer, pos: number, size: number)
 		if Writer then
 			if pos + 1 > size then
 				buf, size = inflate(buf, pos + 1, size)
@@ -91,16 +62,5 @@ local Userdata = {
 		Writer = writer
 	end,
 }
-
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Userdata.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	Userdata.Write = WRITE
-end
 
 return Userdata
