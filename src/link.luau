@@ -72,4 +72,4 @@ function link.calculateId(id: number, typeV: TYPES)
 	return calcId
 end
 
-return link
+return table.freeze(link)

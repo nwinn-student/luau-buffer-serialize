@@ -104,7 +104,7 @@ function tabSerializer(
 	local roundRobinLength = 0
 	local roundRobinIndex = 61440
 
-	local constants = {}
+	local constants: { [any]: number } = {}
 
 	local serialTable: (data: { [any]: any }) -> ()
 
@@ -223,16 +223,7 @@ function tabSerializer(
 				end
 				cached = constants[element]
 				if cached then
-					local newSize = cached > 255 and 2 or 1
-					if pos + newSize > size then
-						buf, size = inflate(buf, pos + newSize, size)
-					end
-					if newSize == 1 then
-						buffer.writeu8(buf, pos, cached)
-					else
-						buffer.writeu16(buf, pos, cached)
-					end
-					pos += newSize
+					buf, pos, size = linkSer(cached, buf, pos, size)
 					continue
 				end
 
@@ -283,16 +274,7 @@ function tabSerializer(
 
 			local constCached = constants[key]
 			if constCached and not cached then
-				local newSize = constCached > 255 and 2 or 1
-				if pos + newSize > size then
-					buf, size = inflate(buf, pos + newSize, size)
-				end
-				if newSize == 1 then
-					buffer.writeu8(buf, pos, constCached)
-				else
-					buffer.writeu16(buf, pos, constCached)
-				end
-				pos += newSize
+				buf, pos, size = linkSer(constCached, buf, pos, size)
 			elseif not cached then
 				-- store key
 				serialCache(key, typeKey)
@@ -311,16 +293,7 @@ function tabSerializer(
 			end
 			cached = constants[element]
 			if cached then
-				local newSize = cached > 255 and 2 or 1
-				if pos + newSize > size then
-					buf, size = inflate(buf, pos + newSize, size)
-				end
-				if newSize == 1 then
-					buffer.writeu8(buf, pos, cached)
-				else
-					buffer.writeu16(buf, pos, cached)
-				end
-				pos += newSize
+				buf, pos, size = linkSer(cached, buf, pos, size)
 				continue
 			end
 
