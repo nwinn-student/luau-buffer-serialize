@@ -1,7 +1,8 @@
 --!optimize 2
 --!strict
 local inflate = require("./inflate")
-local link = require("./link") :: { [any]: any }
+local link = require("./link").values :: { [any]: any }
+local linkSer = require("./link").serialize
 
 type Serialize = (
 	data: any,
@@ -21,61 +22,34 @@ local numSer = require("./number").serialize
 local vecSer = require("./vector").serialize
 local userSer = require("./userdata").serialize
 
-@native
-local function linkSer(
-	buf: buffer,
-	pos: number,
-	size: number,
-	cachedConstant: number,
-	count: number,
-	start: number,
-	duostart: number
-)
-	local newSize = if cachedConstant <= count then 1 else 2
-
-	if pos + newSize > size then
-		buf, size = inflate(buf, pos + newSize, size)
-	end
-
-	if newSize == 1 then
-		buffer.writeu8(buf, pos, cachedConstant + start)
-	else
-		local constVal = cachedConstant - count
-		buffer.writeu8(buf, pos, duostart + (constVal // 256))
-		buffer.writeu8(buf, pos + 1, constVal)
-	end
-
-	return buf, pos + newSize, size, true :: any
-end
-
 local serialSwitch: Switch<string, Serialize> = {
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
 	string = @native function(data: any, buf: buffer, pos: number, size: number)
 		local linkValue = link[data]
 		if linkValue then
-			return linkSer(buf, pos, size, linkValue, 64, 18, 83)
+			return linkSer(linkValue, buf, pos, size)
 		end
 		return strSer(data, buf, pos, size)
 	end,
 	number = @native function(data: any, buf: buffer, pos: number, size: number)
 		local linkValue = link[data]
 		if linkValue then
-			return linkSer(buf, pos, size, linkValue, 32, 99, 132)
+			return linkSer(linkValue, buf, pos, size)
 		end
 		return numSer(data, buf, pos, size)
 	end,
 	vector = @native function(data: any, buf: buffer, pos: number, size: number)
 		local linkValue = link[data]
 		if linkValue then
-			return linkSer(buf, pos, size, linkValue, 32, 157, 190)
+			return linkSer(linkValue, buf, pos, size)
 		end
 		return vecSer(data, buf, pos, size)
 	end,
 	userdata = @native function(data: any, buf: buffer, pos: number, size: number)
 		local linkValue = link[data]
 		if linkValue then
-			return linkSer(buf, pos, size, linkValue, 16, 203, 220)
+			return linkSer(linkValue, buf, pos, size)
 		end
 		return userSer(data, buf, pos, size)
 	end,
@@ -197,21 +171,23 @@ function tabSerializer(
 		buf, pos, size, triggered = serialSwitch[typeName](data, buf, pos, size)
 
 		if pos - oldPos == 1 then
+			if triggered then
+				constants[data] = triggered
+				buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
+				return
+			end
+
 			local serValue = buffer.readu8(buf, oldPos)
 			constants[data] = serValue
-			if not triggered then
+		elseif pos - oldPos == 2 then
+			if triggered then
+				constants[data] = triggered
+				buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
 				return
 			end
 
-			buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
-		elseif pos - oldPos == 2 then
 			local serValue = buffer.readu16(buf, oldPos)
 			constants[data] = serValue
-			if not triggered then
-				return
-			end
-
-			buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
 		elseif data == data then
 			existingCache(data)
 		end
@@ -440,11 +416,13 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 				or case == 4 and valId > 131
 				or case == 5 and valId > 189
 				or valId > 219
+
 			local pairedValue = paired[valId]
 			if pairedValue then
 				pos += if isTwo then 2 else 1
 				return pairedValue
 			end
+
 			-- read id, then skip to value
 			if isTwo then
 				local id = buffer.readu16(buf, pos)
