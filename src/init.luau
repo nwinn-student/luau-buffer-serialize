@@ -52,7 +52,7 @@ BufferSerializer.serialize = function(value: any): buffer
 
 	local serial: Serialize = serialModules[typeValue]
 	if not serial then
-		serial = (require("@self" .. typeValue) :: any).serialize
+		serial = (require("@self/" .. typeValue) :: any).serialize
 		serialModules[typeValue] = serial
 	end
 	return trim(serial(value, nil, 0, 0))
