@@ -62,7 +62,7 @@ type Pair = {
 	
 	@return a buffer representing the serialized value
 ]]
-BufferSerializer.serialize = function(value: any): buffer
+function BufferSerializer.serialize(value: any): buffer
 	local typeValue = type(value)
 	if typeValue == "function" or typeValue == "thread" then
 		typeValue = "nil"
@@ -75,12 +75,12 @@ end
 
 --[[
 	Returns the original value within the buffer
-	
+
 	@param value the buffer containing the original value
 	
 	@return the original value
 ]]
-BufferSerializer.deserialize = function(value: buffer): any
+function BufferSerializer.deserialize(value: buffer): any
 	local pointer = buffer.readu8(value, 0)
 	if pointer == 0 then
 		return nil
@@ -98,13 +98,55 @@ end
 type TYPES = "userdata" | "number" | "string" | "vector"
 
 --[[
-	Connects a constant value to an identifier.
-	@ Only certain types are supported.
-	
+	Pairs, or links, an id(entifier) to a value.
+
+	- When a value rawequal to a linked value is serialized, the id is stored instead of the value.
+	 Upon deserialization, the id is replaced with the linked value.
+		- To save bytes, pairs are only recognized in the context of table (de)serialization.
+		- Ids are stored in tandem with their value initially, so there is no requirement for consistent
+		 pairing of ids to values.
+		- Userdata is not always rawequal, and when possible should be shared directly to ensure proper linkage.
+			- See [userdata.luau](./userdata.luau) for information about supporting userdata that isn't linked, whether
+			 or not by choice.
+
+	- Linking a value to an id causes the value to be stored as 1-2 bytes, depending on the number associated
+	 with the id and the value's type.
+
+	| **Type**   | **Id Range**    | **Cost** |
+	|------------|-----------------|----------|
+	| `string`   | 1-64            | 1 byte   |
+	| `number`   | 1-32            | 1 byte   |
+	| `vector`   | 1-32            | 1 byte   |
+	| `userdata` | 1-16            | 1 byte   |
+	|            |                 |          |
+	| `string`   | 65-1343         | 2 bytes  |
+	| `number`   | 33-1055         | 2 bytes  |
+	| `vector`   | 33-1055         | 2 bytes  |
+	| `userdata` | 16-1039         | 2 bytes  |
+
+	**Recommendations:**
+	- Calculate the word frequency of your dataset to determine which values to link to what ids.
+	- Ensure that linked values cannot be stored for less than or equal to the associated id cost (in bytes).
+	- Spare a range of ids for future additions.
+
+	**Example**
+	```luau
+	 -- 5 is between 1 and 64, so it will take 1 byte to store "Foo" from now on
+	BufferSerializer.pair(5, "Foo")
+	-- 75 is between 65 and 1343, so it will take 2 bytes to store "Bar" from now on
+	BufferSerializer.pair(75, "Bar")
+	```
+
 	@param id the identifier
 	@param value the value
+
+	@error Invalid type: When the value is not a string, number, vector, or userdata
+	@error Invalid id: When the id is not an integer
+	@error Invalid id: When the id is not between 1 and N, where N depends on the value's type
+	@error Invalid value: When the value is NaN
+	@error Invalid value: When the value is a built-in constant, i.e. "", 0, 1, etc
 ]]
-BufferSerializer.pair = function(id: number, value: any): ()
+function BufferSerializer.pair(id: number, value: any): ()
 	local typeV = type(value) :: TYPES
 	local maxId = if typeV == "string"
 		then 1343
