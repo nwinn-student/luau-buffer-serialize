@@ -68,9 +68,9 @@ For numbers, the data following the representation byte is equivalent to the lit
 
 `table`  
 Definition of array used: An array is a list of elements from index 1 to n where there exist no gaps between the integers 1 and n.  
-The arraySize variable represents the amount of bytes used to store all of the values within the array part.  The minimum value for arraySize is arrayLen, but such an occurance is highly unlikely.  
+The arraySize variable represents the amount of bytes used to store all the values within the array part.  The minimum value for arraySize is arrayLen, but such an occurrence is highly unlikely.  
 
-The dictSize variable represents the amount of bytes used to store all of the keys and values within the dictionary part.  The minimum value for dictSize is dictLen * 2, but such an occurance is highly unlikely.
+The dictSize variable represents the amount of bytes used to store all the keys and values within the dictionary part.  The minimum value for dictSize is dictLen * 2, but such an occurrence is highly unlikely.
 
 - [X] empty table [194]: The constant ```{}```
 - [X] table [195]: A mixed table that contains both arrayend and tableend to terminate. (Takes 3 + arraySize + dictSize bytes)
