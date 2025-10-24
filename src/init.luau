@@ -129,10 +129,6 @@ type TYPES = "userdata" | "number" | "string" | "vector"
 	- Ensure that linked values cannot be stored for less than or equal to the associated id cost (in bytes).
 	- Spare a range of ids for future additions.
 
-	<!-- TODO: Remove the comment once RISKS.md is complete.
-	<sub>See [RISKS.md](../RISKS.md) to understand the risks when using `BufferSerializer.pair`.</sub>
-	-->
-
 	**Example**
 	```luau
 	 -- 5 is between 1 and 64, so it will take 1 byte to store "Foo" from now on
