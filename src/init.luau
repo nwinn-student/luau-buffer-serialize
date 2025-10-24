@@ -16,12 +16,14 @@ local function trim(data: buffer, pos: number, size: number)
 end
 
 local BufferSerializer = {}
+local link = require("@self/link")
 
 local serialModules = {}
 local deserialModules = {}
-local pairModules = require("@self/link").values :: { [any]: any }
+local pairModules = link.values :: { [any]: any }
 
-local calcId = require("@self/link").calculateId
+local calcId = link.calculateId
+local linkType = link.type
 
 type Serialize = (
 	value: any,
@@ -50,17 +52,7 @@ BufferSerializer.serialize = function(value: any): buffer
 
 	local serial: Serialize = serialModules[typeValue]
 	if not serial then
-		local temp = if typeValue == "nil"
-			then require("@self/nil")
-			elseif typeValue == "boolean" then require("@self/boolean")
-			elseif typeValue == "buffer" then require("@self/buffer")
-			elseif typeValue == "string" then require("@self/string")
-			elseif typeValue == "number" then require("@self/number")
-			elseif typeValue == "vector" then require("@self/vector")
-			elseif typeValue == "table" then require("@self/table")
-			else require("@self/userdata")
-
-		serial = temp.serialize :: Serialize
+		serial = (require("@self" .. typeValue) :: any).serialize
 		serialModules[typeValue] = serial
 	end
 	return trim(serial(value, nil, 0, 0, true))
@@ -79,29 +71,11 @@ BufferSerializer.deserialize = function(value: buffer): any
 		return nil
 	end
 
-	pointer = if pointer <= 2
-		then 1 -- boolean
-		elseif pointer <= 8 then 2 -- buffer
-		elseif pointer <= 87 then 3 -- string
-		elseif pointer <= 135 then 4 -- number
-		elseif pointer <= 193 then 5 -- vector
-		elseif pointer <= 201 then 6 -- table
-		elseif pointer <= 223 then 7 -- userdata
-		else 0 -- add more if statements if needed for future
+	pointer = linkType(pointer)
 
 	local deserial: Deserialize = deserialModules[pointer]
 	if not deserial then
-		local temp = if pointer == 0
-			then require("@self/nil")
-			elseif pointer == 1 then require("@self/boolean")
-			elseif pointer == 2 then require("@self/buffer")
-			elseif pointer == 3 then require("@self/string")
-			elseif pointer == 4 then require("@self/number")
-			elseif pointer == 5 then require("@self/vector")
-			elseif pointer == 6 then require("@self/table")
-			else require("@self/userdata")
-
-		deserial = temp.deserialize
+		deserial = (require("@self/" .. pointer) :: any).deserialize
 		deserialModules[pointer] = deserial
 	end
 

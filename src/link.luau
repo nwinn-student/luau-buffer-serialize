@@ -5,6 +5,9 @@ local inflate = require("./inflate")
 
 local link = {}
 
+type TYPES = "userdata" | "number" | "string" | "vector"
+type SERIALIZABLE_TYPES = TYPES | "boolean" | "buffer" | "nil" | "table"
+
 -- possibly used in table?
 local STRING_COUNT = 64
 local NUMBER_COUNT = 32
@@ -28,35 +31,48 @@ local USER_DUOSTART = 220
 
 link.values = {}
 
+--[[
+	Appends the id to the buffer at the given position, returning the inputs.
+
+	@param id the internal representation of the id associated with a value
+	@param buf the buffer to append the id to
+	@param pos the position in the buffer to append the id to
+	@param size the size of the buffer
+]]
 @native
-function link.serialize(value: number, buf: buffer, pos: number, size: number)
+function link.serialize(id: number, buf: buffer, pos: number, size: number)
 	if pos + 2 > size then
 		buf, size = inflate(buf, pos + 2, size)
 	end
-	buffer.writeu16(buf, pos, value)
-	return buf, pos + (value > 255 and 2 or 1), size, value :: any
+	buffer.writeu16(buf, pos, id)
+	return buf, pos + (id > 255 and 2 or 1), size, id :: any
 end
 
-type TYPES = "userdata" | "number" | "string" | "vector"
+--[[
+	Returns the internal representation of the id based on the provided type.
+	That is, the value to store when serializing the value in tables.
 
+	@param id the id to pair to a value
+	@param type the type of the paired value
+]]
 @native
-function link.calculateId(id: number, typeV: TYPES)
-	local count = if typeV == "string"
+function link.calculateId(id: number, type: TYPES): number
+	local count = if type == "string"
 		then STRING_COUNT
-		elseif typeV == "number" then NUMBER_COUNT
-		elseif typeV == "vector" then VECTOR_COUNT
+		elseif type == "number" then NUMBER_COUNT
+		elseif type == "vector" then VECTOR_COUNT
 		else USER_COUNT
 
-	local start = if typeV == "string"
+	local start = if type == "string"
 		then STRING_START
-		elseif typeV == "number" then NUMBER_START
-		elseif typeV == "vector" then VECTOR_START
+		elseif type == "number" then NUMBER_START
+		elseif type == "vector" then VECTOR_START
 		else USER_START
 
-	local duostart = if typeV == "string"
+	local duostart = if type == "string"
 		then STRING_DUOSTART
-		elseif typeV == "number" then NUMBER_DUOSTART
-		elseif typeV == "vector" then VECTOR_DUOSTART
+		elseif type == "number" then NUMBER_DUOSTART
+		elseif type == "vector" then VECTOR_DUOSTART
 		else USER_DUOSTART
 
 	local calcId
@@ -70,6 +86,52 @@ function link.calculateId(id: number, typeV: TYPES)
 	end
 
 	return calcId
+end
+
+--[[
+	Returns the type of reference id
+
+	@param refId the byte containing the type and location of the id paired to a value
+]]
+@native
+function link.type(refId: number): SERIALIZABLE_TYPES
+	return if refId <= 2
+		then "boolean"
+		elseif refId <= 8 then "buffer"
+		elseif refId <= 87 then "string"
+		elseif refId <= 135 then "number"
+		elseif refId <= 193 then "vector"
+		elseif refId <= 201 then "table"
+		elseif refId <= 223 then "userdata"
+		else "nil" -- add more if statements if needed for future
+end
+
+--[[
+	Returns whether the byte is linked
+
+	@param byte the byte read
+	@param type value type
+]]
+@native
+function link.islink(byte: number, type: SERIALIZABLE_TYPES): boolean
+	return type == "string" and byte > STRING_START
+		or type == "number" and byte > NUMBER_START
+		or type == "vector" and byte > VECTOR_START
+		or type == "userdata" and byte > USER_START
+end
+
+--[[
+	Returns whether the value associated with the link is 2 bytes
+
+	@param byte the byte read
+	@param type the value type
+]]
+@native
+function link.isduo(byte: number, type: SERIALIZABLE_TYPES): boolean
+	return type == "string" and byte >= STRING_DUOSTART
+		or type == "number" and byte >= NUMBER_DUOSTART
+		or type == "vector" and byte >= VECTOR_DUOSTART
+		or type == "userdata" and byte >= USER_DUOSTART
 end
 
 return table.freeze(link)

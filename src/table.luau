@@ -1,8 +1,12 @@
 --!optimize 2
 --!strict
 local inflate = require("./inflate")
-local link = require("./link").values :: { [any]: any }
-local linkSer = require("./link").serialize
+local link = require("./link")
+local linkValues = link.values :: { [any]: any }
+local linkSer = link.serialize
+local linkType = link.type
+local isLink = link.islink
+local isDuo = link.isduo
 
 type Serialize = (
 	data: any,
@@ -26,28 +30,28 @@ local serialSwitch: Switch<string, Serialize> = {
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
 	string = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = link[data]
+		local linkId = linkValues[data]
 		if linkId then
 			return linkSer(linkId, buf, pos, size)
 		end
 		return strSer(data, buf, pos, size)
 	end,
 	number = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = link[data]
+		local linkId = linkValues[data]
 		if linkId then
 			return linkSer(linkId, buf, pos, size)
 		end
 		return numSer(data, buf, pos, size)
 	end,
 	vector = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = link[data]
+		local linkId = linkValues[data]
 		if linkId then
 			return linkSer(linkId, buf, pos, size)
 		end
 		return vecSer(data, buf, pos, size)
 	end,
 	userdata = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = link[data]
+		local linkId = linkValues[data]
 		if linkId then
 			return linkSer(linkId, buf, pos, size)
 		end
@@ -61,13 +65,13 @@ local unlinkedSwitch: Switch<string, Serialize> = {
 	userdata = userSer,
 }
 
-local deserialSwitch: Switch<number, Deserialize> = {
-	require("./boolean").deserialize,
-	require("./buffer").deserialize,
-	require("./string").deserialize,
-	require("./number").deserialize,
-	require("./vector").deserialize,
-	require("./userdata").deserialize,
+local deserialSwitch: Switch<string, Deserialize> = {
+	boolean = require("./boolean").deserialize,
+	buffer = require("./buffer").deserialize,
+	string = require("./string").deserialize,
+	number = require("./number").deserialize,
+	vector = require("./vector").deserialize,
+	userdata = require("./userdata").deserialize,
 }
 
 local EMPTY = 194
@@ -369,26 +373,10 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 
 		local value: any = nil
 		local oldPos = pos
-		local case = if valId <= 2
-			then 1 -- boolean
-			elseif valId <= 8 then 2 -- buffer
-			elseif valId <= 87 then 3 -- string
-			elseif valId <= 135 then 4 -- number
-			elseif valId <= 193 then 5 -- vector
-			elseif valId <= 201 then 0 -- table (none currently that can get here)
-			elseif valId <= 223 then 6 -- userdata
-			else 0 -- for future
+		local case = linkType(valId)
 
-		if
-			case == 3 and valId > 13
-			or case == 4 and valId > 96
-			or case == 5 and valId > 149
-			or case == 6 and valId > 203
-		then
-			local isTwo = case == 3 and valId > 82
-				or case == 4 and valId > 131
-				or case == 5 and valId > 189
-				or valId > 219
+		if isLink(valId, case) then
+			local isTwo = isDuo(valId, case)
 
 			local pairedValue = paired[valId]
 			if pairedValue then
