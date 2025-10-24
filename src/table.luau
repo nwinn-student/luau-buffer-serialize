@@ -57,22 +57,23 @@ local serialSwitch: Switch<string, Serialize> = table.freeze({
 		end
 		return userSer(data, buf, pos, size)
 	end,
-})
+}) :: Switch<string, Serialize>
 local unlinkedSwitch: Switch<string, Serialize> = {
 	string = strSer,
 	number = numSer,
 	vector = vecSer,
 	userdata = userSer,
-} :: Switch<string, Serialize>
+}
 
-local deserialSwitch: Switch<string, Deserialize> = table.freeze({
-	boolean = require("./boolean").deserialize,
-	buffer = require("./buffer").deserialize,
-	string = require("./string").deserialize,
-	number = require("./number").deserialize,
-	vector = require("./vector").deserialize,
-	userdata = require("./userdata").deserialize,
-})
+local deserialSwitch: Switch<string, Deserialize> =
+	table.freeze({
+		boolean = require("./boolean").deserialize,
+		buffer = require("./buffer").deserialize,
+		string = require("./string").deserialize,
+		number = require("./number").deserialize,
+		vector = require("./vector").deserialize,
+		userdata = require("./userdata").deserialize,
+	}) :: Switch<string, Deserialize>
 
 local EMPTY = 194
 local TABLE = 195
@@ -396,7 +397,7 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			return value
 		end
 
-		if case ~= 0 then
+		if case ~= "nil" then
 			value, pos = deserialSwitch[case](buf, pos)
 		else
 			pos += 1
