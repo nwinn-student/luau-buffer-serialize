@@ -55,7 +55,7 @@ BufferSerializer.serialize = function(value: any): buffer
 		serial = (require("@self" .. typeValue) :: any).serialize
 		serialModules[typeValue] = serial
 	end
-	return trim(serial(value, nil, 0, 0, true))
+	return trim(serial(value, nil, 0, 0))
 end
 
 --[[
