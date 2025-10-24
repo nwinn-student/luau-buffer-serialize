@@ -26,30 +26,30 @@ local serialSwitch: Switch<string, Serialize> = {
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
 	string = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkValue = link[data]
-		if linkValue then
-			return linkSer(linkValue, buf, pos, size)
+		local linkId = link[data]
+		if linkId then
+			return linkSer(linkId, buf, pos, size)
 		end
 		return strSer(data, buf, pos, size)
 	end,
 	number = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkValue = link[data]
-		if linkValue then
-			return linkSer(linkValue, buf, pos, size)
+		local linkId = link[data]
+		if linkId then
+			return linkSer(linkId, buf, pos, size)
 		end
 		return numSer(data, buf, pos, size)
 	end,
 	vector = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkValue = link[data]
-		if linkValue then
-			return linkSer(linkValue, buf, pos, size)
+		local linkId = link[data]
+		if linkId then
+			return linkSer(linkId, buf, pos, size)
 		end
 		return vecSer(data, buf, pos, size)
 	end,
 	userdata = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkValue = link[data]
-		if linkValue then
-			return linkSer(linkValue, buf, pos, size)
+		local linkId = link[data]
+		if linkId then
+			return linkSer(linkId, buf, pos, size)
 		end
 		return userSer(data, buf, pos, size)
 	end,
@@ -167,12 +167,12 @@ function tabSerializer(
 			return
 		end
 
-		local oldPos, triggered = pos, nil
-		buf, pos, size, triggered = serialSwitch[typeName](data, buf, pos, size)
+		local oldPos, pairedId = pos, nil
+		buf, pos, size, pairedId = serialSwitch[typeName](data, buf, pos, size)
 
 		if pos - oldPos == 1 then
-			if triggered then
-				constants[data] = triggered
+			if pairedId then
+				constants[data] = pairedId
 				buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
 				return
 			end
@@ -180,8 +180,8 @@ function tabSerializer(
 			local serValue = buffer.readu8(buf, oldPos)
 			constants[data] = serValue
 		elseif pos - oldPos == 2 then
-			if triggered then
-				constants[data] = triggered
+			if pairedId then
+				constants[data] = pairedId
 				buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
 				return
 			end
