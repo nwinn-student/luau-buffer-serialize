@@ -28,9 +28,6 @@ local MAX_FLOAT = 2 ^ 127
 
 local vecX = vector.create(1, 0)
 
-local READ = {}
-local WRITE = {} -- 1 to 1055
-
 @native
 local function numSerializer(
 	value: number,
@@ -50,25 +47,6 @@ local function numSerializer(
 		)
 
 		return buf, pos + 1, size
-	end
-
-	local cachedConstant: number? = WRITE[value]
-	if cachedConstant then
-		local newSize = if cachedConstant <= 32 then 1 else 2
-
-		if pos + newSize > size then
-			buf, size = inflate(buf, pos + newSize, size)
-		end
-
-		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + 99)
-		else
-			local constVal = cachedConstant - 32
-			buffer.writeu8(buf, pos, 132 + (constVal // 256))
-			buffer.writeu8(buf, pos + 1, constVal)
-		end
-
-		return buf, pos + newSize, size
 	end
 
 	-- Floating points
@@ -136,17 +114,6 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 		return 0 / 0, pos + 1
 	end
 
-	if id > 99 then
-		local cachedId = if id > 131
-			then (id - 132) * 256 + 32 + buffer.readu8(buf, pos + 1)
-			else id - 99
-
-		local cachedConstant: number? = READ[cachedId]
-		if cachedConstant then
-			return cachedConstant, pos + (if cachedId > 32 then 2 else 1)
-		end
-	end
-
 	if id == BYTE then
 		return buffer.readi8(buf, pos + 1), pos + 2
 	elseif id == CHAR then
@@ -169,32 +136,8 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 end
 
 local Number = {
-	Read = READ,
-	Write = WRITE,
-
 	serialize = numSerializer,
 	deserialize = numDeserializer,
 }
-
---[[
-	Clears and replaces the read table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Number.resetRead()
-	table.clear(READ)
-	READ = {}
-	Number.Read = READ
-end
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Number.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	Number.Write = WRITE
-end
 
 return Number
