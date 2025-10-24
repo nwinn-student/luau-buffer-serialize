@@ -102,7 +102,9 @@ type TYPES = "userdata" | "number" | "string" | "vector"
 
 	- When a value rawequal to a linked value is serialized, the id is stored instead of the value.
 	 Upon deserialization, the id is replaced with the linked value.
-		- An id **must** be linked to a value at the point of deserialization.
+		- To save bytes, pairs are only recognized in the context of table (de)serialization.
+		- Ids are stored in tandem with their value initially, so there is no requirement for consistent
+		 pairing of ids to values.
 		- Userdata is not always rawequal, and when possible should be shared directly to ensure proper linkage.
 			- See [userdata.luau](./userdata.luau) for information about supporting userdata that isn't linked, whether
 			 or not by choice.
@@ -126,8 +128,6 @@ type TYPES = "userdata" | "number" | "string" | "vector"
 	- Calculate the word frequency of your dataset to determine which values to link to what ids.
 	- Ensure that linked values cannot be stored for less than or equal to the associated id cost (in bytes).
 	- Spare a range of ids for future additions.
-
-	<sub>See [README.md](../README.md#constant-amount-supported) for more information</sub>
 
 	<!-- TODO: Remove the comment once RISKS.md is complete.
 	<sub>See [RISKS.md](../RISKS.md) to understand the risks when using `BufferSerializer.pair`.</sub>
