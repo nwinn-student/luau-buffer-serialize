@@ -26,7 +26,7 @@ local numSer = require("./number").serialize
 local vecSer = require("./vector").serialize
 local userSer = require("./userdata").serialize
 
-local serialSwitch: Switch<string, Serialize> = {
+local serialSwitch: Switch<string, Serialize> = table.freeze({
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
 	string = @native function(data: any, buf: buffer, pos: number, size: number)
@@ -57,7 +57,7 @@ local serialSwitch: Switch<string, Serialize> = {
 		end
 		return userSer(data, buf, pos, size)
 	end,
-}
+}) :: Switch<string, Serialize>
 local unlinkedSwitch: Switch<string, Serialize> = {
 	string = strSer,
 	number = numSer,
@@ -65,14 +65,15 @@ local unlinkedSwitch: Switch<string, Serialize> = {
 	userdata = userSer,
 }
 
-local deserialSwitch: Switch<string, Deserialize> = {
-	boolean = require("./boolean").deserialize,
-	buffer = require("./buffer").deserialize,
-	string = require("./string").deserialize,
-	number = require("./number").deserialize,
-	vector = require("./vector").deserialize,
-	userdata = require("./userdata").deserialize,
-}
+local deserialSwitch: Switch<string, Deserialize> =
+	table.freeze({
+		boolean = require("./boolean").deserialize,
+		buffer = require("./buffer").deserialize,
+		string = require("./string").deserialize,
+		number = require("./number").deserialize,
+		vector = require("./vector").deserialize,
+		userdata = require("./userdata").deserialize,
+	}) :: Switch<string, Deserialize>
 
 local EMPTY = 194
 local TABLE = 195
@@ -365,7 +366,6 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			pos += 1
 			return {}
 		elseif valId == TABLE or valId == ARRAY or valId == DICT then
-			-- TODO: Maybe add cyclic checker here?
 			local value = {}
 			existingCache(value)
 			return deserialTable(value)
@@ -396,7 +396,7 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			return value
 		end
 
-		if case ~= 0 then
+		if case ~= "nil" then
 			value, pos = deserialSwitch[case](buf, pos)
 		else
 			pos += 1
@@ -519,7 +519,7 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 	return data, pos + 1
 end
 
-return {
+return table.freeze({
 	serialize = tabSerializer,
 	deserialize = tabDeserializer,
-}
+})

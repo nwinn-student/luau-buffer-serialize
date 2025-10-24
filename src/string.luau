@@ -83,4 +83,4 @@ local String = {
 	deserialize = strDeserializer,
 }
 
-return String
+return table.freeze(String)

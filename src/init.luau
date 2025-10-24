@@ -18,8 +18,26 @@ end
 local BufferSerializer = {}
 local link = require("@self/link")
 
-local serialModules = {}
-local deserialModules = {}
+local serialModules = table.freeze({
+	["nil"] = require("@self/nil").serialize,
+	boolean = require("@self/boolean").serialize,
+	buffer = require("@self/buffer").serialize,
+	string = require("@self/string").serialize,
+	number = require("@self/number").serialize,
+	vector = require("@self/vector").serialize,
+	table = require("@self/table").serialize,
+	userdata = require("@self/userdata").serialize,
+})
+local deserialModules = table.freeze({
+	["nil"] = require("@self/nil").deserialize,
+	boolean = require("@self/boolean").deserialize,
+	buffer = require("@self/buffer").deserialize,
+	string = require("@self/string").deserialize,
+	number = require("@self/number").deserialize,
+	vector = require("@self/vector").deserialize,
+	table = require("@self/table").deserialize,
+	userdata = require("@self/userdata").deserialize,
+})
 local pairModules = link.values :: { [any]: any }
 
 local calcId = link.calculateId
@@ -50,11 +68,8 @@ BufferSerializer.serialize = function(value: any): buffer
 		typeValue = "nil"
 	end
 
-	local serial: Serialize = serialModules[typeValue]
-	if not serial then
-		serial = (require("@self/" .. typeValue) :: any).serialize
-		serialModules[typeValue] = serial
-	end
+	local serial: Serialize = (serialModules :: any)[typeValue]
+
 	return trim(serial(value, nil, 0, 0))
 end
 
@@ -73,11 +88,7 @@ BufferSerializer.deserialize = function(value: buffer): any
 
 	pointer = linkType(pointer)
 
-	local deserial: Deserialize = deserialModules[pointer]
-	if not deserial then
-		deserial = (require("@self/" .. pointer) :: any).deserialize
-		deserialModules[pointer] = deserial
-	end
+	local deserial: Deserialize = (deserialModules :: any)[pointer]
 
 	local originalData = deserial(value, 0)
 	return originalData
@@ -139,4 +150,4 @@ BufferSerializer.pair = function(id: number, value: any): ()
 	pairModules[value] = calcId(id, typeV)
 end
 
-return BufferSerializer
+return table.freeze(BufferSerializer)

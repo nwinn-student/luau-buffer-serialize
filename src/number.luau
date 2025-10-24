@@ -140,4 +140,4 @@ local Number = {
 	deserialize = numDeserializer,
 }
 
-return Number
+return table.freeze(Number)

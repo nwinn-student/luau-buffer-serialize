@@ -43,7 +43,7 @@ local Userdata = {
 	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
 
-		if Reader then
+		if Reader and id == CUSTOM then
 			local obj
 			obj, pos = Reader(buf, pos + 1)
 			if obj == nil then
@@ -63,4 +63,4 @@ local Userdata = {
 	end,
 }
 
-return Userdata
+return table.freeze(Userdata)
