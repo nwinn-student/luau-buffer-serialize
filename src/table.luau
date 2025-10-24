@@ -366,7 +366,6 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			pos += 1
 			return {}
 		elseif valId == TABLE or valId == ARRAY or valId == DICT then
-			-- TODO: Maybe add cyclic checker here?
 			local value = {}
 			existingCache(value)
 			return deserialTable(value)

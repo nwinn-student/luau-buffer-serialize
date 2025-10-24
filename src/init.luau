@@ -68,7 +68,7 @@ BufferSerializer.serialize = function(value: any): buffer
 		typeValue = "nil"
 	end
 
-	local serial: Serialize = serialModules[typeValue]
+	local serial: Serialize = (serialModules :: any)[typeValue]
 
 	return trim(serial(value, nil, 0, 0))
 end
@@ -88,7 +88,7 @@ BufferSerializer.deserialize = function(value: buffer): any
 
 	pointer = linkType(pointer)
 
-	local deserial: Deserialize = deserialModules[pointer]
+	local deserial: Deserialize = (deserialModules :: any)[pointer]
 
 	local originalData = deserial(value, 0)
 	return originalData
