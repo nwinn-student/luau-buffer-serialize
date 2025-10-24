@@ -4,7 +4,7 @@ local inflate = require("./inflate")
 
 local numSerializer = require("./number").serialize
 local numDeserializer = require("./number").deserialize
-local numWrite = require("./link") :: { number }
+local numWrite = require("./link").values :: { number }
 
 local ZERO = 136
 local ONE = 137
