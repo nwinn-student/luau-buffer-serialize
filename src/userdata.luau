@@ -41,8 +41,6 @@ local Userdata = {
 		return buf, pos + 1, size
 	end,
 	deserialize = function(buf: buffer, pos: number)
-		local id = buffer.readu8(buf, pos)
-
 		if Reader then
 			local obj
 			obj, pos = Reader(buf, pos + 1)
