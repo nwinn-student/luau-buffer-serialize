@@ -15,10 +15,10 @@ local serialize = require("../src").serialize
 local deserialize = require("../src").deserialize
 
 local Sir_Empty = serialize("")
-local Sir_Byte = serialize(string.rep("\0", 2^5))
-local Sir_Char = serialize(string.rep("\0", 2^8))
-local Sir_Tryte = serialize(string.rep("\0", 2^16))
-local Sir_Int = serialize(string.rep("\0", 2^24))
+local Sir_Byte = serialize(string.rep("\0", 2 ^ 5))
+local Sir_Char = serialize(string.rep("\0", 2 ^ 8))
+local Sir_Tryte = serialize(string.rep("\0", 2 ^ 16))
+local Sir_Int = serialize(string.rep("\0", 2 ^ 24))
 
 -- serialization
 test.serial(Sir_Empty, test.newBuffer(EMPTY))
@@ -29,13 +29,13 @@ test.serial(Sir_Int, test.sizedBuffer(16777221, INT, 0, 0, 0, 1))
 
 -- deserialization
 test.compare("", deserialize(Sir_Empty))
-test.compare(string.rep("\0", 2^5), deserialize(Sir_Byte))
-test.compare(string.rep("\0", 2^8), deserialize(Sir_Char))
-test.compare(string.rep("\0", 2^16), deserialize(Sir_Tryte))
-test.compare(string.rep("\0", 2^24), deserialize(Sir_Int))
+test.compare(string.rep("\0", 2 ^ 5), deserialize(Sir_Byte))
+test.compare(string.rep("\0", 2 ^ 8), deserialize(Sir_Char))
+test.compare(string.rep("\0", 2 ^ 16), deserialize(Sir_Tryte))
+test.compare(string.rep("\0", 2 ^ 24), deserialize(Sir_Int))
 
 -- constants [show risks]
-local function ds(v: any): any 
+local function ds(v: any): any
 	return deserialize(serialize(v))
 end
 
@@ -45,7 +45,7 @@ local pair = require("../src").pair
 pair(32, "1")
 pair(64, "2")
 pair(64 + 64, "3") -- 128
-pair(64 + 5*256 - 1, "4") -- 1343
+pair(64 + 5 * 256 - 1, "4") -- 1343
 
 test.serial(serialize("1"), test.newBuffer(CONST_INIT + 32))
 test.serial(serialize("2"), test.newBuffer(CONST_INIT + 64))
@@ -89,10 +89,5 @@ test.compare("7", deserialize(Sir_Seven)) -- nothing changes
 -- Attempt to pair a constant string to a built-in string
 -- built-in string [""] is of higher priority
 test.compare(false, pcall(pair, 5, ""))
-
-require("../src/string").resetRead()
-require("../src/string").resetWrite()
-
-test.complete("STRING")
 
 return {}

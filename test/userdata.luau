@@ -21,7 +21,7 @@ test.serial(Sir_Proxy, test.newBuffer(NIL))
 test.compare("userdata", type(deserialize(Sir_Proxy)))
 
 -- constants [show risks]
-local function ds(v: any): any 
+local function ds(v: any): any
 	return deserialize(serialize(v))
 end
 
@@ -39,7 +39,7 @@ local Seven = newproxy()
 pair(8, One)
 pair(16, Two)
 pair(16 + 112, Three) -- 128
-pair(16 + 4*256 - 1, Four) -- 1039
+pair(16 + 4 * 256 - 1, Four) -- 1039
 
 test.serial(serialize(One), test.newBuffer(CONST_INIT + 8))
 test.serial(serialize(Two), test.newBuffer(CONST_INIT + 16))
@@ -80,16 +80,11 @@ local Sir_Seven = serialize(Seven)
 pair(7, Seven)
 test.compare("userdata", type(deserialize(Sir_Seven))) -- nothing changes
 
-require("../src/userdata").resetRead()
-require("../src/userdata").resetWrite()
-
 -- Custom reader/writer functions will be dealt w/ later
 --[[
 	Since the functions are not user-specified, 
 		but usually extender specified, we can 
 		be much more lax w/ the restrictions.
 ]]
-
-test.complete("USERDATA")
 
 return {}

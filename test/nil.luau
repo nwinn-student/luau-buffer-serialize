@@ -13,6 +13,4 @@ local Sir_Nil = serialize(nil)
 test.compare(nil, deserialize(Sir_Nil))
 test.serial(Sir_Nil, test.newBuffer(NIL))
 
-test.complete("NIL")
-
 return {}

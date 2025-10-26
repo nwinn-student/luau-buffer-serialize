@@ -18,6 +18,4 @@ test.serial(True_Bool, test.newBuffer(TRUE))
 test.compare(false, deserialize(False_Bool))
 test.serial(False_Bool, test.newBuffer(FALSE))
 
-test.complete("BOOLEAN")
-
 return {}

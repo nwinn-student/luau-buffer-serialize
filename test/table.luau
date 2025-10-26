@@ -19,10 +19,10 @@ local deserialize = require("../src").deserialize
 
 local Sir_Empty = serialize({})
 local Sir_Empty = serialize({})
-local Sir_Table = serialize({[0] = 1, 1})
-local Sir_Array = serialize({1})
-local Sir_Dict = serialize({[0] = 1})
-local Sir_Exist = serialize({"aaa","aaa"})
+local Sir_Table = serialize({ [0] = 1, 1 })
+local Sir_Array = serialize({ 1 })
+local Sir_Dict = serialize({ [0] = 1 })
+local Sir_Exist = serialize({ "aaa", "aaa" })
 local Sir_Recurs = serialize(recurse)
 
 -- serialization
@@ -30,18 +30,18 @@ test.serial(Sir_Empty, test.newBuffer(EMPTY))
 test.serial(Sir_Table, test.newBuffer(TABLE, 89, ARRAYEND, 88, 89, TABLEEND))
 test.serial(Sir_Array, test.newBuffer(ARRAY, 89, TABLEEND))
 test.serial(Sir_Dict, test.newBuffer(DICT, 88, 89, TABLEEND))
-test.serial(Sir_Exist, test.newBuffer(ARRAY, 10, 3, 97, 97, 97, EXIST, 1, 0, TABLEEND))
+test.serial(
+	Sir_Exist,
+	test.newBuffer(ARRAY, 10, 3, 97, 97, 97, EXIST, 1, 0, TABLEEND)
+)
 test.serial(Sir_Recurs, test.newBuffer(ARRAY, EXIST, 0, 0, TABLEEND))
 
 -- deserialization
 test.compare({}, deserialize(Sir_Empty))
-test.compare({[0] = 1, 1}, deserialize(Sir_Table))
-test.compare({1}, deserialize(Sir_Array))
-test.compare({[0] = 1}, deserialize(Sir_Dict))
-test.compare({"aaa","aaa"}, deserialize(Sir_Exist))
+test.compare({ [0] = 1, 1 }, deserialize(Sir_Table))
+test.compare({ 1 }, deserialize(Sir_Array))
+test.compare({ [0] = 1 }, deserialize(Sir_Dict))
+test.compare({ "aaa", "aaa" }, deserialize(Sir_Exist))
 test.compare(recurse, deserialize(Sir_Recurs))
-
-
-test.complete("TABLE")
 
 return {}

@@ -20,38 +20,38 @@ local deserialize = require("../src").deserialize
 
 local Sir_Zero = serialize(0)
 local Sir_One = serialize(1)
-local Sir_Byte = serialize(2^1)
-local Sir_Char = serialize(2^8)
-local Sir_Tryte = serialize(2^16)
-local Sir_Int = serialize(2^24)
-local Sir_Float = serialize(2^-8)
-local Sir_Double = serialize(2^-256)
-local Sir_NaN = serialize(0/0)
+local Sir_Byte = serialize(2 ^ 1)
+local Sir_Char = serialize(2 ^ 8)
+local Sir_Tryte = serialize(2 ^ 16)
+local Sir_Int = serialize(2 ^ 24)
+local Sir_Float = serialize(2 ^ -8)
+local Sir_Double = serialize(2 ^ -256)
+local Sir_NaN = serialize(0 / 0)
 
 -- serialization
 test.serial(Sir_Zero, test.newBuffer(ZERO))
 test.serial(Sir_One, test.newBuffer(ONE))
-test.serial(Sir_Byte, test.newBuffer(BYTE, 2^1))
+test.serial(Sir_Byte, test.newBuffer(BYTE, 2 ^ 1))
 test.serial(Sir_Char, test.newBuffer(CHAR, 0, 1))
 test.serial(Sir_Tryte, test.newBuffer(TRYTE, 0, 0, 1))
 test.serial(Sir_Int, test.newBuffer(INT, 0, 0, 0, 1))
 test.serial(Sir_Float, test.newBuffer(FLOAT, 0, 0, 128, 59))
-test.serial(Sir_Double, test.newBuffer(DOUBLE, 0, 0, 0, 0 ,0, 0, 240, 47))
+test.serial(Sir_Double, test.newBuffer(DOUBLE, 0, 0, 0, 0, 0, 0, 240, 47))
 test.serial(Sir_NaN, test.newBuffer(NAN))
 
 -- deserialization
 test.compare(0, deserialize(Sir_Zero))
 test.compare(1, deserialize(Sir_One))
-test.compare(2^1, deserialize(Sir_Byte))
-test.compare(2^8, deserialize(Sir_Char))
-test.compare(2^16, deserialize(Sir_Tryte))
-test.compare(2^24, deserialize(Sir_Int))
-test.compare(2^-8, deserialize(Sir_Float))
-test.compare(2^-256, deserialize(Sir_Double))
-test.compare(0/0, deserialize(Sir_NaN))
+test.compare(2 ^ 1, deserialize(Sir_Byte))
+test.compare(2 ^ 8, deserialize(Sir_Char))
+test.compare(2 ^ 16, deserialize(Sir_Tryte))
+test.compare(2 ^ 24, deserialize(Sir_Int))
+test.compare(2 ^ -8, deserialize(Sir_Float))
+test.compare(2 ^ -256, deserialize(Sir_Double))
+test.compare(0 / 0, deserialize(Sir_NaN))
 
 -- constants [show risks]
-local function ds(v: any): any 
+local function ds(v: any): any
 	return deserialize(serialize(v))
 end
 
@@ -61,7 +61,7 @@ local pair = require("../src").pair
 pair(16, 2)
 pair(32, 3)
 pair(32 + 96, 4) -- 128
-pair(32 + 4*256 - 1, 5) -- 1055
+pair(32 + 4 * 256 - 1, 5) -- 1055
 
 test.serial(serialize(2), test.newBuffer(CONST_INIT + 16))
 test.serial(serialize(3), test.newBuffer(CONST_INIT + 32))
@@ -105,10 +105,5 @@ test.compare(8, deserialize(Sir_Eight)) -- nothing changes
 -- Attempt to pair a constant number to a built-in number
 -- built-in number [1] is of higher priority
 test.compare(false, pcall(pair, 5, 1))
-
-require("../src/number").resetRead()
-require("../src/number").resetWrite()
-
-test.complete("NUMBER")
 
 return {}
