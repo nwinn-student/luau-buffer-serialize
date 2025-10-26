@@ -37,11 +37,38 @@ local function stringify(value: any, parTree: any?)
 
 	parTree:add(value)
 	-- must be table...
-	local s = "{ "
-	for k, v in value do
-		s ..= `[{stringify(k, parTree)}] = {stringify(v, parTree)},`
+	local strTab = { "{ " }
+	for key, prop in value do
+		table.insert(
+			strTab,
+			`[{stringify(key, parTree)}] = {stringify(prop, parTree)},`
+		)
 	end
-	return s .. "} "
+	table.insert(strTab, "} ")
+	return table.concat(strTab, "")
+end
+
+local function getSize(tab: { number | string })
+	local size = 0
+	for _, value in tab do
+		if type(value) == "string" then
+			size += #value
+			continue
+		end
+		assert(type(value) == "number")
+		size += 1
+	end
+	return size
+end
+
+local function writeBuffer(value: unknown, buf: buffer, pos: number)
+	if type(value) == "string" then
+		buffer.writestring(buf, pos, value)
+		return pos + #value
+	end
+	assert(type(value) == "number")
+	buffer.writeu8(buf, pos, value)
+	return pos + 1
 end
 
 local test = {
@@ -51,19 +78,21 @@ local test = {
 		end
 		print(`{msg} {debug.traceback("", 2)}`)
 	end,
-	newBuffer = function(...: number)
+	newBuffer = function(...: number | string)
 		local args = { ... }
-		local buf = buffer.create(#args)
-		for i, v in args do
-			buffer.writeu8(buf, i - 1, v)
+		local buf = buffer.create(getSize(args))
+		local pos = 0
+		for _, value in args do
+			pos = writeBuffer(value, buf, pos)
 		end
 		return buf
 	end,
-	sizedBuffer = function(size: number, ...: number)
+	sizedBuffer = function(size: number, ...: number | string)
 		local args = { ... }
 		local buf = buffer.create(size)
-		for i, v in args do
-			buffer.writeu8(buf, i - 1, v)
+		local pos = 0
+		for _, value in args do
+			pos = writeBuffer(value, buf, pos)
 		end
 		return buf
 	end,
@@ -101,6 +130,9 @@ local test = {
 		if strOri == strNew then
 			return
 		end
+
+		strOri = if strOri:len() > 100 then strOri:sub(1, 98) .. ".." else strOri
+		strNew = if strNew:len() > 100 then strNew:sub(1, 98) .. ".." else strNew
 
 		print(`Expected {strOri} (got {strNew}) {debug.traceback("", 2)}`)
 	end,

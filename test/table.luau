@@ -1,5 +1,5 @@
 --!strict
--- Runs tests for ../BufferSerializer/nil
+-- Runs tests for ../BufferSerializer/table
 
 local test = require("./test")
 local EMPTY = 194
@@ -49,5 +49,24 @@ local function ds(v: any): any
 end
 
 local pair = require("../src").pair
+local calcId = require("../src/link").calculateId
+
+pair(5, "aaa")
+
+local aaaId = calcId(5, "string")
+
+local Sir_Paired = serialize({ "aaa" })
+local Sir_DuoPaired = serialize({ "aaa", "aaa" })
+
+-- serialization
+test.serial(Sir_Paired, test.newBuffer(ARRAY, aaaId, 10, 3, "aaa", TABLEEND))
+test.serial(
+	Sir_DuoPaired,
+	test.newBuffer(ARRAY, aaaId, 10, 3, "aaa", aaaId, TABLEEND)
+)
+
+-- deserialization
+test.compare({ "aaa" }, deserialize(Sir_Paired))
+test.compare({ "aaa", "aaa" }, deserialize(Sir_DuoPaired))
 
 return {}

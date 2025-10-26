@@ -18,6 +18,8 @@ require("@self/vector")
 require("@self/table")
 require("@self/userdata")
 
+require("@self/link")
+
 local test = require("@self/test")
 
 local pair = require("./src").pair
@@ -38,3 +40,5 @@ test.compare(false, pcall(pair, 5, vector.create(0, 1, 1)))
 test.compare(false, pcall(pair, 5, vector.create(1, 0, 0)))
 test.compare(false, pcall(pair, 5, vector.create(1, 0, 1)))
 test.compare(false, pcall(pair, 5, vector.create(1, 1)))
+
+return {}
