@@ -26,3 +26,15 @@ local deserialize = require("./src").deserialize
 
 -- Now we need to test pair
 
+-- built-ins
+test.compare(false, pcall(pair, 5, 0))
+test.compare(false, pcall(pair, 5, 1))
+test.compare(false, pcall(pair, 5, ""))
+test.compare(false, pcall(pair, 5, vector.zero))
+test.compare(false, pcall(pair, 5, vector.one))
+test.compare(false, pcall(pair, 5, vector.create(0, 0, 1)))
+test.compare(false, pcall(pair, 5, vector.create(0, 1)))
+test.compare(false, pcall(pair, 5, vector.create(0, 1, 1)))
+test.compare(false, pcall(pair, 5, vector.create(1, 0, 0)))
+test.compare(false, pcall(pair, 5, vector.create(1, 0, 1)))
+test.compare(false, pcall(pair, 5, vector.create(1, 1)))

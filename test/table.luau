@@ -18,7 +18,6 @@ local serialize = require("../src").serialize
 local deserialize = require("../src").deserialize
 
 local Sir_Empty = serialize({})
-local Sir_Empty = serialize({})
 local Sir_Table = serialize({ [0] = 1, 1 })
 local Sir_Array = serialize({ 1 })
 local Sir_Dict = serialize({ [0] = 1 })
@@ -43,5 +42,12 @@ test.compare({ 1 }, deserialize(Sir_Array))
 test.compare({ [0] = 1 }, deserialize(Sir_Dict))
 test.compare({ "aaa", "aaa" }, deserialize(Sir_Exist))
 test.compare(recurse, deserialize(Sir_Recurs))
+
+-- pairs
+local function ds(v: any): any
+	return deserialize(serialize(v))
+end
+
+local pair = require("../src").pair
 
 return {}

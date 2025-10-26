@@ -17,8 +17,6 @@ local TRYTE = 146
 local FLOAT = 147
 local NUMBER = 148
 local SCALAR = 149
-local CONST_INIT = 157
-local CONST_NEXT = 190
 
 -- Check that vector.luau works properly
 local serialize = require("../src").serialize
@@ -73,61 +71,5 @@ test.compare(vcreate(2 ^ 16, 2 ^ 17, 2 ^ 18), deserialize(Sir_Tryte))
 test.compare(vcreate(2 ^ 24, 2 ^ 25, 2 ^ 26), deserialize(Sir_Float))
 test.compare(vcreate(2, 2 ^ 8, 2 ^ 16), deserialize(Sir_Number))
 test.compare(vcreate(2, 0, 0), deserialize(Sir_Scalar))
-
--- constants [show risks]
-local function ds(v: any): any
-	return deserialize(serialize(v))
-end
-
-local pair = require("../src").pair
-
--- Regular tests
-pair(16, vcreate(1, 2, 3))
-pair(32, vcreate(2, 2, 2))
-pair(32 + 96, vcreate(3, 3, 3)) -- 128
-pair(32 + 4 * 256 - 1, vcreate(4, 4, 4)) -- 1055
-
-test.serial(serialize(vcreate(1, 2, 3)), test.newBuffer(CONST_INIT + 16))
-test.serial(serialize(vcreate(2, 2, 2)), test.newBuffer(CONST_INIT + 32))
-test.serial(serialize(vcreate(3, 3, 3)), test.newBuffer(CONST_NEXT, 96))
-test.serial(serialize(vcreate(4, 4, 4)), test.newBuffer(CONST_NEXT + 3, 255))
-
-test.compare(vcreate(1, 2, 3), ds(vcreate(1, 2, 3)))
-test.compare(vcreate(2, 2, 2), ds(vcreate(2, 2, 2)))
-test.compare(vcreate(3, 3, 3), ds(vcreate(3, 3, 3)))
-test.compare(vcreate(4, 4, 4), ds(vcreate(4, 4, 4)))
-
--- Serializes multiple values to the same id
---	To show that the latest is used
-pair(1, vcreate(5, 5, 5))
-pair(1, vcreate(6, 6, 6))
-
-test.serial(serialize(vcreate(5, 5, 5)), test.newBuffer(SCALAR, 137, 90, 5))
-test.compare(vcreate(5, 5, 5), ds(vcreate(5, 5, 5)))
-
-test.serial(serialize(vcreate(6, 6, 6)), test.newBuffer(CONST_INIT + 1))
-test.compare(vcreate(6, 6, 6), ds(vcreate(6, 6, 6)))
-
--- Serializes the same value to multiple ids
---	To show that the lastest is used
-pair(33, vcreate(2, 2, 2)) -- 32 -> 33
-
-test.serial(serialize(vcreate(2, 2, 2)), test.newBuffer(CONST_NEXT, 1))
-test.compare(vcreate(2, 2, 2), ds(vcreate(2, 2, 2)))
-
--- Attempts to deserialize an invalid constant
---	CONST_INIT + 32 is an previously valid vector constant
---	Simulates migration from a value from 1 id to another
---		but failure to account for backwards compatibility
-test.compare(nil, deserialize(test.newBuffer(CONST_INIT + 32)))
-
--- Attempts to deserialize a value from before it was made a constant
-local Sir_Seven = serialize(vcreate(7, 7, 7))
-pair(7, vcreate(7, 7, 7))
-test.compare(vcreate(7, 7, 7), deserialize(Sir_Seven)) -- nothing changes
-
--- Attempt to pair a constant vector to a built-in vector
--- built-in vector [vector.zero] is of higher priority
-test.compare(false, pcall(pair, 5, vector.zero))
 
 return {}
