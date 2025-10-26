@@ -1,6 +1,12 @@
 --!optimize 2
 --!strict
 local inflate = require("./inflate")
+local link = require("./link")
+local linkValues = link.values :: { [any]: any }
+local linkSer = link.serialize
+local linkType = link.type
+local isLink = link.islink
+local isDuo = link.isduo
 
 type Serialize = (
 	data: any,
@@ -15,23 +21,59 @@ type Switch<VAR, F> = {
 	[VAR]: F,
 }
 
-local serialSwitch: Switch<string, Serialize> = {
+local strSer = require("./string").serialize
+local numSer = require("./number").serialize
+local vecSer = require("./vector").serialize
+local userSer = require("./userdata").serialize
+
+local serialSwitch: Switch<string, Serialize> = table.freeze({
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
-	string = require("./string").serialize,
-	number = require("./number").serialize,
-	vector = require("./vector").serialize,
-	userdata = require("./userdata").serialize,
+	string = @native function(data: any, buf: buffer, pos: number, size: number)
+		local linkId = linkValues[data]
+		if linkId then
+			return linkSer(linkId, buf, pos, size)
+		end
+		return strSer(data, buf, pos, size)
+	end,
+	number = @native function(data: any, buf: buffer, pos: number, size: number)
+		local linkId = linkValues[data]
+		if linkId then
+			return linkSer(linkId, buf, pos, size)
+		end
+		return numSer(data, buf, pos, size)
+	end,
+	vector = @native function(data: any, buf: buffer, pos: number, size: number)
+		local linkId = linkValues[data]
+		if linkId then
+			return linkSer(linkId, buf, pos, size)
+		end
+		return vecSer(data, buf, pos, size)
+	end,
+	userdata = @native function(data: any, buf: buffer, pos: number, size: number)
+		local linkId = linkValues[data]
+		if linkId then
+			return linkSer(linkId, buf, pos, size)
+		end
+		return userSer(data, buf, pos, size)
+	end,
+}) :: Switch<string, Serialize>
+local unlinkedSwitch: Switch<string, Serialize> = {
+	string = strSer,
+	number = numSer,
+	vector = vecSer,
+	userdata = userSer,
 }
 
-local deserialSwitch: Switch<number, Deserialize> = {
-	require("./boolean").deserialize,
-	require("./buffer").deserialize,
-	require("./string").deserialize,
-	require("./number").deserialize,
-	require("./vector").deserialize,
-	require("./userdata").deserialize,
-}
+local deserialSwitch: Switch<string, Deserialize> =
+	table.freeze({
+		boolean = require("./boolean").deserialize,
+		buffer = require("./buffer").deserialize,
+		string = require("./string").deserialize,
+		number = require("./number").deserialize,
+		vector = require("./vector").deserialize,
+		userdata = require("./userdata").deserialize,
+	}) :: Switch<string, Deserialize>
 
 local EMPTY = 194
 local TABLE = 195
@@ -67,7 +109,7 @@ function tabSerializer(
 	local roundRobinLength = 0
 	local roundRobinIndex = 61440
 
-	local constants = {}
+	local constants: { [any]: number } = {}
 
 	local serialTable: (data: { [any]: any }) -> ()
 
@@ -130,13 +172,27 @@ function tabSerializer(
 			return
 		end
 
-		local oldPos = pos
-		buf, pos, size = serialSwitch[typeName](data, buf, pos, size)
+		local oldPos, pairedId = pos, nil
+		buf, pos, size, pairedId = serialSwitch[typeName](data, buf, pos, size)
 
 		if pos - oldPos == 1 then
-			constants[data] = buffer.readu8(buf, oldPos)
+			if pairedId then
+				constants[data] = pairedId
+				buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
+				return
+			end
+
+			local serValue = buffer.readu8(buf, oldPos)
+			constants[data] = serValue
 		elseif pos - oldPos == 2 then
-			constants[data] = buffer.readu16(buf, oldPos)
+			if pairedId then
+				constants[data] = pairedId
+				buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
+				return
+			end
+
+			local serValue = buffer.readu16(buf, oldPos)
+			constants[data] = serValue
 		elseif data == data then
 			existingCache(data)
 		end
@@ -172,16 +228,7 @@ function tabSerializer(
 				end
 				cached = constants[element]
 				if cached then
-					local newSize = cached > 255 and 2 or 1
-					if pos + newSize > size then
-						buf, size = inflate(buf, pos + newSize, size)
-					end
-					if newSize == 1 then
-						buffer.writeu8(buf, pos, cached)
-					else
-						buffer.writeu16(buf, pos, cached)
-					end
-					pos += newSize
+					buf, pos, size = linkSer(cached, buf, pos, size)
 					continue
 				end
 
@@ -232,16 +279,7 @@ function tabSerializer(
 
 			local constCached = constants[key]
 			if constCached and not cached then
-				local newSize = constCached > 255 and 2 or 1
-				if pos + newSize > size then
-					buf, size = inflate(buf, pos + newSize, size)
-				end
-				if newSize == 1 then
-					buffer.writeu8(buf, pos, constCached)
-				else
-					buffer.writeu16(buf, pos, constCached)
-				end
-				pos += newSize
+				buf, pos, size = linkSer(constCached, buf, pos, size)
 			elseif not cached then
 				-- store key
 				serialCache(key, typeKey)
@@ -260,16 +298,7 @@ function tabSerializer(
 			end
 			cached = constants[element]
 			if cached then
-				local newSize = cached > 255 and 2 or 1
-				if pos + newSize > size then
-					buf, size = inflate(buf, pos + newSize, size)
-				end
-				if newSize == 1 then
-					buffer.writeu8(buf, pos, cached)
-				else
-					buffer.writeu16(buf, pos, cached)
-				end
-				pos += newSize
+				buf, pos, size = linkSer(cached, buf, pos, size)
 				continue
 			end
 
@@ -311,6 +340,7 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 	local existingIndex = 1
 	local existing: { [number]: any } = { [0] = returnedTab }
 	local roundRobinIndex = 61_440
+	local paired = {}
 
 	local deserialTable: (data: { [any]: any }) -> { [any]: any }?
 
@@ -336,7 +366,6 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			pos += 1
 			return {}
 		elseif valId == TABLE or valId == ARRAY or valId == DICT then
-			-- TODO: Maybe add cyclic checker here?
 			local value = {}
 			existingCache(value)
 			return deserialTable(value)
@@ -344,16 +373,30 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 
 		local value: any = nil
 		local oldPos = pos
-		local case = if valId <= 2
-			then 1 -- boolean
-			elseif valId <= 8 then 2 -- buffer
-			elseif valId <= 87 then 3 -- string
-			elseif valId <= 135 then 4 -- number
-			elseif valId <= 193 then 5 -- vector
-			elseif valId <= 201 then 0 -- table (none currently that can get here)
-			elseif valId <= 215 then 6 -- userdata
-			else 0 -- for future
-		if case ~= 0 then
+		local case = linkType(valId)
+
+		if isLink(valId, case) then
+			local isTwo = isDuo(valId, case)
+
+			local pairedValue = paired[valId]
+			if pairedValue then
+				pos += if isTwo then 2 else 1
+				return pairedValue
+			end
+
+			-- read id, then skip to value
+			if isTwo then
+				local id = buffer.readu16(buf, pos)
+				value, pos = deserialSwitch[case](buf, pos + 2)
+				paired[id] = value
+				return value
+			end
+			value, pos = deserialSwitch[case](buf, pos + 1)
+			paired[valId] = value
+			return value
+		end
+
+		if case ~= "nil" then
 			value, pos = deserialSwitch[case](buf, pos)
 		else
 			pos += 1
@@ -476,7 +519,7 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 	return data, pos + 1
 end
 
-return {
+return table.freeze({
 	serialize = tabSerializer,
 	deserialize = tabDeserializer,
-}
+})

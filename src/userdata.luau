@@ -13,35 +13,13 @@ type Writer = (
 	size: number
 ) -> (buffer, number, number)
 
-local READ = {}
-local WRITE = {} -- 1 to 521
 local Reader: Reader?
 local Writer: Writer?
 
 local Userdata = {
-	Read = READ,
-	Write = WRITE,
 	-- Need a way to set the approaches for serial and deserial
 
 	serialize = function(value: any, buf: buffer, pos: number, size: number)
-		local cachedConstant: number? = WRITE[value]
-		if cachedConstant then
-			local newSize = if cachedConstant <= 10 then 1 else 2
-			if pos + newSize > size then
-				buf, size = inflate(buf, pos + newSize, size)
-			end
-
-			if newSize == 1 then
-				buffer.writeu8(buf, pos, cachedConstant + 203)
-			else
-				local constVal = cachedConstant - 10
-				buffer.writeu8(buf, pos, 214 + (constVal // 256))
-				buffer.writeu8(buf, pos + 1, constVal)
-			end
-
-			return buf, pos + newSize, size
-		end
-
 		if Writer then
 			if pos + 1 > size then
 				buf, size = inflate(buf, pos + 1, size)
@@ -65,18 +43,7 @@ local Userdata = {
 	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
 
-		if id > 203 then
-				local cachedId = if id > 213
-				then (id - 214) * 256 + 10 + buffer.readu8(buf, pos + 1)
-				else id - 203
-
-			local cachedConstant = READ[cachedId]
-			if cachedConstant then
-				return cachedConstant, pos + (if cachedId > 10 then 2 else 1)
-			end
-		end
-
-		if Reader then
+		if Reader and id == CUSTOM then
 			local obj
 			obj, pos = Reader(buf, pos + 1)
 			if obj == nil then
@@ -96,25 +63,4 @@ local Userdata = {
 	end,
 }
 
---[[
-	Clears and replaces the read table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Userdata.resetRead()
-	table.clear(READ)
-	READ = {}
-	Userdata.Read = READ
-end
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Userdata.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	Userdata.Write = WRITE
-end
-
-return Userdata
+return table.freeze(Userdata)

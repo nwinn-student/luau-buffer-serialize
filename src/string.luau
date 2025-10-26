@@ -8,9 +8,6 @@ local CHAR = 11
 local THREE_BYTE = 12
 local INT = 13
 
-local READ = {}
-local WRITE = {} -- 1 to 1343
-
 @native
 local function strSerializer(
 	value: string,
@@ -24,25 +21,6 @@ local function strSerializer(
 		end
 		buffer.writeu8(buf, pos, EMPTY)
 		return buf, pos + 1, size
-	end
-
-	local cachedConstant: number? = WRITE[value]
-	if cachedConstant then
-		local newSize = if cachedConstant <= 64 then 1 else 2
-
-		if pos + newSize > size then
-			buf, size = inflate(buf, pos + newSize, size)
-		end
-
-		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + 18)
-		else
-			local constVal = cachedConstant - 64
-			buffer.writeu8(buf, pos, 83 + (constVal // 256))
-			buffer.writeu8(buf, pos + 1, constVal)
-		end
-
-		return buf, pos + newSize, size
 	end
 
 	local len = #value
@@ -80,17 +58,6 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 		return "", pos + 1
 	end
 
-	if id > 18 then
-		local cachedId = if id > 82
-			then (id - 83) * 256 + 64 + buffer.readu8(buf, pos + 1)
-			else id - 18
-
-		local cachedConstant: string? = READ[cachedId]
-		if cachedConstant then
-			return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
-		end
-	end
-
 	local lenSize = id - EMPTY
 
 	local len: number
@@ -112,32 +79,8 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 end
 
 local String = {
-	Read = READ,
-	Write = WRITE,
-
 	serialize = strSerializer,
 	deserialize = strDeserializer,
 }
 
---[[
-	Clears and replaces the read table
-
-	@ Mainly used to reduce memory usage
-]]
-function String.resetRead()
-	table.clear(READ)
-	READ = {}
-	String.Read = READ
-end
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function String.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	String.Write = WRITE
-end
-
-return String
+return table.freeze(String)
