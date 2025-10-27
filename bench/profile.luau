@@ -9,9 +9,9 @@
 	```bash
 	luau --profile bench/profile.luau ; python tools/perfgraph.py profile.out > profile.svg ; .\profile.svg
 	```
-	For Linux:
+	For Linux (or Bash):
 	```bash
-	luau --profile bench/profile.luau && python tools/perfgraph.py profile.out > profile.svg && xdg-open profile.svg
+	luau --profile bench/profile.luau && python tools/perfgraph.py profile.out > profile.svg && start profile.svg
 	```
 ]]
 local profile = {}

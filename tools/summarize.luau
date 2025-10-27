@@ -22,10 +22,28 @@ function benchStdev(self: Bench.BenchData)
 	return self
 end
 
+local CONF_95 = 0.975
+
+-- 95% confidence interval
+function benchConf(self: Bench.BenchData)
+	local mem = self.Memory
+	local speed = self.Speed
+
+	local memLen = #mem.Data
+	local memPerc = mem.Data[(CONF_95 * memLen) // 1]
+	mem.conf = memPerc * mem.stdev / math.sqrt(memLen)
+
+	local spdLen = #speed.Data
+	local spdPerc = speed.Data[(CONF_95 * spdLen) // 1]
+	speed.conf = spdPerc * speed.stdev / math.sqrt(spdLen)
+end
+
 function summarize(self: Bench.BenchData, arg: any)
 	self.Name = arg.path
 	benchStdev(self)
+	benchConf(self)
 
+	--TODO: Have an option to specify avg +- stdev OR median +- 95% conf interval
 	local nameStr = self.Name
 	if #nameStr >= 10 then
 		nameStr = nameStr:sub(1, 6 - #nameStr) .. ".."
