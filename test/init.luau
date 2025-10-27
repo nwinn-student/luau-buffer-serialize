@@ -27,11 +27,33 @@ local serialize = require("./src").serialize
 local deserialize = require("./src").deserialize
 local pair = require("./src").pair
 
---pair(1, {}) -- to check type stuff later, I want it to TypeError: ...
+-- remove userdata custom stuff
+require("./src/userdata").setReader(nil)
+require("./src/userdata").setWriter(nil)
+
+local proxy = newproxy()
+
+pair(1, "value")
+pair(1, 5)
+pair(1, vector.create(1, 2))
+pair(1, proxy)
+
+local Sir_String = serialize({ "value" })
+local Sir_Number = serialize({ 5 })
+local Sir_Vector = serialize({ vector.create(1, 2) })
+local Sir_User = serialize({ proxy })
 
 -- serialize
+test.serial(Sir_String, test.newBuffer(197, 19, 10, 5, "value", 200))
+test.serial(Sir_Number, test.newBuffer(197, 100, 90, 5, 200))
+test.serial(Sir_Vector, test.newBuffer(197, 158, 144, 1, 2, 0, 200))
+test.serial(Sir_User, test.newBuffer(197, 204, 203, 200)) -- ???
 
 -- deserialize
+test.compare("value", deserialize(Sir_String)[1])
+test.compare(5, deserialize(Sir_Number)[1])
+test.compare(vector.create(1, 2), deserialize(Sir_Vector)[1])
+test.compare(proxy, deserialize(Sir_User)[1]) -- uh oh..?
 
 -- built-ins
 test.compare(false, pcall(pair, 5, 0))
