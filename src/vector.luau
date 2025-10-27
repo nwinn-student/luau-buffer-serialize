@@ -4,7 +4,6 @@ local inflate = require("./inflate")
 
 local numSerializer = require("./number").serialize
 local numDeserializer = require("./number").deserialize
-local numWrite = require("./link").values :: { number }
 
 local ZERO = 136
 local ONE = 137
@@ -145,12 +144,6 @@ local function vecSerializer(
 	if not isNumber then
 		typeZ = getType(valueZ)
 		isNumber = typeY ~= typeZ
-	end
-	if not isNumber and typeX ~= BYTE then
-		-- if num is a constant and all types aren't byte
-		-- char/tryte COULD be cheaper (1 + 2 (const) + 5 (float) + 5 (float) is worst case)
-		-- the checks are VERY expensive (from a line perspective) though
-		isNumber = (numWrite[valueX] or numWrite[valueY] or numWrite[valueZ])
 	end
 
 	-- 4+ bytes (NOT intelligent, as a const byte will be more expensive)
