@@ -236,10 +236,6 @@ function tabSerializer(
 
 				if typeElement == "function" or typeElement == "thread" then
 					constants[element] = 0 -- NIL
-					if pos + 1 > size then
-						buf, size = inflate(buf, pos + 1, size)
-					end
-					buffer.writeu8(buf, pos, 0)
 					pos += 1
 					continue
 				end
