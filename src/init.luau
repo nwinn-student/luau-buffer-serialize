@@ -5,7 +5,6 @@ do
 	require("@self/table")
 end
 
-@native
 local function trim(data: buffer, pos: number, size: number)
 	if size == pos then
 		return data
