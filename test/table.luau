@@ -44,10 +44,6 @@ test.compare({ "aaa", "aaa" }, deserialize(Sir_Exist))
 test.compare(recurse, deserialize(Sir_Recurs))
 
 -- pairs
-local function ds(v: any): any
-	return deserialize(serialize(v))
-end
-
 local pair = require("../src").pair
 local calcId = require("../src/link").calculateId
 

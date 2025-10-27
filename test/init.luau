@@ -1,3 +1,4 @@
+--!strict
 --[[
 	DO NOT RUN THESE TESTS IN PRODUCTION
 	
@@ -22,11 +23,15 @@ require("@self/link")
 
 local test = require("@self/test")
 
-local pair = require("./src").pair
 local serialize = require("./src").serialize
 local deserialize = require("./src").deserialize
+local pair = require("./src").pair
 
--- Now we need to test pair
+--pair(1, {}) -- to check type stuff later, I want it to TypeError: ...
+
+-- serialize
+
+-- deserialize
 
 -- built-ins
 test.compare(false, pcall(pair, 5, 0))

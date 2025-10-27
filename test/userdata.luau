@@ -24,5 +24,29 @@ test.compare("userdata", type(deserialize(Sir_Proxy)))
 		but usually extender specified, we can 
 		be much more lax w/ the restrictions.
 ]]
+local userdata = require("../src/userdata")
+userdata.setReader(function(buf: buffer, pos: number): (unknown, number)
+	print(buf, pos)
+	return buf, pos
+end)
+userdata.setWriter(
+	function(
+		value: unknown,
+		buf: buffer,
+		pos: number,
+		size: number
+	): (buffer, number, number)
+		print(value, buf, pos, size)
+		return buf, pos, size
+	end
+)
+
+local Sir_Custom = serialize(proxy)
+
+-- serialization (?! why does it do this?)
+test.serial(Sir_Custom, test.newBuffer(CUSTOM, NIL))
+
+-- deserialization
+test.compare("userdata", type(deserialize(Sir_Custom)))
 
 return {}
