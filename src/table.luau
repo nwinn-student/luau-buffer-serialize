@@ -83,7 +83,6 @@ local DICT = 198
 local ARRAY_END = 199
 local TABLE_END = 200
 
-@native
 function tabSerializer(
 	value: { [any]: any },
 	buf: buffer,
@@ -325,7 +324,6 @@ function tabSerializer(
 	return buf, pos, size
 end
 
-@native
 function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 	local returnedTab = {}
 
