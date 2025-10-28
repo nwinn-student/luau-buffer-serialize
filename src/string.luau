@@ -51,7 +51,7 @@ local function strSerializer(
 end
 
 @native
-local function strDeserializer(buf: buffer, pos: number): (string?, number)
+local function strDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == EMPTY then
@@ -71,8 +71,8 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 	elseif id == INT then
 		len = buffer.readu32(buf, pos + 1)
 	else
-		-- DATA CORRUPTED (for now)
-		return nil, pos + 1 -- for future version
+		-- TODO: Error here
+		return "", pos + 1 -- for future version
 	end
 
 	return buffer.readstring(buf, pos + lenSize + 1, len), pos + len + 1 + lenSize

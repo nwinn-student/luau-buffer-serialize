@@ -324,7 +324,7 @@ function tabSerializer(
 	return buf, pos, size
 end
 
-function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
+function tabDeserializer(buf: buffer, pos: number)
 	local returnedTab = {}
 
 	if buffer.readu8(buf, pos) == EMPTY then
@@ -332,11 +332,11 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 	end
 
 	local existingIndex = 1
-	local existing: { [number]: any } = { [0] = returnedTab }
+	local existing: { any } = { [0] = returnedTab }
 	local roundRobinIndex = 61_440
 	local paired = {}
 
-	local deserialTable: (data: { [any]: any }) -> { [any]: any }?
+	local deserialTable: (data: { [any]: any }) -> { [any]: any }
 
 	@native
 	local function existingCache(data: any)
@@ -355,7 +355,7 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 	end
 
 	@native
-	local function deserialCache(valId: number): any
+	local function deserialCache(valId: number): unknown
 		if valId == EMPTY then
 			pos += 1
 			return {}
@@ -393,10 +393,12 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 		if case ~= "nil" then
 			value, pos = deserialSwitch[case](buf, pos)
 		else
+			-- TODO: Error here? Can it even get here?
 			pos += 1
 		end
 
 		if value == nil then
+			-- TODO: Error here
 			return nil -- data corrupted
 		end
 
@@ -406,8 +408,9 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 		return value
 	end
 
+	-- TODO: See if there are more spots to add errors
 	@native
-	function deserialTable(data: { [any]: any }): { [any]: any }?
+	function deserialTable(data: { [any]: any }): { [any]: any }
 		local id = buffer.readu8(buf, pos)
 
 		pos += 1
@@ -415,7 +418,8 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 		local hasArray = id == ARRAY or id == TABLE
 
 		if not hasArray and id ~= DICT then
-			return nil -- data corruption
+			-- TODO: Error here
+			return {} -- data corruption
 		end
 
 		if hasArray then
@@ -445,7 +449,8 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 					value = existing[buffer.readu16(buf, pos + 1)]
 					pos += 3
 					if value == nil then
-						return nil
+						-- TODO: Error here
+						return {}
 					end
 					data[index] = value
 					continue
@@ -453,7 +458,8 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 
 				value = deserialCache(valId)
 				if value == nil then
-					return nil
+					-- TODO: Error here
+					return {}
 				end
 				data[index] = value
 			end
@@ -472,7 +478,8 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			if valId == EQ_EXISTING then
 				key = existing[buffer.readu16(buf, pos + 1)]
 				if key == nil then
-					return nil
+					-- TODO: Error here
+					return {}
 				end
 				pos += 3
 			end
@@ -480,7 +487,8 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			if not key then
 				key = deserialCache(valId)
 				if key == nil then
-					return nil
+					-- TODO: Error here
+					return {}
 				end
 			end
 
@@ -490,7 +498,8 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			if valId == EQ_EXISTING then
 				value = existing[buffer.readu16(buf, pos + 1)]
 				if value == nil then
-					return nil
+					-- TODO: Error here
+					return {}
 				end
 				pos += 3
 				data[key] = value
@@ -499,7 +508,8 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 
 			value = deserialCache(valId)
 			if value == nil then
-				return nil
+				-- TODO: Error here
+				return {}
 			end
 
 			data[key] = value

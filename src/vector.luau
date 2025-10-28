@@ -185,7 +185,7 @@ local function vecSerializer(
 end
 
 @native
-local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
+local function vecDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then
@@ -208,12 +208,13 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 
 	if id == SCALAR_NUMBER then
 		local vecVal = builtinDeserialConst[buffer.readu8(buf, pos + 1)]
+		-- TODO: Error here if vecVal is nil
 		local numVal
 		numVal, pos = numDeserializer(buf, pos + 2)
 		if vecVal and numVal then
 			return numVal * vecVal, pos
 		end
-		return nil, pos + 1 -- data corruption
+		return vector.zero, pos + 1 -- data corruption
 	elseif id == BYTE then
 		return vector.create(
 			buffer.readi8(buf, pos + 1),
@@ -252,13 +253,10 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		yVal, pos = numDeserializer(buf, pos)
 		zVal, pos = numDeserializer(buf, pos)
 
-		if xVal and yVal and zVal then
-			return vector.create(xVal, yVal, zVal), pos
-		end
-		-- fill with 0's instead?
-		return nil, pos + 1 -- data corrupted
+		return vector.create(xVal, yVal, zVal), pos
 	else
-		return nil, pos + 1 -- data corrupted
+		-- TODO: Error here
+		return vector.zero, pos + 1 -- data corrupted
 	end
 end
 

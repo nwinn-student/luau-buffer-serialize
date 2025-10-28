@@ -70,6 +70,8 @@ return table.freeze({
 		elseif id == INT then
 			len = buffer.readu32(buf, pos)
 			pos += lenSize
+		else
+			-- TODO: Error here
 		end
 
 		local value = buffer.create(len)
