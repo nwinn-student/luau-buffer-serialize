@@ -192,7 +192,7 @@ function tabSerializer(
 
 			local serValue = buffer.readu16(buf, oldPos)
 			constants[data] = serValue
-		elseif data == data then
+		elseif data == data and typeName ~= "userdata" then
 			existingCache(data)
 		end
 	end
@@ -400,7 +400,7 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			return nil -- data corrupted
 		end
 
-		if pos - 2 > oldPos then
+		if pos - 2 > oldPos and case ~= "userdata" then
 			existingCache(value)
 		end
 		return value
