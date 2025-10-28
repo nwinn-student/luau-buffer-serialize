@@ -105,7 +105,7 @@ BufferSerializer.pair = function(id: number, value: any): ()
 		then 1343
 		elseif typeV == "number" then 1055
 		elseif typeV == "vector" then 1055
-		elseif typeV == "userdata" then 1039
+		elseif typeV == "userdata" then 521
 		else 0
 
 	assert(

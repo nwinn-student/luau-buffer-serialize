@@ -8,11 +8,10 @@ local link = {}
 type TYPES = "userdata" | "number" | "string" | "vector"
 type SERIALIZABLE_TYPES = TYPES | "boolean" | "buffer" | "nil" | "table"
 
--- possibly used in table?
 local STRING_COUNT = 64
 local NUMBER_COUNT = 32
 local VECTOR_COUNT = 32
-local USER_COUNT = 16
+local USER_COUNT = 10
 
 local STRING_START = 18
 local NUMBER_START = 99
@@ -22,12 +21,12 @@ local USER_START = 203
 local STRING_DUOSTART = 83
 local NUMBER_DUOSTART = 132
 local VECTOR_DUOSTART = 190
-local USER_DUOSTART = 220
+local USER_DUOSTART = 214
 
 -- string: 1 to 1343
 -- number: 1 to 1055
 -- vector: 1 to 1055
--- userdata: 1 to 1039
+-- userdata: 1 to 521
 
 link.values = {}
 
@@ -102,7 +101,7 @@ function link.type(refId: number): SERIALIZABLE_TYPES
 		elseif refId <= 135 then "number"
 		elseif refId <= 193 then "vector"
 		elseif refId <= 201 then "table"
-		elseif refId <= 223 then "userdata"
+		elseif refId <= 215 then "userdata"
 		else "nil" -- add more if statements if needed for future
 end
 
