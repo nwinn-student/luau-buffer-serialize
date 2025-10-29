@@ -67,11 +67,20 @@ local unlinkedSwitch: Switch<string, Serialize> = {
 
 local deserialSwitch: Switch<string, Deserialize> =
 	table.freeze({
+		["nil"] = function(buf: buffer, pos: number)
+			local valId = buffer.readu8(buf, pos)
+			local var = if valId < 240 then "future" else "extension"
+			error(`Failed to parse {var} byte: {valId} at position {pos}`)
+		end,
 		boolean = require("./boolean").deserialize,
 		buffer = require("./buffer").deserialize,
 		string = require("./string").deserialize,
 		number = require("./number").deserialize,
 		vector = require("./vector").deserialize,
+		table = function(buf: buffer, pos: number)
+			local valId = buffer.readu8(buf, pos)
+			error(`Failed to parse table byte: {valId} at position {pos}`)
+		end,
 		userdata = require("./userdata").deserialize,
 	}) :: Switch<string, Deserialize>
 
@@ -390,17 +399,7 @@ function tabDeserializer(buf: buffer, pos: number)
 			return value
 		end
 
-		if case ~= "nil" then
-			value, pos = deserialSwitch[case](buf, pos)
-		else
-			-- TODO: Error here? Can it even get here?
-			pos += 1
-		end
-
-		if value == nil then
-			-- TODO: Error here
-			return nil -- data corrupted
-		end
+		value, pos = deserialSwitch[case](buf, pos)
 
 		if pos - 2 > oldPos then
 			existingCache(value)
