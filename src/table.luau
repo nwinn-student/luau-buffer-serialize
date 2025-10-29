@@ -336,8 +336,17 @@ end
 function tabDeserializer(buf: buffer, pos: number)
 	local returnedTab = {}
 
-	if buffer.readu8(buf, pos) == EMPTY then
-		return returnedTab, 1
+	do
+		local id = buffer.readu8(buf, pos)
+		if id == EMPTY then
+			return returnedTab, 1
+		end
+
+		if id ~= ARRAY and id ~= TABLE and id ~= DICT then
+			error(
+				`Failed to parse table using byte: {id} at position {pos} (expected {ARRAY}, {TABLE}, or {DICT})`
+			)
+		end
 	end
 
 	local existingIndex = 1
@@ -407,7 +416,6 @@ function tabDeserializer(buf: buffer, pos: number)
 		return value
 	end
 
-	-- TODO: See if there are more spots to add errors
 	@native
 	function deserialTable(data: { [any]: any }): { [any]: any }
 		local id = buffer.readu8(buf, pos)
@@ -415,11 +423,6 @@ function tabDeserializer(buf: buffer, pos: number)
 		pos += 1
 
 		local hasArray = id == ARRAY or id == TABLE
-
-		if not hasArray and id ~= DICT then
-			-- TODO: Error here
-			return {} -- data corruption
-		end
 
 		if hasArray then
 			local index = 0
