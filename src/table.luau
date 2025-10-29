@@ -456,10 +456,7 @@ function tabDeserializer(buf: buffer, pos: number)
 				end
 
 				value = deserialCache(valId)
-				if value == nil then
-					-- TODO: Error here
-					return {}
-				end
+
 				data[index] = value
 			end
 		end
@@ -485,10 +482,6 @@ function tabDeserializer(buf: buffer, pos: number)
 
 			if not key then
 				key = deserialCache(valId)
-				if key == nil then
-					-- TODO: Error here
-					return {}
-				end
 			end
 
 			valId = buffer.readu8(buf, pos)
@@ -506,10 +499,6 @@ function tabDeserializer(buf: buffer, pos: number)
 			end
 
 			value = deserialCache(valId)
-			if value == nil then
-				-- TODO: Error here
-				return {}
-			end
 
 			data[key] = value
 		end
