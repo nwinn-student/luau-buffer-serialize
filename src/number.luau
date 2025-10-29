@@ -103,7 +103,7 @@ local function numSerializer(
 end
 
 @native
-local function numDeserializer(buf: buffer, pos: number): (number?, number)
+local function numDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then
@@ -131,7 +131,7 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	elseif id == DOUBLE then
 		return buffer.readf64(buf, pos + 1), pos + 9
 	else
-		return nil, pos + 1 -- data corruption
+		error(`Failed to parse number using byte: {id} at position {pos}`)
 	end
 end
 
