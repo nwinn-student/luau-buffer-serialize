@@ -71,8 +71,7 @@ local function strDeserializer(buf: buffer, pos: number)
 	elseif id == INT then
 		len = buffer.readu32(buf, pos + 1)
 	else
-		-- TODO: Error here
-		return "", pos + 1 -- for future version
+		error(`Failed to parse string using byte: {id} at position {pos}`)
 	end
 
 	return buffer.readstring(buf, pos + lenSize + 1, len), pos + len + 1 + lenSize

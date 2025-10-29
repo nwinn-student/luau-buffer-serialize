@@ -131,8 +131,7 @@ local function numDeserializer(buf: buffer, pos: number)
 	elseif id == DOUBLE then
 		return buffer.readf64(buf, pos + 1), pos + 9
 	else
-		-- TODO: Error here
-		return 0, pos + 1 -- data corruption
+		error(`Failed to parse number using byte: {id} at position {pos}`)
 	end
 end
 

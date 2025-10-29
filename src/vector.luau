@@ -207,14 +207,18 @@ local function vecDeserializer(buf: buffer, pos: number)
 	end
 
 	if id == SCALAR_NUMBER then
-		local vecVal = builtinDeserialConst[buffer.readu8(buf, pos + 1)]
-		-- TODO: Error here if vecVal is nil
+		local constId = buffer.readu8(buf, pos + 1)
+		local vecVal = builtinDeserialConst[constId]
+		if not vecVal then
+			-- Must be ONE to YZ_AXIS
+			error(
+				`Failed to parse built-in vector constant using byte: {constId} at position {pos}`
+			)
+		end
+
 		local numVal
 		numVal, pos = numDeserializer(buf, pos + 2)
-		if vecVal and numVal then
-			return numVal * vecVal, pos
-		end
-		return vector.zero, pos + 1 -- data corruption
+		return numVal * vecVal, pos
 	elseif id == BYTE then
 		return vector.create(
 			buffer.readi8(buf, pos + 1),
@@ -255,8 +259,7 @@ local function vecDeserializer(buf: buffer, pos: number)
 
 		return vector.create(xVal, yVal, zVal), pos
 	else
-		-- TODO: Error here
-		return vector.zero, pos + 1 -- data corrupted
+		error(`Failed to parse vector using byte: {id} at position {pos}`)
 	end
 end
 

@@ -71,7 +71,7 @@ return table.freeze({
 			len = buffer.readu32(buf, pos)
 			pos += lenSize
 		else
-			-- TODO: Error here
+			error(`Failed to parse buffer using byte: {id} at position {pos}`)
 		end
 
 		local value = buffer.create(len)
