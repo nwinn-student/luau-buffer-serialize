@@ -70,7 +70,7 @@ local deserialSwitch: Switch<string, Deserialize> =
 		["nil"] = function(buf: buffer, pos: number)
 			local valId = buffer.readu8(buf, pos)
 			local var = if valId < 240 then "future" else "extension"
-			error(`Failed to parse {var} byte: {valId} at position {pos}`)
+			error(`Failed to parse {var} using byte: {valId} at position {pos}`)
 		end,
 		boolean = require("./boolean").deserialize,
 		buffer = require("./buffer").deserialize,
@@ -79,7 +79,7 @@ local deserialSwitch: Switch<string, Deserialize> =
 		vector = require("./vector").deserialize,
 		table = function(buf: buffer, pos: number)
 			local valId = buffer.readu8(buf, pos)
-			error(`Failed to parse table byte: {valId} at position {pos}`)
+			error(`Failed to parse table using byte: {valId} at position {pos}`)
 		end,
 		userdata = require("./userdata").deserialize,
 	}) :: Switch<string, Deserialize>
@@ -445,11 +445,13 @@ function tabDeserializer(buf: buffer, pos: number)
 
 				-- check if existing
 				if valId == EQ_EXISTING then
-					value = existing[buffer.readu16(buf, pos + 1)]
+					local existingId = buffer.readu16(buf, pos + 1)
+					value = existing[existingId]
 					pos += 3
 					if value == nil then
-						-- TODO: Error here
-						return {}
+						error(
+							`Failed to parse existing value using byte: {existingId} at position {pos}`
+						)
 					end
 					data[index] = value
 					continue
@@ -472,10 +474,12 @@ function tabDeserializer(buf: buffer, pos: number)
 
 			-- check if existing
 			if valId == EQ_EXISTING then
-				key = existing[buffer.readu16(buf, pos + 1)]
+				local existingId = buffer.readu16(buf, pos + 1)
+				key = existing[existingId]
 				if key == nil then
-					-- TODO: Error here
-					return {}
+					error(
+						`Failed to parse existing value using byte: {existingId} at position {pos}`
+					)
 				end
 				pos += 3
 			end
@@ -488,10 +492,12 @@ function tabDeserializer(buf: buffer, pos: number)
 
 			-- check if existing
 			if valId == EQ_EXISTING then
-				value = existing[buffer.readu16(buf, pos + 1)]
+				local existingId = buffer.readu16(buf, pos + 1)
+				value = existing[existingId]
 				if value == nil then
-					-- TODO: Error here
-					return {}
+					error(
+						`Failed to parse existing value using byte: {existingId} at position {pos}`
+					)
 				end
 				pos += 3
 				data[key] = value
