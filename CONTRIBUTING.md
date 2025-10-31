@@ -26,7 +26,7 @@ If you find any part of the documentation unclear, please let us know.
 2. Write clear, concise code.
 3. Run [Stylua](https://github.com/JohnnyMorganz/StyLua) for formatting and luau-analyze to catch common issues.
    1. Stylua can be run with `stylua .` in the root directory of the repository, using `cd path/to/repo`, assuming Stylua is installed.
-   2. Luau-analyze can be run with `luau-analyze .` in the root directory, assuming luau-analyze is installed.
+   2. Luau-analyze can be run with `luau-analyze .` in the root directory of the repository, assuming luau-analyze is installed.
 4. Submit a pull request with a clear description.
 
 ## Coding Standards
@@ -42,23 +42,18 @@ If you find any part of the documentation unclear, please let us know.
 
 ## Pull Requests
 
-- Reference related issues.
-- Include relevant screenshots or code snippets.
+- Should an issue be attached, add `Closes #1`.
 - Run benchmarks if performance is affected, and include results.
 - Ensure all tests pass, adding new tests if necessary.
   - The test suite can be run with `luau ./tests` in the root directory, assuming Luau is installed.
-- Follow the coding standards outlined above.
 - Ensure documentation is updated if necessary.
 - Keep your branch up to date with `main`.
-    - Rebase or merge `main` into your branch before submitting a pull request.
-- Write clear commit messages.
 - Respond to feedback.
 
 ## Code Review
 - Be respectful and constructive.
 - Ask questions if something is unclear.
-- Discuss changes openly.
-- Provide context and reasoning for decisions.
+- Provide context and reasoning for decisions, referencing prior Discussions, Pull Requests, or Issues as necessary.
 - Approve when ready, do not rush to merge.  The concept the code is trying to achieve is more important than the code itself, should the concept be flawed, it should be discussed and improved.
 
 Thank you for helping improve BufferSerializer!
