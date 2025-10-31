@@ -177,25 +177,16 @@ function spawner(fileName: string)
 	-- if generated scripts error, uncomment below
 	--print(proc.stderr:read())
 	--print(proc.stdout:read())
-	-- How do I do other cores?
-	if options.cores == 1 then
-		stdio.write(
-			"Running file: "
-				.. fileName
-				.. string.rep(" ", 30 - #fileName)
-				.. "\n"
-		)
-	end
+
+	stdio.write(`Running file: {fileName}\r`)
+
 	if proc:status().ok then
 		table.insert(
 			Log[getScheme(fileName)][getAction(fileName)],
 			string.sub(proc.stdout:readToEnd(), 1, -3)
 		)
-		-- How do I do other cores?
-		if options.cores == 1 then
-			stdio.write(string.rep("\b", 30 + 14 + 45))
-		end
 	end
+
 	proc:kill()
 	tasks[#tasks] = nil
 end
