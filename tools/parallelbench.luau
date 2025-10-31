@@ -178,7 +178,7 @@ function spawner(fileName: string)
 	--print(proc.stderr:read())
 	--print(proc.stdout:read())
 
-	stdio.write(`Running file: {fileName}\r`)
+	stdio.write(`Running file: {fileName}      \r`)
 
 	if proc:status().ok then
 		table.insert(
@@ -228,7 +228,7 @@ for scheme, actions in Log do
 	if #actions.Deserial == 0 and #actions.Serial == 0 then
 		continue
 	end
-	print("Scheme: ", scheme, (" "):rep(10))
+	print("Scheme: ", scheme, (" "):rep(15))
 	if #actions.Serial > 0 then
 		print("Serial:")
 		table.sort(actions.Serial)
