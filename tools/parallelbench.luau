@@ -24,12 +24,11 @@ local task = require("@lune/task")
 
 local options = {
 	skip = {} :: { string },
-	parallel = true,
-	percore = false,
 	-- FIXME: unsure about linux/darwin
 	cores = tonumber(process.env["NUMBER_OF_PROCESSORS"]) - 1,
 	dir = "temp",
 	verbose = false,
+	avg = false,
 	options = "",
 	output = {},
 }
@@ -53,6 +52,7 @@ Available options:
   -vr, --verbose-results: Displays the expanded results of the benchmark
   --remove-columns<=option,[option...]>: If non-verbose, removes option columns from the output
     | option: Speed | Memory | Output | Total
+  -a, --avg: Displays avg +- stdev instead of the default median +- iqr
 
 Unsupported options:
   -o=<n>,--output=<n>: outputs the results from the benchmarks into file n in Markdown
@@ -107,6 +107,10 @@ for _, input in args do
 	end
 	if input == "-vr" or input == "--verbose-results" then
 		options.verbose = true
+		continue
+	end
+	if input == "-a" or input == "--avg" then
+		options.avg = true
 		continue
 	end
 	if
