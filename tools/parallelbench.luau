@@ -26,9 +26,11 @@ local options = {
 	skip = {} :: { string },
 	-- FIXME: unsure about linux/darwin
 	cores = tonumber(process.env["NUMBER_OF_PROCESSORS"]) - 1,
+	fps = 5,
 	dir = "temp",
 	verbose = false,
 	avg = false,
+	progress = false,
 	options = "",
 	output = {},
 }
@@ -53,6 +55,8 @@ Available options:
   --remove-columns<=option,[option...]>: If non-verbose, removes option columns from the output
     | option: Speed | Memory | Output | Total
   -a, --avg: Displays avg +- stdev instead of the default median +- iqr
+  -p, --progress: Displays a progress bar and duration when running
+  --fps<=number>: The frequency to update the progress bar
 
 Unsupported options:
   -o=<n>,--output=<n>: outputs the results from the benchmarks into file n in Markdown
@@ -102,6 +106,18 @@ for _, input in args do
 		options.cores = cores
 		continue
 	end
+	if input:sub(1, 8) == "--fps=" then
+		local fps = tonumber(input:sub(9))
+		-- Fractional cores might exist later (cuz it sounds cool)
+		assert(
+			fps and fps > 0,
+			`--fps<=number> must take a number between 1 and inf, got {input:sub(
+				9
+			)}`
+		)
+		options.fps = fps
+		continue
+	end
 	if input == "--gen-hist" then
 		print("Generating histograms has yet to be implemented.")
 	end
@@ -111,6 +127,10 @@ for _, input in args do
 	end
 	if input == "-a" or input == "--avg" then
 		options.avg = true
+		continue
+	end
+	if input == "-p" or input == "--progress" then
+		options.progress = true
 		continue
 	end
 	if
@@ -140,7 +160,25 @@ end
 
 -- Both generatebenchscripts and generatesources MUST be run prior.
 
-local files = fs.readDir(options.dir)
+local tempFiles = fs.readDir(options.dir)
+local files = {}
+for i, path in tempFiles do
+	if path:sub(-5) ~= ".luau" then
+		continue
+	end
+	local doContinue = false
+	for _, bypass: string in options.skip do
+		if path:match(`^{bypass}`) then
+			doContinue = true
+			break
+		end
+	end
+	if doContinue then
+		continue
+	end
+	table.insert(files, path)
+end
+
 local encodedOptions = "'" .. serde.encode("json", options) .. "'"
 -- FIXME: could be shell dependent... :<
 encodedOptions = encodedOptions:gsub('"', '\\"')
@@ -163,7 +201,59 @@ local Log: Log = {
 	MessagePack = { Serial = {}, Deserial = {} },
 	unknown = { Serial = {}, Deserial = {} },
 }
-local tasks = {}
+
+local currentDisplayPath = ""
+
+function triggerRunning(path: string)
+	currentDisplayPath = "[  Running  ] " .. path
+end
+function triggerCompleted(path: string)
+	currentDisplayPath = "[ Completed ] " .. path
+end
+
+local tasks = {
+	running = 0,
+	completed = 0,
+	count = 0,
+}
+function tasks:run(path: string)
+	tasks.running += 1
+	tasks.count += 1
+	triggerRunning(path)
+end
+function tasks:complete(path: string)
+	tasks.completed += 1
+	tasks.count -= 1
+	triggerCompleted(path)
+end
+
+if options.progress then
+	task.spawn(function()
+		local startTime = os.clock()
+		local startTasks = #files
+		stdio.write("\n\n")
+		repeat
+			task.wait(1 / options.fps)
+			stdio.write("\r\b\r\b\r") -- resets to start
+			stdio.write(
+				currentDisplayPath .. (" "):rep(43 - #currentDisplayPath) .. "\n"
+			)
+			local progress = (">"):rep(
+				((tasks.running * 0.5 + tasks.completed) / (1.5 * startTasks))
+					* 34
+					// 1
+			)
+			progress ..= (" "):rep(34 - #progress)
+			local duration = (100 * (os.clock() - startTime) // 1) / 100
+			stdio.write(`{progress} | {duration} s\n`)
+		until tasks.completed == startTasks
+		stdio.write("\r\b\r\b\r") -- resets to start
+		-- fill old w/ spaces
+		stdio.write((" "):rep(45) .. "\n" .. (" "):rep(45) .. "\n")
+		stdio.write("\r\b\r\b\r") -- resets to start
+		currentDisplayPath = ""
+	end)
+end
 
 function getScheme(name: string): "BufferSerializer" | "unknown" | "MessagePack"
 	return if name:sub(1, 2) == "bs"
@@ -182,8 +272,6 @@ function spawner(fileName: string)
 	--print(proc.stderr:read())
 	--print(proc.stdout:read())
 
-	stdio.write(`Running file: {fileName}      \r`)
-
 	if proc:status().ok then
 		table.insert(
 			Log[getScheme(fileName)][getAction(fileName)],
@@ -192,26 +280,15 @@ function spawner(fileName: string)
 	end
 
 	proc:kill()
-	tasks[#tasks] = nil
+	tasks:complete(fileName)
 end
 
 function processFile(path: string)
-	if path:sub(-5) ~= ".luau" then
-		return
-	end
-	for _, bypass: string in options.skip do
-		if path:match(`^{bypass}`) then
-			return
-		end
-	end
-	table.insert(tasks, 0)
-	if options.verbose then
-		print(`Running file: {path}`)
-	end
+	tasks:run(path)
 
 	task.spawn(spawner, path)
 
-	while #tasks == options.cores do
+	while tasks.count == options.cores do
 		task.wait()
 	end
 end
@@ -223,7 +300,8 @@ end
 
 repeat
 	task.wait()
-until #tasks == 0
+until options.progress and tasks.count == 0 and currentDisplayPath == ""
+	or not options.progress and tasks.count == 0
 
 stdio.write(stdio.color("green"))
 
