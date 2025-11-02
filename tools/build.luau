@@ -5,8 +5,7 @@ local build = {}
 
 	To run:
 	cd to/repo/path
-	lune run tools/build.luau --name=BufferSerializer \
-		--output=bs.rbxm
+	lune run tools/build.luau --name=BufferSerializer
 ]]
 
 local process = require("@lune/process")
@@ -28,7 +27,6 @@ local function pathName(path: string)
 end
 
 local options = {
-	head = "src/init.luau",
 	body = "src",
 	name = pathName(process.cwd),
 }
@@ -40,10 +38,8 @@ Usage: %s [options]
 
 Available options:
   -h, --help: Display this usage message
-  --name=<str>: The name of the root ModuleScript, default is directory name
-  --head=<file>: The file to use as the root, default is src/init.luau
+  --name=<str>: The name of the root ModuleScript and output file, default is directory name
   --body=<dir>: The directory containing the tree of ModuleScripts, default is src
-  --output=<file>: The file to output the model into
 	]],
 		process.env._
 	))
@@ -58,16 +54,8 @@ for _, input in args do
 		options.name = input:sub(8)
 		continue
 	end
-	if input:sub(1, 7) == "--head=" then
-		options.head = input:sub(8)
-		continue
-	end
 	if input:sub(1, 7) == "--body=" then
 		options.body = input:sub(8)
-		continue
-	end
-	if input:sub(1, 9) == "--output=" then
-		options.output = input:sub(10)
 		continue
 	end
 	print(`{input} is not a valid command, see help:`)
@@ -77,7 +65,7 @@ end
 
 local root = roblox.Instance.new("ModuleScript")
 root.Name = options.name
-root.Source = fs.readFile(options.head)
+root.Source = fs.readFile(options.body .. "/init.luau")
 
 local function addScripts(path: string, par: any)
 	if path:find("/init.luau") then
@@ -112,6 +100,6 @@ for _, path in fs.readDir(options.body) do
 	addScripts(options.body .. "/" .. path, root)
 end
 
-fs.writeFile(options.output, roblox.serializeModel({ root }))
+fs.writeFile(options.name .. ".rbxm", roblox.serializeModel({ root }))
 
 return build
