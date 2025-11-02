@@ -83,7 +83,6 @@ local DICT = 198
 local ARRAY_END = 199
 local TABLE_END = 200
 
-@native
 function tabSerializer(
 	value: { [any]: any },
 	buf: buffer,
@@ -236,10 +235,6 @@ function tabSerializer(
 
 				if typeElement == "function" or typeElement == "thread" then
 					constants[element] = 0 -- NIL
-					if pos + 1 > size then
-						buf, size = inflate(buf, pos + 1, size)
-					end
-					buffer.writeu8(buf, pos, 0)
 					pos += 1
 					continue
 				end
@@ -329,7 +324,6 @@ function tabSerializer(
 	return buf, pos, size
 end
 
-@native
 function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 	local returnedTab = {}
 
