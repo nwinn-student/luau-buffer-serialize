@@ -36,6 +36,8 @@ function printHelp()
 		[[
 Usage: %s [options]
 
+Only .luau files are added to the rbxm.
+
 Available options:
   -h, --help: Display this usage message
   --name=<str>: The name of the root ModuleScript and output file, default is directory name
