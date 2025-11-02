@@ -79,7 +79,7 @@ for _, input in args do
 		printHelp()
 		process.exit(0)
 	end
-	if input:sub(1, 5) == "--dir=" then
+	if input:sub(1, 6) == "--dir=" then
 		options.dir = input:sub(7)
 		continue
 	end
