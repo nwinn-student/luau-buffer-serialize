@@ -6,7 +6,7 @@ local release = {}
 	To run:
 	cd to/repo/path
 	lune run tools/release.luau 1.2.3 \
-		--build \
+		--build --delete-build \
 		--prefix=BufferSerializer
 
 	Alternative:
@@ -18,6 +18,7 @@ local release = {}
 		BufferSerializerTAG.rbxm
 ]]
 
+local fs = require("@lune/fs")
 local process = require("@lune/process")
 local args = process.args
 
@@ -30,6 +31,7 @@ local options = {
 	build = false,
 	tag = "",
 	prefix = pathName(process.cwd),
+	delete = false,
 }
 
 function printHelp()
@@ -41,6 +43,7 @@ Available options:
   -h, --help: Display this usage message
   --build: Uses build.luau to build
   --prefix<=str>: The prefix of the file to publish, default is directory name
+  --delete-build: Deletes the build file after publishing the Release
 	]],
 		process.env._
 	))
@@ -57,6 +60,10 @@ for _, input in args do
 	end
 	if input == "--build" then
 		options.build = true
+		continue
+	end
+	if input == "--delete-build" then
+		options.delete = true
 		continue
 	end
 	options.tag = input
@@ -85,8 +92,13 @@ local ghRelease = process.exec("gh", {
 	"--fail-on-no-commits",
 	"--title",
 	`Version {options.tag}`,
+	-- If lune fails, this will fail too
 	`{options.prefix}{options.tag}.rbxm`,
 })
-print(ghRelease.stderr)
+assert(ghRelease.ok, ghRelease.stderr)
+
+if options.delete then
+	fs.removeFile(`{options.prefix}{options.tag}.rbxm`)
+end
 
 return release
