@@ -27,6 +27,7 @@ test.compare("userdata", type(deserialize(Sir_Proxy)))
 local userdata = require("../src/userdata")
 userdata.setReader(function(buf: buffer, pos: number): (unknown, number)
 	test.serial(buf, test.newBuffer(202, 203))
+	test.compare(pos, 1)
 	return nil, pos
 end)
 userdata.setWriter(
@@ -36,7 +37,10 @@ userdata.setWriter(
 		pos: number,
 		size: number
 	): (buffer, number, number)
+		test.compare(value, proxy)
 		test.serial(buf, test.newBuffer(202))
+		test.compare(pos, 1)
+		test.compare(size, 1)
 		return buf, pos, size
 	end
 )
