@@ -52,7 +52,7 @@ for _, input in args do
 		process.exit(0)
 	end
 	if input:sub(1, 9) == "--prefix=" then
-		options.prefix = input:sub(8)
+		options.prefix = input:sub(10)
 		continue
 	end
 	if input == "--build" then
