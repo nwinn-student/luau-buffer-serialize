@@ -18,17 +18,12 @@ test.serial(Sir_Proxy, test.newBuffer(NIL))
 -- deserialization
 test.compare("userdata", type(deserialize(Sir_Proxy)))
 
--- Custom reader/writer functions will be dealt w/ later
---[[
-	Since the functions are not user-specified, 
-		but usually extender specified, we can 
-		be much more lax w/ the restrictions.
-]]
+-- Custom reader/writer functions
 local userdata = require("../src/userdata")
 userdata.setReader(function(buf: buffer, pos: number): (unknown, number)
 	test.serial(buf, test.newBuffer(202, 203))
 	test.compare(pos, 1)
-	return nil, pos
+	return proxy, pos
 end)
 userdata.setWriter(
 	function(
@@ -51,6 +46,6 @@ local Sir_Custom = serialize(proxy)
 test.serial(Sir_Custom, test.newBuffer(CUSTOM, NIL))
 
 -- deserialization
-test.compare("userdata", type(deserialize(Sir_Custom)))
+test.compare(proxy, deserialize(Sir_Custom))
 
 return {}
