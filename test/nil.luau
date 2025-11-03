@@ -1,5 +1,5 @@
 --!strict
--- Runs tests for ../BufferSerializer/nil
+-- Runs tests for ../src/nil
 
 local test = require("./test")
 local NIL = 0

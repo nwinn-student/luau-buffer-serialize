@@ -1,5 +1,5 @@
 --!strict
--- Runs tests for ../BufferSerializer/number
+-- Runs tests for ../src/number
 
 local test = require("./test")
 local ZERO = 88

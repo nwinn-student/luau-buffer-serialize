@@ -1,5 +1,5 @@
 --!strict
--- Runs tests for ../BufferSerializer/vector
+-- Runs tests for ../src/vector
 
 local test = require("./test")
 local vcreate = vector.create

@@ -1,5 +1,5 @@
 --!strict
--- Runs tests for ../BufferSerializer/boolean
+-- Runs tests for ../src/boolean
 
 local test = require("./test")
 local TRUE = 1

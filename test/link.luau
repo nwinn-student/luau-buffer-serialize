@@ -1,5 +1,5 @@
 --!strict
--- Runs tests for ../BufferSerializer/link
+-- Runs tests for ../src/link
 
 local link = require("../src/link")
 local test = require("./test")

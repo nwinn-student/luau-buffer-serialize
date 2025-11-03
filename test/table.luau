@@ -1,5 +1,5 @@
 --!strict
--- Runs tests for ../BufferSerializer/table
+-- Runs tests for ../src/table
 
 local test = require("./test")
 local EMPTY = 194

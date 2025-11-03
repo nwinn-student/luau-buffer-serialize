@@ -1,5 +1,5 @@
 --!strict
--- Runs tests for ../BufferSerializer/userdata
+-- Runs tests for ../src/userdata
 
 local test = require("./test")
 local CUSTOM = 202
