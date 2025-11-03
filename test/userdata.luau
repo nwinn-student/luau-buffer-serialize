@@ -26,8 +26,8 @@ test.compare("userdata", type(deserialize(Sir_Proxy)))
 ]]
 local userdata = require("../src/userdata")
 userdata.setReader(function(buf: buffer, pos: number): (unknown, number)
-	print(buf, pos)
-	return buf, pos
+	test.serial(buf, test.newBuffer(202, 203))
+	return nil, pos
 end)
 userdata.setWriter(
 	function(
@@ -36,14 +36,14 @@ userdata.setWriter(
 		pos: number,
 		size: number
 	): (buffer, number, number)
-		print(value, buf, pos, size)
+		test.serial(buf, test.newBuffer(202))
 		return buf, pos, size
 	end
 )
 
 local Sir_Custom = serialize(proxy)
 
--- serialization (?! why does it do this?)
+-- serialization
 test.serial(Sir_Custom, test.newBuffer(CUSTOM, NIL))
 
 -- deserialization

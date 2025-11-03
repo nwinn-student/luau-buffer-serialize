@@ -8,6 +8,9 @@
 	
 	There are no solutions as the tests could be run 
 	in parallel w/ some other task.
+
+	To run:
+	luau test
 ]]
 
 require("@self/nil")
@@ -28,8 +31,8 @@ local deserialize = require("./src").deserialize
 local pair = require("./src").pair
 
 -- remove userdata custom stuff
-require("./src/userdata").setReader(nil)
-require("./src/userdata").setWriter(nil)
+require("./src/userdata").setReader(nil :: any)
+require("./src/userdata").setWriter(nil :: any)
 
 local proxy = newproxy()
 
@@ -53,7 +56,9 @@ test.serial(Sir_User, test.newBuffer(197, 204, 203, 200)) -- ???
 test.compare("value", deserialize(Sir_String)[1])
 test.compare(5, deserialize(Sir_Number)[1])
 test.compare(vector.create(1, 2), deserialize(Sir_Vector)[1])
-test.compare(proxy, deserialize(Sir_User)[1]) -- uh oh..?
+-- Warning! This version does not support all equal userdata should
+-- no reader/writer be provided!
+test.compare("userdata", type(deserialize(Sir_User)[1]))
 
 -- built-ins
 test.compare(false, pcall(pair, 5, 0))
