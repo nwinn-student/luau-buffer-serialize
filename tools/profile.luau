@@ -24,7 +24,7 @@ local options = {
 function printHelp()
 	print(string.format(
 		[[
-Usage: %s <file>
+Usage: %s <path>
 
 Requires luau and python installed.
 
