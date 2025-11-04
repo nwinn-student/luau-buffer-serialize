@@ -1,11 +1,6 @@
 --!optimize 2
 --!strict
-do
-	-- For runtimes that cache the requires
-	require("@self/table")
-end
 
-@native
 local function trim(data: buffer, pos: number, size: number)
 	if size == pos then
 		return data
