@@ -9,7 +9,6 @@
 - [Example](#example)
 - [Performance](#performance)
 - [Technical Details](#technical-details)
-- [Constant Amount Supported](#constant-amount-supported)
 
 ## Purpose
 
@@ -17,11 +16,10 @@ BufferSerializer is a general-purpose serializer for complex data structures wit
 
 In order to make the most out of BufferSerializer, it is highly recommended to reformat the dataset into a form that produces a minimal output size in JSON.  Upon completion perform the following:
  - Identify whether there are arrays in the dataset with gaps worth filling with nil bytes, functions and threads can be used to represent `nil`.
- - Supply known constants to BufferSerializer.
+ - Supply known pairs to BufferSerializer.
 
 Reformatting using JSON as a reference is much simpler than understanding how BufferSerializer internals function in order to reduce the output size.  Most improvements to the JSON version of the format will improve the output of BufferSerializer.  The more information known regarding the dataset, the smaller the output size can be, and at some point, schema-based serializers will be more optimal, and beyond that a custom-made serializer based on the specific information.  BufferSerializer sits right before schema-based serializers in that it assumes less knowledge is known regarding the format and the little known can be conveyed through constants and userdata functions.
 
-[//]: # (TODO: Move the following to RISKS.md, as limitations are considered risks.)
 #### Limitations
  - Although cyclic tables<sup>[1]</sup> are supported, large datasets with distant<sup>[2]</sup> cyclic tables will fatally error.  Although possible, the solution would be too costly.
  - Constants need to be handled with care in order to avoid corruption when migrating.
@@ -70,23 +68,4 @@ There are 16 approaches left for extenders of BufferSerializer to define in orde
 
 `deserialize(data: buffer): any`: Takes in a serialized version of some data and **recreates** and returns the original data.
 
-`pair(id: number, data: any)`: Connects a constant value to an identifier.  See [constants supported](#constant-amount-supported) in order to understand how expensive the constant will be in its serialized form.  
-
-### Constant Amount Supported
-
-Constants are used to save the as much output size as possible given **fixed** information.  The constants should seldomly be modified as there is risk of corruption if mishandled.
-
- - NaN values are NOT supported, such as vector.create(2, 4, 0/0).
- - Userdata values should be handled with care*.  Prioritize pairing lightuserdata objects or known fixed userdata objects.  Do NOT expect userdata objects, like Roblox Instances, to equal other Roblox Instances with the same properties.
-
-| **Type**   | **Amount** | **Cost** |
-|------------|------------|----------|
-| `string`   | 64         | 1 byte   |
-| `number`   | 32         | 1 byte   |
-| `vector`   | 32         | 1 byte   |
-| `userdata` | 16         | 1 byte   |
-|            |            |          |
-| `string`   | 1280       | 2 bytes  |
-| `number`   | 1024       | 2 bytes  |
-| `vector`   | 1024       | 2 bytes  |
-| `userdata` | 1024       | 2 bytes  |
+`pair(id: number, data: any)`: Connects a constant value to an identifier.  See [constants supported](#constant-amount-supported) in order to understand how expensive the constant will be in its serialized form.
