@@ -51,13 +51,25 @@ type Pair = {
 }
 
 --[[
-	Returns the value as a buffer
-	
+	Serializes the provided value into a buffer.
+
+	- Follows the specified format in [FORMAT.md](../FORMAT.md).
+
+	**Recommendations:**
+	- Protect value from concurrent modifications, specifically tables and buffers.
+
+	**Example:**
+	```luau
+	local BufferSerializer = require("./path/to/BufferSerializer")
+
+	local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
+	```
+
 	@param value the value to serialize
 	
 	@return a buffer representing the serialized value
 ]]
-BufferSerializer.serialize = function(value: any): buffer
+function BufferSerializer.serialize(value: any): buffer
 	local typeValue = type(value)
 	if typeValue == "function" or typeValue == "thread" then
 		typeValue = "nil"
@@ -69,13 +81,30 @@ BufferSerializer.serialize = function(value: any): buffer
 end
 
 --[[
-	Returns the original value within the buffer
-	
-	@param value the buffer containing the original value
-	
+	Deserializes the provided buffer, producing the value originally serialized.
+
+	- Operates under the assumption that the buffer follows the specified format in
+	 [FORMAT.md](../FORMAT.md).
+	- Capable of deserializing values impossible for `serialize` to produce.
+
+	**Recommendations:**
+	- Protect value from concurrent modifications.
+
+	**Example:**
+	```luau
+	local BufferSerializer = require("./path/to/BufferSerializer")
+	local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
+
+	local originData = BufferSerializer.deserialize(serialData)
+	```
+
+	@param value buffer containing a serialized value
+
+	@error buffer access out of bounds
+
 	@return the original value
 ]]
-BufferSerializer.deserialize = function(value: buffer): any
+function BufferSerializer.deserialize(value: buffer): any
 	local pointer = buffer.readu8(value, 0)
 	if pointer == 0 then
 		return nil
@@ -85,21 +114,70 @@ BufferSerializer.deserialize = function(value: buffer): any
 
 	local deserial: Deserialize = (deserialModules :: any)[pointer]
 
-	local originalData = deserial(value, 0)
-	return originalData
+	return (deserial(value, 0))
 end
 
 -- narrows the type emitted by `type(any): string` would like for it to error
 type TYPES = "userdata" | "number" | "string" | "vector"
 
 --[[
-	Connects a constant value to an identifier.
-	@ Only certain types are supported.
-	
-	@param id the identifier
-	@param value the value
+	Pairs, or links, an id(entifier) to a value.
+
+	- Ids replace the value when serializing, should the value be rawequal.
+		- Only applicable within tables.
+		- Initially stored [ID][VALUE], all further instances of the value are
+		 stored as [ID].
+	- Values replace the id when deserializing.
+	- Equivalent userdata may not be rawequal
+		- See [userdata.luau](./userdata.luau) for information about supporting
+		 userdata.
+
+	- Ids are stored as 1-2 bytes, depending on the number associated with the id
+	 and the value's type.
+
+	| **Type**   | **Id Range**    | **Cost** |
+	|------------|-----------------|----------|
+	| `string`   | 1-64            | 1 byte   |
+	| `number`   | 1-32            | 1 byte   |
+	| `vector`   | 1-32            | 1 byte   |
+	| `userdata` | 1-16            | 1 byte   |
+	|            |                 |          |
+	| `string`   | 65-1343         | 2 bytes  |
+	| `number`   | 33-1055         | 2 bytes  |
+	| `vector`   | 33-1055         | 2 bytes  |
+	| `userdata` | 16-1039         | 2 bytes  |
+
+	**Recommendations:**
+	- Calculate the word frequency of your dataset to determine which values to link to
+	 what ids.
+	- Ensure that linked values cannot be stored for less than or equal to the associated
+	 id cost (in bytes).
+	- Spare a range of ids for future additions.
+	- When concurrently modifying pairs, ensure that an id is not assigned to a different
+	 value.
+
+	**Example:**
+	```luau
+	local BufferSerializer = require("./path/to/BufferSerializer")
+
+	-- 5 is between 1 and 64, so it will take 1 byte to store "Foo"
+	BufferSerializer.pair(5, "Foo")
+
+	local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
+	```
+
+	@param id the number associated with the value
+	@param value the value reference compared against when serializing
+
+	@error Invalid type: When the value is not a string, number, vector, or userdata
+	@error Invalid id: When the id is not an integer
+	@error Invalid id: When the id is not between 1 and N, where N depends on the value's type
+	@error Invalid value: When the value is NaN
+	@error Invalid number: When the value is 0 or 1
+	@error Invalid string: When the value is ""
+	@error Invalid vector: When the value is a built-in vector constant
 ]]
-BufferSerializer.pair = function(id: number, value: any): ()
+function BufferSerializer.pair(id: number, value: any): ()
 	local typeV = type(value) :: TYPES
 	local maxId = if typeV == "string"
 		then 1343
@@ -114,7 +192,7 @@ BufferSerializer.pair = function(id: number, value: any): ()
 	)
 	assert(
 		type(id) == "number" and id % 1 == 0 and id == id,
-		`Invalid id {id} (must be integer)`
+		`Invalid id {id} (must be an integer)`
 	)
 	assert(
 		id >= 1 and id <= maxId,
@@ -123,11 +201,11 @@ BufferSerializer.pair = function(id: number, value: any): ()
 	assert(value == value, `Invalid value {value} (must be non-nan)`)
 	assert(
 		typeV ~= "number" or value ~= 0 and value ~= 1,
-		`Invalid value {value} (cannot be a built-in [0 or 1])`
+		`Invalid number {value} (cannot be a built-in [0 or 1])`
 	)
 	assert(
 		typeV ~= "string" or value ~= "",
-		`Invalid value {value} (cannot be a built-in [""])`
+		`Invalid string {value} (cannot be a built-in [""])`
 	)
 	assert(
 		typeV ~= "vector"
@@ -139,7 +217,7 @@ BufferSerializer.pair = function(id: number, value: any): ()
 				and value ~= vector.create(1, 0, 0)
 				and value ~= vector.create(1, 0, 1)
 				and value ~= vector.create(1, 1, 0),
-		`Invalid value {value} (cannot be a built-in)`
+		`Invalid vector {value} (cannot be a built-in)`
 	)
 
 	pairModules[value] = calcId(id, typeV)
