@@ -95,17 +95,17 @@ type TYPES = "userdata" | "number" | "string" | "vector"
 --[[
 	Pairs, or links, an id(entifier) to a value.
 
-	- When a value rawequal to a linked value is serialized, the id is stored instead of the value.
-	 Upon deserialization, the id is replaced with the linked value.
-		- To save bytes, pairs are only recognized in the context of table (de)serialization.
-		- Ids are stored in tandem with their value initially, so there is no requirement for consistent
-		 pairing of ids to values.
-		- Userdata is not always rawequal, and when possible should be shared directly to ensure proper linkage.
-			- See [userdata.luau](./userdata.luau) for information about supporting userdata that isn't linked, whether
-			 or not by choice.
+	- Ids replace the value when serializing, should the value be rawequal.
+		- Only applicable within tables.
+		- Initially stored [ID][VALUE], all further instances of the value are
+		 stored as [ID].
+	- Values replace the id when deserializing.
+	- Equivalent userdata may not be rawequal
+		- See [userdata.luau](./userdata.luau) for information about supporting
+		 userdata.
 
-	- Linking a value to an id causes the value to be stored as 1-2 bytes, depending on the number associated
-	 with the id and the value's type.
+	- Ids are stored as 1-2 bytes, depending on the number associated with the id
+	 and the value's type.
 
 	| **Type**   | **Id Range**    | **Cost** |
 	|------------|-----------------|----------|
@@ -120,26 +120,34 @@ type TYPES = "userdata" | "number" | "string" | "vector"
 	| `userdata` | 16-1039         | 2 bytes  |
 
 	**Recommendations:**
-	- Calculate the word frequency of your dataset to determine which values to link to what ids.
-	- Ensure that linked values cannot be stored for less than or equal to the associated id cost (in bytes).
+	- Calculate the word frequency of your dataset to determine which values to link to
+	 what ids.
+	- Ensure that linked values cannot be stored for less than or equal to the associated
+	 id cost (in bytes).
 	- Spare a range of ids for future additions.
+	- When concurrently modifying pairs, ensure that an id is not assigned to a different
+	 value.
 
-	**Example**
+	**Example:**
 	```luau
-	 -- 5 is between 1 and 64, so it will take 1 byte to store "Foo" from now on
+	local BufferSerializer = require("./path/to/BufferSerializer")
+
+	-- 5 is between 1 and 64, so it will take 1 byte to store "Foo"
 	BufferSerializer.pair(5, "Foo")
-	-- 75 is between 65 and 1343, so it will take 2 bytes to store "Bar" from now on
-	BufferSerializer.pair(75, "Bar")
+
+	local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
 	```
 
-	@param id the identifier
-	@param value the value
+	@param id the number associated with the value
+	@param value the value reference compared against when serializing
 
 	@error Invalid type: When the value is not a string, number, vector, or userdata
 	@error Invalid id: When the id is not an integer
 	@error Invalid id: When the id is not between 1 and N, where N depends on the value's type
 	@error Invalid value: When the value is NaN
-	@error Invalid value: When the value is a built-in constant, i.e. "", 0, 1, etc
+	@error Invalid number: When the value is 0 or 1
+	@error Invalid string: When the value is ""
+	@error Invalid vector: When the value is a built-in vector constant
 ]]
 function BufferSerializer.pair(id: number, value: any): ()
 	local typeV = type(value) :: TYPES
@@ -156,7 +164,7 @@ function BufferSerializer.pair(id: number, value: any): ()
 	)
 	assert(
 		type(id) == "number" and id % 1 == 0 and id == id,
-		`Invalid id {id} (must be integer)`
+		`Invalid id {id} (must be an integer)`
 	)
 	assert(
 		id >= 1 and id <= maxId,
@@ -165,11 +173,11 @@ function BufferSerializer.pair(id: number, value: any): ()
 	assert(value == value, `Invalid value {value} (must be non-nan)`)
 	assert(
 		typeV ~= "number" or value ~= 0 and value ~= 1,
-		`Invalid value {value} (cannot be a built-in [0 or 1])`
+		`Invalid number {value} (cannot be a built-in [0 or 1])`
 	)
 	assert(
 		typeV ~= "string" or value ~= "",
-		`Invalid value {value} (cannot be a built-in [""])`
+		`Invalid string {value} (cannot be a built-in [""])`
 	)
 	assert(
 		typeV ~= "vector"
@@ -181,7 +189,7 @@ function BufferSerializer.pair(id: number, value: any): ()
 				and value ~= vector.create(1, 0, 0)
 				and value ~= vector.create(1, 0, 1)
 				and value ~= vector.create(1, 1, 0),
-		`Invalid value {value} (cannot be a built-in)`
+		`Invalid vector {value} (cannot be a built-in)`
 	)
 
 	pairModules[value] = calcId(id, typeV)
