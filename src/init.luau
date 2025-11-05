@@ -51,8 +51,20 @@ type Pair = {
 }
 
 --[[
-	Returns the value as a buffer
-	
+	Serializes the provided value into a buffer.
+
+	- Follows the specified format in [FORMAT.md](../FORMAT.md).
+
+	**Recommendations:**
+	- Protect value from concurrent modifications, specifically tables and buffers.
+
+	**Example:**
+	```luau
+	local BufferSerializer = require("./path/to/BufferSerializer")
+
+	local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
+	```
+
 	@param value the value to serialize
 	
 	@return a buffer representing the serialized value
@@ -69,10 +81,27 @@ function BufferSerializer.serialize(value: any): buffer
 end
 
 --[[
-	Returns the original value within the buffer
+	Deserializes the provided buffer, producing the value originally serialized.
 
-	@param value the buffer containing the original value
-	
+	- Operates under the assumption that the buffer follows the specified format in
+	 [FORMAT.md](../FORMAT.md).
+	- Capable of deserializing values impossible for `serialize` to produce.
+
+	**Recommendations:**
+	- Protect value from concurrent modifications.
+
+	**Example:**
+	```luau
+	local BufferSerializer = require("./path/to/BufferSerializer")
+	local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
+
+	local originData = BufferSerializer.deserialize(serialData)
+	```
+
+	@param value buffer containing a serialized value
+
+	@error buffer access out of bounds
+
 	@return the original value
 ]]
 function BufferSerializer.deserialize(value: buffer): any
@@ -85,8 +114,7 @@ function BufferSerializer.deserialize(value: buffer): any
 
 	local deserial: Deserialize = (deserialModules :: any)[pointer]
 
-	local originalData = deserial(value, 0)
-	return originalData
+	return (deserial(value, 0))
 end
 
 -- narrows the type emitted by `type(any): string` would like for it to error
