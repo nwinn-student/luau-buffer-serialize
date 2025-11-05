@@ -12,6 +12,10 @@
 
 ## Purpose
 
+> [!CAUTION]
+> Unstable format until version 2.0.0
+
+
 BufferSerializer is a general-purpose serializer for complex data structures with the capability to compress known constants whose goal trudges the line of speed and effective output size.
 
 In order to make the most out of BufferSerializer, it is highly recommended to reformat the dataset into a form that produces a minimal output size in JSON.  Upon completion perform the following:
