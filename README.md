@@ -16,10 +16,11 @@
 ## Purpose
 
 BufferSerializer is a general-purpose format for complex data structures
- whose goal trudges the line of speed and effective output size. 
+ whose goal trudges the line of speed and effective output size.
 
-BufferSerializer acts as a first-pass compressor, meaning that it stores
- duplicate data in fewer bytes.  There are various approaches to further
+Unlike most serializers, BufferSerializer acts as a first-pass compressor
+ by storing duplicate data in fewer bytes.  While the format itself is not
+ highly compressibly like JSON, there are various approaches to further
  reduce the output size, see [tips](./docs/tips.md#reducing-output-size).
 
 #### Supported Features
@@ -29,9 +30,7 @@ BufferSerializer acts as a first-pass compressor, meaning that it stores
 
 ### Usage Cases
 A user needs to prepare data for storing in a database, they will use
- BufferSerializer to convert the table with the data into a buffer, then
- passing the buffer to a lossless compressor module such as
- [LibDeflate](https://github.com/safeteeWow/LibDeflate) and store the value.
+ BufferSerializer to convert the data into a buffer, then store the value.
 
 A user with an extension of Luau may wish to have their userdata objects
  specially handled, using BufferSerializer, they create two functions to handle
@@ -56,14 +55,31 @@ print(`Initial Data: {data}, Final Data: {input}`)
 
 ## Performance
 
-BufferSerializer was compared against [@cipharius's MessagePack implementation](https://github.com/cipharius/msgpack-luau)
- and Roblox's implementation of JSON.
-The benchmark code can be located [here](../bench-results/bench/compare.luau)
- and personal benchmark results [here](../bench-results/bench/compare_results.txt).  
+**Under construction...**
 
-Results will differ based on the platform tested on and whether native-support
- is present.
+<!--
 
+For more information on the setup and datasets used, see
+ [performance](./docs/performance.md).
+
+Only BufferSerializer, paired-BufferSerializer, and the top 3 measured
+ formats for each category will be shown, using the (???)[] dataset.
+
+#### Serialization
+
+| Name             | Speed | Memory | Output | Compressed |
+|------------------|-------|--------|--------|------------|
+| BufferSerializer |       |        |        |            |
+| Paired-BuffSer   |       |        |        |            |
+
+#### Deserialization
+
+| Name             | Speed | Memory |
+|------------------|-------|--------|
+| BufferSerializer |       |        |
+| Paired-BuffSer   |       |        |
+
+-->
 
 ## Technical Details
 
