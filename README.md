@@ -19,29 +19,8 @@ BufferSerializer is a general-purpose serializer for complex data structures
  whose goal trudges the line of speed and effective output size.
 
 BufferSerializer acts as a first-pass compressor, meaning that it stores
- duplicate data in fewer bytes.  There are ways to represent commonly used
- values in even fewer bytes, `BufferSerializer.pair`.  There are also
- specialized approaches towards formatting a dataset to further reduce output
- size.
-
-> [!TIP]
-> 1. Reformat the dataset into a form that produces a minimal output size in
->  JSON.
-> 
-> 2. Identify whether there are arrays in the dataset with gaps worth filling
->  with nil bytes, functions and threads can be used to represent `nil`.
-> 
-> 3. Supply known pairs to BufferSerializer.
-
-Reformatting using JSON as a reference is much simpler than understanding how
- BufferSerializer internals function in order to reduce the output size.  Most
- improvements to the JSON version of the format will improve the output of
- BufferSerializer.  The more information known regarding the dataset, the smaller
- the output size can be, and at some point, schema-based serializers will be more
- optimal, and beyond that a custom-made serializer based on the specific
- information.  BufferSerializer sits right before schema-based serializers in
- that it assumes less knowledge is known regarding the format and the little
- known can be conveyed through pairings and userdata functions.
+ duplicate data in fewer bytes.  There are various approaches to further
+ reduce the output size, see [tips](./docs/tips.md#reducing-output-size).
 
 #### Limitations
  - Although cyclic tables<sup>[1]</sup> are supported, large datasets with
