@@ -15,24 +15,17 @@
 
 ## Purpose
 
-BufferSerializer is a general-purpose serializer for complex data structures
- whose goal trudges the line of speed and effective output size.
+BufferSerializer is a general-purpose format for complex data structures
+ whose goal trudges the line of speed and effective output size. 
 
 BufferSerializer acts as a first-pass compressor, meaning that it stores
  duplicate data in fewer bytes.  There are various approaches to further
  reduce the output size, see [tips](./docs/tips.md#reducing-output-size).
 
-#### Limitations
- - Although cyclic tables<sup>[1]</sup> are supported, large datasets with
-  distant<sup>[2]</sup> cyclic tables will fatally error.  Although possible,
-  the solution would be too costly.
-
-<sub>[1]: Tables that point to other tables that at some point, point back to
- the initial pointing table.</sub>
-
-<sub>[2]: Large datasets are datasets with at least 61_440 unique values,
- including dictionary keys and excluding constants.  Distant cyclic tables
- are cyclic tables that are at least 4_096 unique values apart.</sub>
+#### Supported Features
+- Custom Userdata
+- Cyclic tables
+  - See [limitations](./docs/risks.md#limitations) for more information.
 
 ### Usage Cases
 A user needs to prepare data for storing in a database, they will use
