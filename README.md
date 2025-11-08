@@ -84,7 +84,8 @@ Only BufferSerializer, paired-BufferSerializer, and the top 3 measured
 
 ## Technical Details
 
-For the binary format BufferSerializer is using to (de)serialize, look to [FORMAT.md](./FORMAT.md).  
+For the binary format BufferSerializer is using to (de)serialize, look to
+ [format.md](./docs/spec/format.md).  
 
 There are 16 approaches left for future applications, whether it be for a new
  type in Luau or upon enough user requests.  These approaches will be consumed
