@@ -1,11 +1,3 @@
-<!--
-
-TODO: Should be similar to FORMAT.md
-
--->
-
-**Under construction..**
-
 ### Supported Types
 
 `nil`, `boolean`, `buffer`, `string`, `number`, `vector`, `table`, `userdata`
@@ -33,6 +25,11 @@ Paired ids are stored either in the byte itself, or as a 2 byte number.
  and the second byte represents the id linked to the value.
 
 ## Design
+
+**Under construction..**
+
+
+<!--
 
 | Tag(s)  | Cost     | Type      | Description                             |
 |---------|----------|-----------|-----------------------------------------|
@@ -65,3 +62,5 @@ Paired ids are stored either in the byte itself, or as a 2 byte number.
 | 97-99   | 0        | `number`  | **Unknown**                             |
 | 100-131 | 1        | `number`  | The id for a paired number value        |
 | 132-135 | 2        | `number`  | The id for a paired number value        |
+
+-->
