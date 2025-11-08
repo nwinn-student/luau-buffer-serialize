@@ -4,7 +4,8 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL_3.0-yellow.svg)](https://opensource.org/licenses/GPL-3.0)
 
 > [!CAUTION]
-> Unstable format until version 2.0.0
+> Unstable data format
+> External API is stable
 
 #### Table of Contents
 - [Purpose](#purpose)
@@ -94,16 +95,3 @@ There are 16 approaches left for extenders of BufferSerializer to define in
  tables, re-adding number strings, adding fixed-length strings like
  MessagePack, and more.  These 16 approaches will never be consumed by
  future BufferSerializer versions.
-
-### External API
-
-> [!NOTE]
-> The External API is stable, even if the format isn't
-
-`serialize(data: any): buffer`: Takes in a value and spits out the serialized
- version within a buffer.
-
-`deserialize(data: buffer): any`: Takes in a serialized version of some data
- and **recreates** and returns the original data.
-
-`pair(id: number, data: any)`: Links a value to an identifier.
