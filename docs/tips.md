@@ -1,3 +1,9 @@
+## Migration
+
+When migrating, the following steps are used.
+
+1. Pass the serialized data into the deserializer, retrieving the original data
+2. Pass the original data into the serializer for the desired format or version.
 
 ## Reducing output size
 
