@@ -61,6 +61,12 @@ local Userdata = {
 	setWriter = function(writer: Writer)
 		Writer = writer
 	end,
+	getReader = function()
+		return Reader
+	end,
+	getWriter = function()
+		return Writer
+	end,
 }
 
 return table.freeze(Userdata)
