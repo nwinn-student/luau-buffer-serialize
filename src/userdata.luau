@@ -5,8 +5,35 @@ local inflate = require("./inflate")
 local CUSTOM = 202
 local NIL = 203
 
-type Reader = (buf: buffer, pos: number) -> (unknown, number)
-type Writer = (
+--[[
+	The deserializer function for custom userdata.
+
+	@param buf the buffer containing the serialized data
+	@param pos the current position within the buffer
+
+	@return value the userdata value serialized
+	@return pos the new position within the buffer
+]]
+export type Reader = (buf: buffer, pos: number) -> (unknown, number)
+
+--[[
+	The serializer function for custom userdata.
+	
+	- If the position is unchanged when exiting the function, then
+	 the userdata will be considered **unsupported**.
+	  - Unsupported userdata is stored as a NIL userdata, which is
+	   deserialized as a newproxy() and **not** a constant.
+
+	@param value the userdata to serialize
+	@param buf the buffer containing the serialized data
+	@param pos the current position within the buffer
+	@param size the size of the buffer
+
+	@return buffer the buffer containing the serialized data
+	@return pos the new position within the buffer
+	@return size the new size of the buffer
+]]
+export type Writer = (
 	value: unknown,
 	buf: buffer,
 	pos: number,
@@ -16,57 +43,65 @@ type Writer = (
 local Reader: Reader?
 local Writer: Writer?
 
-local Userdata = {
-	-- Need a way to set the approaches for serial and deserial
-
-	serialize = function(value: any, buf: buffer, pos: number, size: number)
-		if Writer then
-			if pos + 1 > size then
-				buf, size = inflate(buf, pos + 1, size)
-			end
-			buffer.writeu8(buf, pos, CUSTOM)
-
-			local tempPos = pos + 1
-
-			buf, pos, size = Writer(value, buf, pos + 1, size)
-
-			if tempPos ~= pos then
-				return buf, pos, size
-			end
-		end
+local function userSerializer(value: any, buf: buffer, pos: number, size: number)
+	if Writer then
 		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
 		end
-		buffer.writeu8(buf, pos, NIL)
-		return buf, pos + 1, size
-	end,
-	deserialize = function(buf: buffer, pos: number)
-		local id = buffer.readu8(buf, pos)
+		buffer.writeu8(buf, pos, CUSTOM)
 
-		if Reader and id == CUSTOM then
-			local obj
-			obj, pos = Reader(buf, pos + 1)
-			if obj == nil then
-				-- We cannot return nil or it will corrupt
-				return newproxy(), pos + 1
-			end
-			return obj, pos
+		local tempPos = pos + 1
+
+		buf, pos, size = Writer(value, buf, pos + 1, size)
+
+		if tempPos ~= pos then
+			return buf, pos, size
 		end
-		-- We cannot return nil or it will corrupt
-		return newproxy(), pos + 1
-	end,
-	setReader = function(reader: Reader)
-		Reader = reader
-	end,
-	setWriter = function(writer: Writer)
-		Writer = writer
-	end,
-	getReader = function()
-		return Reader
-	end,
-	getWriter = function()
-		return Writer
-	end,
+	end
+	if pos + 1 > size then
+		buf, size = inflate(buf, pos + 1, size)
+	end
+	buffer.writeu8(buf, pos, NIL)
+	return buf, pos + 1, size
+end
+
+local function userDeserializer(buf: buffer, pos: number)
+	local id = buffer.readu8(buf, pos)
+
+	if Reader and id == CUSTOM then
+		local obj
+		obj, pos = Reader(buf, pos + 1)
+		if obj == nil then
+			-- We cannot return nil or it will corrupt
+			return newproxy(), pos + 1
+		end
+		return obj, pos
+	end
+	-- We cannot return nil or it will corrupt
+	return newproxy(), pos + 1
+end
+
+local function getReader()
+	return Reader
+end
+local function setReader(reader: Reader)
+	Reader = reader
+end
+
+local function getWriter()
+	return Writer
+end
+local function setWriter(writer: Writer)
+	Writer = writer
+end
+
+local Userdata = {
+	serialize = userSerializer,
+	deserialize = userDeserializer,
+	setReader = setReader,
+	setWriter = setWriter,
+	getReader = getReader,
+	getWriter = getWriter,
 }
 
 return table.freeze(Userdata)
