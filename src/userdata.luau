@@ -81,16 +81,36 @@ local function userDeserializer(buf: buffer, pos: number)
 	return newproxy(), pos + 1
 end
 
+--[[
+	Returns the current custom userdata deserializer.
+
+	@return Reader the assigned custom userdata deserializer
+]]
 local function getReader()
 	return Reader
 end
+--[[
+	Sets the custom userdata deserializer.
+
+	@param Reader the new custom userdata deserializer
+]]
 local function setReader(reader: Reader)
 	Reader = reader
 end
 
+--[[
+	Returns the current custom userdata serializer.
+
+	@return Writer the assigned custom userdata serializer
+]]
 local function getWriter()
 	return Writer
 end
+--[[
+	Sets the custom userdata serializer.
+
+	@param Writer the new custom userdata serializer
+]]
 local function setWriter(writer: Writer)
 	Writer = writer
 end
