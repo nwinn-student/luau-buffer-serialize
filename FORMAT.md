@@ -84,11 +84,11 @@ The dictSize variable represents the amount of bytes used to store all the keys 
 `userdata`
 - [X] custom [202]: A user-defined function is used to read/write the information associated with the userdata (Takes 1+custom bytes)
 - [X] nil [203]: Specifies that the userdata is not supported.
-- [X] byte_constant [204-219]: This byte stores the id of a userdata constant (1-16)
-- [X] char_constant_next [220-223]: The next byte stores the id of a userdata constant (Takes 2 bytes)
+- [X] byte_constant [204-213]: This byte stores the id of a userdata constant (1-10)
+- [X] char_constant_next [214-215]: The next byte stores the id of a userdata constant (Takes 2 bytes)
 
 `future`
-- [ ] future_approaches [224-239]: Approaches reserved for new types or expanding upon prior.
+- [ ] future_approaches [216-239]: Approaches reserved for new types or expanding upon prior.
 
 `extend`
 - [ ] extend_approaches [240-255]: Approaches reserved for BufferSerializer extenders.

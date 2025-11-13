@@ -30,35 +30,95 @@ local serialize = require("./src").serialize
 local deserialize = require("./src").deserialize
 local pair = require("./src").pair
 
--- remove userdata custom stuff
-require("./src/userdata").setReader(nil :: any)
-require("./src/userdata").setWriter(nil :: any)
+local inflate = require("./src/inflate")
 
-local proxy = newproxy()
+local proxyTable = {
+	newproxy(), -- proxy
+	newproxy(), -- yxorp
+	newproxy(), -- roxyp
+}
+
+require("./src/userdata").setReader(
+	function(buf: buffer, pos: number): (unknown, number)
+		local tablePosition = buffer.readu8(buf, pos)
+		local proxy = proxyTable[tablePosition]
+		return proxy, pos + 1
+	end
+)
+require("./src/userdata").setWriter(
+	function(
+		value: unknown,
+		buf: buffer,
+		pos: number,
+		size: number
+	): (buffer, number, number)
+		local tablePosition = table.find(proxyTable, value)
+		if tablePosition then
+			if pos + 1 > size then
+				buf, size = inflate(buf, pos + 1, size)
+			end
+			buffer.writeu8(buf, pos, tablePosition)
+			return buf, pos + 1, size
+		end
+
+		return buf, pos, size
+	end
+)
+
+local proxy = proxyTable[1]
+local yxorp = proxyTable[2]
+local roxyp = proxyTable[3]
 
 pair(1, "value")
+pair(64, "eulav")
+pair(1343, "lueva")
 pair(1, 5)
+pair(32, 25)
+pair(1055, 125)
 pair(1, vector.create(1, 2))
+pair(32, vector.create(3, 4))
+pair(1055, vector.create(5, 6))
 pair(1, proxy)
+pair(10, yxorp)
+pair(521, roxyp)
 
-local Sir_String = serialize({ "value" })
-local Sir_Number = serialize({ 5 })
-local Sir_Vector = serialize({ vector.create(1, 2) })
-local Sir_User = serialize({ proxy })
+local Sir_String = serialize({ "value", "eulav", "lueva" })
+local Sir_Number = serialize({ 5, 25, 125 })
+local Sir_Vector =
+	serialize({ vector.create(1, 2), vector.create(3, 4), vector.create(5, 6) })
+local Sir_User = serialize({ proxy, yxorp, roxyp })
 
 -- serialize
-test.serial(Sir_String, test.newBuffer(197, 19, 10, 5, "value", 200))
-test.serial(Sir_Number, test.newBuffer(197, 100, 90, 5, 200))
-test.serial(Sir_Vector, test.newBuffer(197, 158, 144, 1, 2, 0, 200))
-test.serial(Sir_User, test.newBuffer(197, 204, 203, 200)) -- ???
+test.serial(
+	Sir_String,
+	test.newBuffer("\197\19\10\5value\82\10\5eulav\87\255\10\5lueva\200")
+)
+test.serial(
+	Sir_Number,
+	test.newBuffer(197, 100, 90, 5, 131, 90, 25, 135, 255, 90, 125, 200)
+)
+test.serial(
+	Sir_Vector,
+	test.newBuffer("\197\158\144\1\2\0\189\144\3\4\0\193\255\144\5\6\0\200")
+)
+test.serial(
+	Sir_User,
+	test.newBuffer(197, 204, 202, 1, 213, 202, 2, 215, 255, 202, 3, 200)
+)
 
 -- deserialize
 test.compare("value", deserialize(Sir_String)[1])
+test.compare("eulav", deserialize(Sir_String)[2])
+test.compare("lueva", deserialize(Sir_String)[3])
 test.compare(5, deserialize(Sir_Number)[1])
+test.compare(25, deserialize(Sir_Number)[2])
+test.compare(125, deserialize(Sir_Number)[3])
 test.compare(vector.create(1, 2), deserialize(Sir_Vector)[1])
--- Warning! This version does not support all equal userdata should
--- no reader/writer be provided!
-test.compare("userdata", type(deserialize(Sir_User)[1]))
+test.compare(vector.create(3, 4), deserialize(Sir_Vector)[2])
+test.compare(vector.create(5, 6), deserialize(Sir_Vector)[3])
+test.compare(proxy, deserialize(Sir_User)[1])
+test.compare(yxorp, deserialize(Sir_User)[2])
+test.compare(roxyp, deserialize(Sir_User)[3])
 
 -- built-ins
 test.compare(false, pcall(pair, 5, 0))
