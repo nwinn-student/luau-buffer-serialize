@@ -16,20 +16,12 @@ Usage: %s <path>
 Available options:
   -h, --help: Display this usage message
   --skip=<str>:
-  --tag=<str>:
-  --compare=<tag[,tag...]>:
   --view[=mode]:
   --output=<file>
-  --column:<(+^-)option[,<+^->option...]>:
-
-Not supported options:
-  --gen-hist=<file>:
-  --gen-comp=<file>:
 
 Luau options:
   --codegen:
   -O<n>:
-  -g<n>:
 	]],
 		process.env._
 	))
