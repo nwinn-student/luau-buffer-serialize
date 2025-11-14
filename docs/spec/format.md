@@ -88,7 +88,7 @@ Paired ids are stored either in the byte itself, or as a 2 byte number.
 | 200     | 1        | `table`    | Table terminator                        |
 | 201     | 1        | `table`    | **Unknown**                             |
 | 202     | 1 + size | `userdata` | Custom userdata                         |
-| 203     | 1        | `userdata` | The constant `newproxy()`               |
+| 203     | 1        | `userdata` | The value `newproxy()`                  |
 | 204-213 | 1        | `userdata` | The id for a paired userdata value      |
 | 214-215 | 2        | `userdata` | The id for a paired userdata value      |
 | 216-239 | 0        | `future`   | Reserved for new types or expansions    |
