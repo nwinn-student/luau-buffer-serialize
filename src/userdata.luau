@@ -106,6 +106,10 @@ end
 	@param Reader the new custom userdata deserializer
 ]]
 local function setReader(reader: Reader)
+	assert(
+		type(reader) == "function",
+		`Invalid type {type(reader)} (must be function)`
+	)
 	Reader = reader
 end
 
@@ -133,6 +137,10 @@ end
 	@param Writer the new custom userdata serializer
 ]]
 local function setWriter(writer: Writer)
+	assert(
+		type(writer) == "function",
+		`Invalid type {type(writer)} (must be function)`
+	)
 	Writer = writer
 end
 
