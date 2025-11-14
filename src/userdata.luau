@@ -84,6 +84,10 @@ end
 --[[
 	Returns the current custom userdata deserializer.
 
+	Commonly used to cache the prior reader function when overwriting the
+	 reader.  The prior reader is typically called whenever an unsupported
+	 userdata is being handled.
+
 	@return Reader the assigned custom userdata deserializer
 ]]
 local function getReader()
@@ -91,6 +95,13 @@ local function getReader()
 end
 --[[
 	Sets the custom userdata deserializer.
+
+	The reader function will be called whenever a custom userdata byte is
+	 encountered in the serialized data.  It is common to check the first byte
+	 to see if the userdata tag or type is supported, if it is not, the arguments
+	 should be passed to older readers to handle.
+
+	Note: The NIL userdata byte will not trigger the function call.
 
 	@param Reader the new custom userdata deserializer
 ]]
@@ -101,6 +112,10 @@ end
 --[[
 	Returns the current custom userdata serializer.
 
+	Commonly used to cache the prior writer function when overwriting the
+	 writer.  The prior writer is typically called whenever an unsupported
+	 userdata is being handled.
+
 	@return Writer the assigned custom userdata serializer
 ]]
 local function getWriter()
@@ -108,6 +123,12 @@ local function getWriter()
 end
 --[[
 	Sets the custom userdata serializer.
+
+	The writer function will always be called when serializing different
+	 userdata.
+
+	Note: By the returned position equaling the initial position, the
+	 NIL userdata byte will be set instead of the custom userdata byte.
 
 	@param Writer the new custom userdata serializer
 ]]
