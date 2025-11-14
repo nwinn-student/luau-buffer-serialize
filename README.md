@@ -1,94 +1,87 @@
-# Buffer Serializer
+# BufferSerializer
 
-#### Table of Contents
-- [Purpose](#purpose)
-- [Requirements](#requirements)
-- [Usage Cases](#usage-cases)
-- [Example](#example)
-- [Performance](#performance)
-- [Technical Details](#technical-details)
-- [Constant Amount Supported](#constant-amount-supported)
+[![Luau Version](https://img.shields.io/badge/Luau-0.670+-blue.svg)](https://github.com/luau-lang/luau/releases)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL_3.0-yellow.svg)](https://opensource.org/licenses/GPL-3.0)
 
+> [!CAUTION]
+> Unstable data format, see [migration path](./docs/tips.md#migration).
+
+> [!CAUTION]
+> External API is stable, except for the planned addition of errors in a later
+>  version.
 
 ## Purpose
 
-BufferSerializer is a general-purpose serializer for complex data structures with the capability to compress known constants whose goal tredges the line of speed and effective output size.
+BufferSerializer is a binary format for complex data structures
+ whose goal trudges the line of speed and effective output size.
+ Unlike most serializers, BufferSerializer acts as a first-pass compressor
+ by storing duplicate data in fewer bytes.  The benefit of this approach is
+ that datasets **could** be processed much faster than otherwise, however datasets
+ with little duplicate content are less performant.  While the format itself is
+ not highly compressible like JSON, there are various approaches to further
+ reduce the output size, see [tips](./docs/tips.md#reducing-output-size).
 
-In order to make the most out of BufferSerializer, it is highly recommended to reformat the dataset into a form that produces a minimal output size in JSON.  Upon completion perform the following:
- - Identify whether there are arrays in the dataset with gaps worth filling with nil bytes, functions and threads can be used to represent `nil`.
- - Supply known constants to BufferSerializer.
+BufferSerializer supports most of the built-in Luau types, excluding `function`
+ and `thread`.  Implementations of the binary format in other programming
+ languages must follow the [specification](./docs/spec/README.md).
 
-Reformatting using JSON as a reference is much simpler than understanding how BufferSerializer internals function in order to reduce the output size.  Most improvements to the JSON'ed format will improve the output of BufferSerializer.  The more information known regarding the dataset, the smaller the output size can be, and at some point, schema-based serializers will be more optimal, and beyond that a custom-made serializer based on the specific information.  BufferSerializer sits right before schema-based serializers in that it assumes less knowledge is known regarding the format and the little known can be conveyed through constants and userdata functions.
-
-#### Limitations
- - Although cyclic tables<sup>[1]</sup> are supported, large datasets with distant<sup>[2]</sup> cyclic tables will fatally error.  Although possible, the solution would be too costly.
- - Constants need to be handled with care in order to avoid corruption when migrating.
-
-<sub>[1]: Tables that point to other tables that at some point point back to the initial pointing table.</sub>
-
-<sub>[2]: Large datasets are datasets with at least 61_440 unique values, including dictionary keys and excluding constants.  Distant cyclic tables are cyclic tables that are at least 4_096 unique values apart.</sub>
-
-
-### Requirements
-[Luau 0.670+](https://github.com/luau-lang/luau/releases): As internal methods use @self to refer to each other.
+#### Additional Features
+- Custom Userdata
+  - Users can add support for (de)serializing userdata using the internal API.
+- Cyclic tables
+  - See [limitations](./docs/risks.md#limitations) for more information.
 
 ### Usage Cases
-A user needs to prepare data for storing in a database, they will use BufferSerializer to convert the table with the data into a buffer, then passing the buffer to a lossless compressor module such as [LibDeflate](https://github.com/safeteeWow/LibDeflate) and store the value.
+A user needs to prepare data for storing in a database, they will use
+ BufferSerializer to convert the data into a buffer, then store the value.
 
-A user with an extension of Luau may wish to have their userdata objects specially handled, using BufferSerializer, they create two functions to handle the serialization and deserialization of userdata objects.
+A user with an extension of Luau may wish to have their userdata objects
+ specially handled, using BufferSerializer, they create two functions to handle
+ the serialization and deserialization of userdata objects.
 
 ## Example
 
-More in-depth examples can be found in [examples](./examples).
+More in-depth examples can be found in [examples](./examples), and more
+ information about the API is located in the
+ [API documentation](./docs/code/README.md).
 
 ```luau
-local bufferSerial = require("./BufferSerializer")
+local BufferSerializer = require("./path/to/BufferSerializer")
 
 -- Serialize
 local data = "Hello World!"
-local output = BufferSerialize.serialize(data)
+local output = BufferSerializer.serialize(data)
 
 -- Deserialize
-local input = BufferSerialize.deserialize(output)
+local input = BufferSerializer.deserialize(output)
 
 print(`Initial Data: {data}, Final Data: {input}`)
 ```
 
 ## Performance
 
-BufferSerializer was compared against @cipharius 's MessagePack implementation in Luau and Roblox's implementation of JSON.
-The benchmark code can be located [here](../bench-results/bench/compare.luau) and personal benchmark results [here](../bench-results/bench/compare_results.txt).  
-Results will differ based on the platform tested on and whether native-support is present.
+**Under construction...**
 
+<!--
 
-## Technical Details
+For more information on the setup and datasets used, see
+ [performance](./docs/performance.md).
 
-For the binary format BufferSerializer is using to (de)serialize, look to [FORMAT.md](./FORMAT.md).  
+Only BufferSerializer, paired-BufferSerializer, and the top 3 measured
+ formats for each category will be shown, using the (???)[] dataset.
 
-There are 16 approaches left for future applications, whether it be for a new type in Luau or upon enough user requests.  These approaches will be consumed when no unknown approach is left in the type's section of the binary format.
-There are 16 approaches left for extenders of BufferSerializer to define in order to accomidate their own requirements, such as adding the length of tables, re-adding number strings, adding fixed-length strings like MessagePack, and more.  These 16 approaches will never be consumed by future BufferSerializer versions.
+#### Serialization
 
-`serialize(data: any): buffer`: Takes in a value and spits out the serialized version within a buffer.
+| Name             | Speed | Memory | Output | Compressed |
+|------------------|-------|--------|--------|------------|
+| BufferSerializer |       |        |        |            |
+| Paired-BuffSer   |       |        |        |            |
 
-`deserialize(data: buffer): any`: Takes in a serialized version of some data and **recreates** and returns the original data.
+#### Deserialization
 
-`pair(id: number, data: any)`: Connects a constant value to an identifier.  See [constants supported](#constant-amount-supported) in order to understand how expensive the constant will be in its serialized form.  
+| Name             | Speed | Memory |
+|------------------|-------|--------|
+| BufferSerializer |       |        |
+| Paired-BuffSer   |       |        |
 
-### Constant Amount Supported
-
-Constants are used to save the as much output size as possible given **fixed** information.  The constants should seldomly be modified as there is risk of corruption if mishandled.
-
- - NaN values are NOT supported, such as vector.create(2, 4, 0/0).
- - Userdata values should be handled with care*.  Prioritize pairing lightuserdata objects or known fixed userdata objects.  Do NOT expect userdata objects, like Roblox Instances, to equal other Roblox Instances with the same properties.
-
-| **Type** | **Amount** | **Cost** |
-| ---- | ---- | ---- |
-| `string` | 64 | 1 byte |
-| `number` | 32 | 1 byte |
-| `vector` | 32 | 1 byte |
-| `userdata` | 16 | 1 byte |
-|  |  |  |
-| `string` | 1280 | 2 bytes |
-| `number` | 1024 | 2 bytes |
-| `vector` | 1024 | 2 bytes |
-| `userdata` | 1024 | 2 bytes |
+-->
