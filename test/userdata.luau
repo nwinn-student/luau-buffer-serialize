@@ -24,6 +24,8 @@ local userdata = require("../src/userdata")
 -- By default (currently) the reader and writer are initialized to nil
 test.compare(nil, userdata.getReader())
 test.compare(nil, userdata.getWriter())
+test.compare(false, pcall(userdata.setReader, nil :: any))
+test.compare(false, pcall(userdata.setWriter, nil :: any))
 
 local function reader(buf: buffer, pos: number): (unknown, number)
 	test.serial(buf, test.newBuffer(202, 203))
