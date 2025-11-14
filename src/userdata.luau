@@ -104,8 +104,14 @@ end
 	Note: The NIL userdata byte will not trigger the function call.
 
 	@param Reader the new custom userdata deserializer
+
+	@error Invalid type: When the reader is not a function
 ]]
 local function setReader(reader: Reader)
+	assert(
+		type(reader) == "function",
+		`Invalid type {type(reader)} (must be function)`
+	)
 	Reader = reader
 end
 
@@ -131,8 +137,14 @@ end
 	 NIL userdata byte will be set instead of the custom userdata byte.
 
 	@param Writer the new custom userdata serializer
+
+	@error Invalid type: When the writer is not a function
 ]]
 local function setWriter(writer: Writer)
+	assert(
+		type(writer) == "function",
+		`Invalid type {type(writer)} (must be function)`
+	)
 	Writer = writer
 end
 
