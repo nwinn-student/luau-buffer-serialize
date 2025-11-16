@@ -108,9 +108,7 @@ end
 
 local relfile = lazyrelative(debug.info(1, "s"))
 
--- TODO: Get the total amount of files that will be processed
-
-local function processPath(path: string, data)
+local function processPath(path: string, data, fn)
 	if not fs.isDir(path) and not fs.isFile(path) then
 		return
 	end
@@ -127,19 +125,25 @@ local function processPath(path: string, data)
 		fs.isFile(path)
 		and (getExtension(path) == "luau" or getExtension(path) == "lua")
 	then
-		data[pathName(path)] = require(relfile .. removeExtension(path))
+		data[pathName(path)] = fn(relfile .. removeExtension(path))
 		return
 	end
 
 	data[pathName(path)] = {}
 	for _, file in fs.readDir(path) do
-		processPath(path .. "/" .. file, data[pathName(path)])
+		processPath(path .. "/" .. file, data[pathName(path)], fn)
 	end
 end
 
 -- TODO: Deserialize from output file, if it exists
 local data = {}
-processPath(options.path, data)
+local count = 0
+
+processPath(options.path, {}, function(a0: string)
+	count += 1
+end)
+
+processPath(options.path, data, require)
 
 -- TODO: Reserialize and insert into output
 
