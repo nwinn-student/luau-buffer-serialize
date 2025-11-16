@@ -147,7 +147,9 @@ end)
 
 processPath(options.path, data, require)
 
--- TODO: Reserialize and insert into output
+if options.output then
+	fs.writeFile(options.output, serde.encode("json", data))
+end
 
 -- TODO: Print data if necessary (--view)
 
