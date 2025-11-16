@@ -114,6 +114,8 @@ local function processPath(path: string, data, fn)
 		return
 	end
 
+	-- TODO: skip if name matches skip stuff!
+
 	if
 		pathName(path) == "init"
 		and (getExtension(path) == "luau" or getExtension(path) == "lua")
@@ -130,7 +132,7 @@ local function processPath(path: string, data, fn)
 		return
 	end
 
-	data[pathName(path)] = {}
+	data[pathName(path)] = data[pathName(path)] or {}
 	for _, file in fs.readDir(path) do
 		processPath(path .. "/" .. file, data[pathName(path)], fn)
 	end
@@ -145,7 +147,11 @@ processPath(options.path, {}, function(a0: string)
 	count += 1
 end)
 
-processPath(options.path, data, require)
+processPath(options.path, data, function(a0: string)
+	local data = require(a0)
+	-- process data, we assume it matches
+	return data
+end)
 
 if options.output then
 	fs.writeFile(options.output, serde.encode("json", data))
