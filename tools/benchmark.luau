@@ -1,8 +1,10 @@
 local benchmark = {}
 
 local fs = require("@lune/fs")
+local path = require("./path")
 local process = require("@lune/process")
 local serde = require("@lune/serde")
+local summarize = require("./summarize")
 
 local args = process.args
 
@@ -47,94 +49,40 @@ for _, input in args do
 	options.path = input
 end
 
-local function getExtension(path: string)
-	local ext = path:split(".")
-	if #ext == 1 then
-		return ""
-	end
-	if #ext == 2 and ext[1] == "" then
-		return ""
-	end
-	return ext[#ext]
-end
+local relfile = path.relativeTo(debug.info(1, "s"))
 
-local function removeExtension(path: string)
-	local ext = path:split(".")
-	-- ...
-	if #ext == 1 then
-		return ext[1]
-	end
-	if #ext == 2 and ext[1] == "" then
-		return path
-	end
-	return table.concat(ext, ".", 1, #ext - 1)
-end
-local function pathName(path: string)
-	path = path:gsub("\\", "/")
-	local pathSplit = string.split(path, "/")
-	if fs.isDir(path) then
-		if pathSplit[#pathSplit] == "" then
-			return pathSplit[#pathSplit - 1]
-		end
-		return pathSplit[#pathSplit]
-	end
-	return removeExtension(pathSplit[#pathSplit])
-end
-
-local function lazyrelative(path: string)
-	local cwd = process.cwd:gsub("\\", "/")
-	path = path:gsub("\\", "/")
-	path = path:sub(1, -1 - #pathName(path))
-
-	local paths = path:split("/")
-	local cwdpaths = cwd:split("/")
-	local relativepath = ""
-
-	for _, dir in paths do
-		if dir:find("^%a:") or dir == "" then
-			continue
-		end
-		relativepath ..= "../"
-	end
-
-	for _, dir in cwdpaths do
-		if dir:find("^%a:") or dir == "" then
-			continue
-		end
-		relativepath ..= dir .. "/"
-	end
-
-	return relativepath
-end
-
-local relfile = lazyrelative(debug.info(1, "s"))
-
-local function processPath(path: string, data, fn)
-	if not fs.isDir(path) and not fs.isFile(path) then
+local function processPath(file: string, data, fn)
+	if not fs.isDir(file) and not fs.isFile(file) then
 		return
 	end
 
 	-- TODO: skip if name matches skip stuff!
 
 	if
-		pathName(path) == "init"
-		and (getExtension(path) == "luau" or getExtension(path) == "lua")
+		path.name(file) == "init"
+		and (
+			path.getextension(file) == "luau"
+			or path.getextension(file) == "lua"
+		)
 	then
 		-- no clue how to interpret this so.. it isn't supported
 		return
 	end
 
 	if
-		fs.isFile(path)
-		and (getExtension(path) == "luau" or getExtension(path) == "lua")
+		fs.isFile(file)
+		and (
+			path.getextension(file) == "luau"
+			or path.getextension(file) == "lua"
+		)
 	then
-		data[pathName(path)] = fn(relfile .. removeExtension(path))
+		data[path.name(file)] = fn(relfile .. path.removeextension(file))
 		return
 	end
 
-	data[pathName(path)] = data[pathName(path)] or {}
-	for _, file in fs.readDir(path) do
-		processPath(path .. "/" .. file, data[pathName(path)], fn)
+	data[path.name(file)] = data[path.name(file)] or {}
+	for _, fi in fs.readDir(file) do
+		processPath(file .. "/" .. fi, data[path.name(file)], fn)
 	end
 end
 
@@ -149,8 +97,66 @@ end)
 
 processPath(options.path, data, function(a0: string)
 	local data = require(a0)
+
 	-- process data, we assume it matches
-	return data
+	-- if it doesn't this will just error
+	local formattedData = {
+		speed = {
+			low = data.Speed.Low,
+			median = data.Speed.Median,
+			high = data.Speed.High,
+			iqr = summarize.iqr(data.Speed.Data),
+
+			min = data.Speed.Minimum,
+			average = data.Speed.Average,
+			max = data.Speed.Maximum,
+			stdev = summarize.stdev(data.Speed.Data, data.Speed.Average),
+
+			hist = {
+				data.Speed.Histogram[1],
+				data.Speed.Histogram[2],
+				data.Speed.Histogram[3],
+				data.Speed.Histogram[4],
+				data.Speed.Histogram[5],
+				data.Speed.Histogram[6],
+				data.Speed.Histogram[7],
+				data.Speed.Histogram[8],
+
+				min = data.Speed.Low,
+				max = data.Speed.High,
+				range = data.Speed.Histogram.Range,
+			},
+		},
+		memory = {
+			low = data.Memory.Low,
+			median = data.Memory.Median,
+			high = data.Memory.High,
+			iqr = summarize.iqr(data.Memory.Data),
+
+			min = data.Memory.Minimum,
+			average = data.Memory.Average,
+			max = data.Memory.Maximum,
+			stdev = summarize.stdev(data.Memory.Data, data.Memory.Average),
+
+			hist = {
+				data.Memory.Histogram[1],
+				data.Memory.Histogram[2],
+				data.Memory.Histogram[3],
+				data.Memory.Histogram[4],
+				data.Memory.Histogram[5],
+				data.Memory.Histogram[6],
+				data.Memory.Histogram[7],
+				data.Memory.Histogram[8],
+
+				min = data.Memory.Low,
+				max = data.Memory.High,
+				range = data.Memory.Histogram.Range,
+			},
+		},
+		output = data.Output,
+	}
+
+	return formattedData
 end)
 
 if options.output then
