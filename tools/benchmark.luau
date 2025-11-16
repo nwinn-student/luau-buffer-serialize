@@ -6,7 +6,7 @@ local process = require("@lune/process")
 local args = process.args
 
 local options = {
-	file = "",
+	path = "",
 }
 
 function printHelp()
@@ -19,7 +19,6 @@ Available options:
   --skip=<str>:
   --view[=mode]:
   --output=<file>:
-  --codegen:
 	]],
 		process.env._
 	))
@@ -44,12 +43,106 @@ for _, input in args do
 		options.view = view
 		continue
 	end
-	if input == "--coverage" then
-		options.coverage = true
-		continue
-	end
-	-- TODO: Add validity checks
-	options.file = input
+	options.path = input
 end
+
+local function getExtension(path: string)
+	local ext = path:split(".")
+	if #ext == 1 then
+		return ""
+	end
+	if #ext == 2 and ext[1] == "" then
+		return ""
+	end
+	return ext[#ext]
+end
+
+local function removeExtension(path: string)
+	local ext = path:split(".")
+	-- ...
+	if #ext == 1 then
+		return ext[1]
+	end
+	if #ext == 2 and ext[1] == "" then
+		return path
+	end
+	return table.concat(ext, ".", 1, #ext - 1)
+end
+local function pathName(path: string)
+	path = path:gsub("\\", "/")
+	local pathSplit = string.split(path, "/")
+	if fs.isDir(path) then
+		if pathSplit[#pathSplit] == "" then
+			return pathSplit[#pathSplit - 1]
+		end
+		return pathSplit[#pathSplit]
+	end
+	return removeExtension(pathSplit[#pathSplit])
+end
+
+local function lazyrelative(path: string)
+	local cwd = process.cwd:gsub("\\", "/")
+	path = path:gsub("\\", "/")
+	path = path:sub(1, -1 - #pathName(path))
+
+	local paths = path:split("/")
+	local cwdpaths = cwd:split("/")
+	local relativepath = ""
+
+	for _, dir in paths do
+		if dir:find("^%a:") or dir == "" then
+			continue
+		end
+		relativepath ..= "../"
+	end
+
+	for _, dir in cwdpaths do
+		if dir:find("^%a:") or dir == "" then
+			continue
+		end
+		relativepath ..= dir .. "/"
+	end
+
+	return relativepath
+end
+
+local relfile = lazyrelative(debug.info(1, "s"))
+
+-- TODO: Get the total amount of files that will be processed
+
+local function processPath(path: string, data)
+	if not fs.isDir(path) and not fs.isFile(path) then
+		return
+	end
+
+	if
+		pathName(path) == "init"
+		and (getExtension(path) == "luau" or getExtension(path) == "lua")
+	then
+		-- no clue how to interpret this so.. it isn't supported
+		return
+	end
+
+	if
+		fs.isFile(path)
+		and (getExtension(path) == "luau" or getExtension(path) == "lua")
+	then
+		data[pathName(path)] = require(relfile .. removeExtension(path))
+		return
+	end
+
+	data[pathName(path)] = {}
+	for _, file in fs.readDir(path) do
+		processPath(path .. "/" .. file, data[pathName(path)])
+	end
+end
+
+-- TODO: Deserialize from output file, if it exists
+local data = {}
+processPath(options.path, data)
+
+-- TODO: Reserialize and insert into output
+
+-- TODO: Print data if necessary (--view)
 
 return benchmark
