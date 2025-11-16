@@ -2,6 +2,7 @@ local benchmark = {}
 
 local fs = require("@lune/fs")
 local process = require("@lune/process")
+local serde = require("@lune/serde")
 
 local args = process.args
 
@@ -135,10 +136,11 @@ local function processPath(path: string, data, fn)
 	end
 end
 
--- TODO: Deserialize from output file, if it exists
-local data = {}
-local count = 0
+local data = if options.output and fs.isFile(options.output)
+	then serde.decode("json", fs.readFile(options.output))
+	else {}
 
+local count = 0
 processPath(options.path, {}, function(a0: string)
 	count += 1
 end)
