@@ -6,19 +6,13 @@ local task = require("@lune/task")
 function progress.new(totalTasks: number)
 	local display = ""
 	local counter = {
-		count = 0,
-		running = 0,
 		completed = 0,
 	}
 	function counter:run(msg: string)
-		counter.running += 1
-		counter.count += 1
 		display = "[  Running  ] " .. msg
 	end
 	function counter:complete(msg: string)
 		counter.completed += 1
-		counter.count -= 1
-		display = "[ Completed ] " .. msg
 	end
 
 	-- flawed, for some reason does not do the right thing :<
