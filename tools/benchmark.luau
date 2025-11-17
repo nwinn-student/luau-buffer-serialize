@@ -1,10 +1,12 @@
 local benchmark = {}
 
 local fs = require("@lune/fs")
-local path = require("./path")
+local path = require("./utils/path")
 local process = require("@lune/process")
+local progress = require("./utils/progress")
 local serde = require("@lune/serde")
 local summarize = require("./summarize")
+local task = require("@lune/task")
 
 local args = process.args
 
@@ -91,20 +93,29 @@ local data = if options.output and fs.isFile(options.output)
 	else {}
 
 local count = 0
-processPath(options.path, {}, function(a0: string)
+processPath(options.path, {}, function(_: string)
 	count += 1
 end)
+local progressCounter = progress.new(count)
 
-processPath(options.path, data, function(a0: string)
-	local data = require(a0)
+processPath(options.path, data, function(file: string)
+	progressCounter:run(path.name(file))
+	local data
 
-	-- process data, we assume it matches
-	-- if it doesn't this will just error
+	task.defer(function()
+		data = require(file)
+	end)
+
+	repeat
+		task.wait()
+	until data
+
+	progressCounter:complete(path.name(file))
+
+	-- data is assumed to be of the type BenchData defined in luau-bench
 	local formattedData = {
 		speed = {
-			low = data.Speed.Low,
 			median = data.Speed.Median,
-			high = data.Speed.High,
 			iqr = summarize.iqr(data.Speed.Data),
 
 			min = data.Speed.Minimum,
@@ -128,9 +139,7 @@ processPath(options.path, data, function(a0: string)
 			},
 		},
 		memory = {
-			low = data.Memory.Low,
 			median = data.Memory.Median,
-			high = data.Memory.High,
 			iqr = summarize.iqr(data.Memory.Data),
 
 			min = data.Memory.Minimum,
@@ -156,8 +165,13 @@ processPath(options.path, data, function(a0: string)
 		output = data.Output,
 	}
 
+	-- off, progress is not showing at all
+	-- maybe copy parallelbench
+
 	return formattedData
 end)
+
+task.wait(1 / 2.5)
 
 if options.output then
 	fs.writeFile(options.output, serde.encode("json", data))
