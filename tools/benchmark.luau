@@ -19,11 +19,15 @@ function printHelp()
 		[[
 Usage: %s <path>
 
+Codegen is enabled by default, to disable set path environment
+ LUNE_LUAU_JIT to "0" or "false" or "off"
+
 Available options:
   -h, --help: Display this usage message
-  --skip=<str>:
-  --view[=mode]:
-  --output=<file>:
+  --skip=<str[,str]>: Skips
+  --view[=mode]: Displays the results
+    Verbose | Median | Average, defaults to Median
+  --output=<file>: Which file to store the results in
 	]],
 		process.env._
 	))
@@ -44,14 +48,19 @@ for _, input in args do
 	end
 	if input:sub(1, 7) == "--view=" or input == "--view" then
 		local view = input == "--view" and "Median" or input:sub(8)
-		-- TODO: Add validity checks
+		if view ~= "Median" and view ~= "Average" and view ~= "Verbose" then
+			print(`{input} is not a view, see help:`)
+			printHelp()
+			process.exit(1)
+		end
 		options.view = view
 		continue
 	end
 	options.path = input
 end
 
-local relfile = path.relativeTo(debug.info(1, "s"))
+local source = debug.info(1, "s")
+local relfile = path.relativeTo(source)
 
 local function processPath(file: string, data, fn)
 	if not fs.isDir(file) and not fs.isFile(file) then
@@ -164,9 +173,6 @@ processPath(options.path, data, function(file: string)
 		},
 		output = data.Output,
 	}
-
-	-- off, progress is not showing at all
-	-- maybe copy parallelbench
 
 	return formattedData
 end)
