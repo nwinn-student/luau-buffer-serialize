@@ -12,6 +12,7 @@ local args = process.args
 
 local options = {
 	path = "",
+	skip = {} :: { string },
 }
 
 function printHelp()
@@ -60,14 +61,23 @@ for _, input in args do
 end
 
 local source = debug.info(1, "s")
-local relfile = path.relativeTo(source)
+local prefile = options.path:sub(
+	1,
+	-1 - #path.name(options.path) - #path.getextension(options.path)
+)
+local relfile = path.relativeTo(source) .. prefile
 
 local function processPath(file: string, data, fn)
-	if not fs.isDir(file) and not fs.isFile(file) then
+	if not fs.isDir(prefile .. file) and not fs.isFile(prefile .. file) then
 		return
 	end
 
-	-- TODO: skip if name matches skip stuff!
+	-- FIXME: possibly not completely correct
+	for _, v in options.skip do
+		if file:sub(1, #v) == v then
+			return
+		end
+	end
 
 	if
 		path.name(file) == "init"
@@ -81,7 +91,7 @@ local function processPath(file: string, data, fn)
 	end
 
 	if
-		fs.isFile(file)
+		fs.isFile(prefile .. file)
 		and (
 			path.getextension(file) == "luau"
 			or path.getextension(file) == "lua"
@@ -92,7 +102,7 @@ local function processPath(file: string, data, fn)
 	end
 
 	data[path.name(file)] = data[path.name(file)] or {}
-	for _, fi in fs.readDir(file) do
+	for _, fi in fs.readDir(prefile .. file) do
 		processPath(file .. "/" .. fi, data[path.name(file)], fn)
 	end
 end
@@ -102,23 +112,14 @@ local data = if options.output and fs.isFile(options.output)
 	else {}
 
 local count = 0
-processPath(options.path, {}, function(_: string)
+processPath(options.path:sub(#prefile + 1), {}, function(_: string)
 	count += 1
 end)
 local progressCounter = progress.new(count)
 
-processPath(options.path, data, function(file: string)
+processPath(options.path:sub(#prefile + 1), data, function(file: string)
 	progressCounter:run(path.name(file))
-	local data
-
-	task.defer(function()
-		data = require(file)
-	end)
-
-	repeat
-		task.wait()
-	until data
-
+	local data = require(file)
 	progressCounter:complete(path.name(file))
 
 	-- data is assumed to be of the type BenchData defined in luau-bench
