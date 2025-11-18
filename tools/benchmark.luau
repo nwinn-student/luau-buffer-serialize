@@ -6,7 +6,6 @@ local process = require("@lune/process")
 local progress = require("./utils/progress")
 local serde = require("@lune/serde")
 local summarize = require("./summarize")
-local task = require("@lune/task")
 
 local args = process.args
 
@@ -177,8 +176,6 @@ processPath(options.path:sub(#prefile + 1), data, function(file: string)
 
 	return formattedData
 end)
-
-task.wait(1 / 2.5)
 
 if options.output then
 	fs.writeFile(options.output, serde.encode("json", data))
