@@ -12,6 +12,7 @@ local args = process.args
 local options = {
 	path = "",
 	skip = {} :: { string },
+	output = "benchmark-results.json", -- or bench/results.json, unsure which yet
 }
 
 function printHelp()
@@ -25,9 +26,8 @@ Codegen is enabled by default, to disable set path environment
 Available options:
   -h, --help: Display this usage message
   --skip=<str[,str]>: Skips
-  --view[=mode]: Displays the results
-    Verbose | Median | Average, defaults to Median
   --output=<file>: Which file to store the results in
+    Defaults to benchmark-results.json
 	]],
 		process.env._
 	))
@@ -44,16 +44,6 @@ for _, input in args do
 	end
 	if input:sub(1, 9) == "--output=" then
 		options.output = input:sub(10)
-		continue
-	end
-	if input:sub(1, 7) == "--view=" or input == "--view" then
-		local view = input == "--view" and "Median" or input:sub(8)
-		if view ~= "Median" and view ~= "Average" and view ~= "Verbose" then
-			print(`{input} is not a view, see help:`)
-			printHelp()
-			process.exit(1)
-		end
-		options.view = view
 		continue
 	end
 	options.path = input
@@ -180,7 +170,5 @@ end)
 if options.output then
 	fs.writeFile(options.output, serde.encode("json", data))
 end
-
--- TODO: Print data if necessary (--view)
 
 return benchmark
