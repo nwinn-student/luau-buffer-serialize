@@ -107,9 +107,9 @@ end)
 local progressCounter = progress.new(count)
 
 processPath(options.path:sub(#prefile + 1), data, function(file: string)
-	progressCounter:run(path.name(file))
+	progressCounter:run(file:sub(1 + #relfile))
 	local data = require(file)
-	progressCounter:complete(path.name(file))
+	progressCounter:complete(file:sub(1 + #relfile))
 
 	-- data is assumed to be of the type BenchData defined in luau-bench
 	local formattedData = {
