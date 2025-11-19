@@ -5,7 +5,7 @@ local path = require("./utils/path")
 local process = require("@lune/process")
 local progress = require("./utils/progress")
 local serde = require("@lune/serde")
-local summarize = require("./summarize")
+local summarize = require("./utils/summarize")
 
 local args = process.args
 
@@ -25,7 +25,7 @@ Codegen is enabled by default, to disable set path environment
 
 Available options:
   -h, --help: Display this usage message
-  --skip=<str[,str]>: Skips
+  --skip=<path[,path]>: Excludes the given paths that match from running
   --output=<file>: Which file to store the results in
     Defaults to benchmark-results.json
 	]],
@@ -61,42 +61,32 @@ local function processPath(file: string, data, fn)
 		return
 	end
 
-	-- FIXME: possibly not completely correct
 	for _, v in options.skip do
 		if file:sub(1, #v) == v then
 			return
 		end
 	end
 
-	if
-		path.name(file) == "init"
-		and (
-			path.getextension(file) == "luau"
-			or path.getextension(file) == "lua"
-		)
-	then
+	local fileName = path.name(file)
+	local fileExt = path.getextension(file)
+
+	if fileName == "init" and (fileExt == "luau" or fileExt == "lua") then
 		-- no clue how to interpret this so.. it isn't supported
 		return
 	end
 
-	if
-		fs.isFile(prefile .. file)
-		and (
-			path.getextension(file) == "luau"
-			or path.getextension(file) == "lua"
-		)
-	then
-		data[path.name(file)] = fn(relfile .. path.removeextension(file))
+	if fs.isFile(prefile .. file) and (fileExt == "luau" or fileExt == "lua") then
+		data[fileName] = fn(relfile .. path.removeextension(file))
 		return
 	end
 
-	data[path.name(file)] = data[path.name(file)] or {}
+	data[fileName] = data[fileName] or {}
 	for _, fi in fs.readDir(prefile .. file) do
-		processPath(file .. "/" .. fi, data[path.name(file)], fn)
+		processPath(file .. "/" .. fi, data[fileName], fn)
 	end
 end
 
-local data = if options.output and fs.isFile(options.output)
+local data = if fs.isFile(options.output)
 	then serde.decode("json", fs.readFile(options.output))
 	else {}
 
@@ -168,7 +158,7 @@ processPath(options.path:sub(#prefile + 1), data, function(file: string)
 end)
 
 if options.output then
-	fs.writeFile(options.output, serde.encode("json", data))
+	fs.writeFile(options.output, serde.encode("json", data, true))
 end
 
 return benchmark
