@@ -1,5 +1,13 @@
 local benchmark = {}
 
+--[[
+	Used to run benchmarks
+
+	To run:
+	cd to/repo/path
+	lune run tools/benchmark.luau temp
+]]
+
 local fs = require("@lune/fs")
 local path = require("./utils/path")
 local process = require("@lune/process")
@@ -77,6 +85,8 @@ local function processPath(file: string, data, fn)
 
 	if fs.isFile(prefile .. file) and (fileExt == "luau" or fileExt == "lua") then
 		data[fileName] = fn(relfile .. path.removeextension(file))
+		return
+	elseif fs.isFile(prefile .. file) then
 		return
 	end
 
