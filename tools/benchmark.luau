@@ -106,65 +106,22 @@ processPath(options.path:sub(#prefile + 1), {}, function(_: string)
 end)
 local progressCounter = progress.new(count)
 
+type BenchData = {
+	time: { number },
+	space: { number },
+	metadata: { [string]: any }?,
+}
+
 processPath(options.path:sub(#prefile + 1), data, function(file: string)
 	progressCounter:run(file:sub(1 + #relfile))
-	local data = require(file)
+	local data: BenchData = require(file)
 	progressCounter:complete(file:sub(1 + #relfile))
 
-	-- data is assumed to be of the type BenchData defined in luau-bench
-	local formattedData = {
-		speed = {
-			median = data.Speed.Median,
-			iqr = summarize.iqr(data.Speed.Data),
-
-			min = data.Speed.Minimum,
-			average = data.Speed.Average,
-			max = data.Speed.Maximum,
-			stdev = summarize.stdev(data.Speed.Data, data.Speed.Average),
-
-			hist = {
-				data.Speed.Histogram[1],
-				data.Speed.Histogram[2],
-				data.Speed.Histogram[3],
-				data.Speed.Histogram[4],
-				data.Speed.Histogram[5],
-				data.Speed.Histogram[6],
-				data.Speed.Histogram[7],
-				data.Speed.Histogram[8],
-
-				min = data.Speed.Low,
-				max = data.Speed.High,
-				range = data.Speed.Histogram.Range,
-			},
-		},
-		memory = {
-			median = data.Memory.Median,
-			iqr = summarize.iqr(data.Memory.Data),
-
-			min = data.Memory.Minimum,
-			average = data.Memory.Average,
-			max = data.Memory.Maximum,
-			stdev = summarize.stdev(data.Memory.Data, data.Memory.Average),
-
-			hist = {
-				data.Memory.Histogram[1],
-				data.Memory.Histogram[2],
-				data.Memory.Histogram[3],
-				data.Memory.Histogram[4],
-				data.Memory.Histogram[5],
-				data.Memory.Histogram[6],
-				data.Memory.Histogram[7],
-				data.Memory.Histogram[8],
-
-				min = data.Memory.Low,
-				max = data.Memory.High,
-				range = data.Memory.Histogram.Range,
-			},
-		},
-		output = data.Output,
+	return {
+		time = summarize.format(data.time),
+		space = summarize.format(data.space),
+		metadata = data.metadata,
 	}
-
-	return formattedData
 end)
 
 if options.output then
