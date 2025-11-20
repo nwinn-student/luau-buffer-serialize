@@ -70,7 +70,7 @@ local function processPath(file: string, data, fn)
 	end
 
 	for _, v in options.skip do
-		if file:sub(1, #v) == v then
+		if file:sub(1, #v) == v or file:find("^" .. v) then
 			return
 		end
 	end
