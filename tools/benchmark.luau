@@ -5,7 +5,7 @@ local benchmark = {}
 
 	To run:
 	cd to/repo/path
-	lune run tools/benchmark.luau temp
+	lune run tools/benchmark.luau results
 ]]
 
 local fs = require("@lune/fs")

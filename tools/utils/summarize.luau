@@ -177,5 +177,6 @@ function summarize.format(data: { number }): Format
 
 	return format
 end
+summarize.precision = precision
 
 return table.freeze(summarize)
