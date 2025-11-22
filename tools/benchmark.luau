@@ -3,8 +3,12 @@ local benchmark = {}
 --[[
 	Used to run benchmarks
 
+	For no-codegen:
+		export LUNE_LUAU_JIT="false"
+
 	To run:
 	cd to/repo/path
+
 	lune run tools/benchmark.luau results/BufferSerializer
 
 	lune run tools/benchmark.luau results/msgpack
@@ -32,7 +36,7 @@ function printHelp()
 		[[
 Usage: %s <path>
 
-Codegen is enabled by default, to disable set path environment
+Codegen is enabled by default, to disable set environment
  LUNE_LUAU_JIT to "0" or "false" or "off"
 
 Available options:
