@@ -1,20 +1,8 @@
---[[
-	Note: This benchmark is designed to be run with Luau's built-in profiler.
-
-	Use `luau --profile bench/profile.luau` to create a profile.out file.
-	Use `python path/to/luau/tools/perfgraph.py profile.out > profile.svg` to generate a flamegraph.
-	Open profile.svg in a web browser to view the flamegraph.
-
-	For Windows (PowerShell):
-	```bash
-	luau --profile bench/profile.luau ; python tools/perfgraph.py profile.out > profile.svg ; .\profile.svg
-	```
-	For Linux (or Bash):
-	```bash
-	luau --profile bench/profile.luau && python tools/perfgraph.py profile.out > profile.svg && start profile.svg
-	```
-]]
 local profile = {}
+
+--[[
+	See ../tools/profile.luau
+]]
 
 local BufferSerializer = require("@BufferSerializer")
 
