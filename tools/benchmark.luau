@@ -5,7 +5,11 @@ local benchmark = {}
 
 	To run:
 	cd to/repo/path
-	lune run tools/benchmark.luau results
+	lune run tools/benchmark.luau results/BufferSerializer
+
+	lune run tools/benchmark.luau results/msgpack
+
+	lune run tools/benchmark.luau results/inflate-msgpack
 ]]
 
 local fs = require("@lune/fs")
