@@ -75,9 +75,9 @@ function link.calculateId(id: number, type: TYPES): number
 		else USER_DUOSTART
 
 	local calcId
-	local newSize = if id <= count then 1 else 2
 
-	if newSize == 1 then
+	-- stored in 1,2 byte(s) respectively
+	if id <= count then
 		calcId = id + start
 	else
 		local constVal = id - count
