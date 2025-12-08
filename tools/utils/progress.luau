@@ -1,5 +1,7 @@
 local progress = {}
 
+local resetToStart = "\r\b\r\b\r\b\r"
+
 function progress.new(totalTasks: number)
 	local display = ""
 	local counter = {
@@ -12,8 +14,8 @@ function progress.new(totalTasks: number)
 
 	function counter:run(msg: string)
 		display = "[  Running  ] " .. msg
-		print("\r\b\r\b\r\b\r") -- resets to start
-		print(display .. (" "):rep(43 - #display))
+		print(resetToStart)
+		print(display)
 
 		local bar = (">"):rep((counter.completed / totalTasks) * 34 // 1)
 		bar ..= (" "):rep(34 - #bar)
@@ -26,10 +28,10 @@ function progress.new(totalTasks: number)
 		counter.completed += 1
 
 		if counter.completed == totalTasks then
-			print("\r\b\r\b\r\b\r") -- resets to start
+			print(resetToStart)
 			-- fill old with spaces
-			print((" "):rep(45) .. "\n" .. (" "):rep(45))
-			print("\r\b\r\b\r\b\r")
+			print("\1b[2k\n\1b[2k")
+			print(resetToStart)
 			display = nil
 		end
 	end
