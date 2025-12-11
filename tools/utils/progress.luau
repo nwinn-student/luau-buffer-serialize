@@ -30,7 +30,7 @@ function progress.new(totalTasks: number)
 		if counter.completed == totalTasks then
 			print(resetToStart)
 			-- fill old with spaces
-			print("\1b[2k\n\1b[2k")
+			print("\x1b[2k\n\x1b[2k")
 			print(resetToStart)
 			display = nil
 		end
