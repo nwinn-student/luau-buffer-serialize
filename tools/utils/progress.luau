@@ -27,10 +27,12 @@ function progress.new(totalTasks: number)
 	function counter:complete(msg: string)
 		counter.completed += 1
 
+		print(resetToStart)
+		print("\r\x1b[2K\n") -- clear running line
+
 		if counter.completed == totalTasks then
 			print(resetToStart)
-			-- fill old with spaces
-			print("\x1b[2k\n\x1b[2k")
+			print("\x1b[2K\n\x1b[2K") -- clear old
 			print(resetToStart)
 			display = nil
 		end
