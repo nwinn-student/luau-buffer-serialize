@@ -3,8 +3,8 @@ local benchmark = {}
 --[[
 	Used to run benchmarks
 
-	1. Expects that tools/fetch-datasets has been run
-	2. Expects that tools/generate-scripts has been run
+	1. Expects that tools/fetch-resources has been run (located in resources)
+	2. Expects that tools/generate-scripts has been run (scripts located in results/<name>)
 
 	For no-codegen:
 		export LUNE_LUAU_JIT="false"
