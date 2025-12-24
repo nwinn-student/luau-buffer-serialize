@@ -11,14 +11,15 @@
 
 **Why are we measuring?**
 - In order to market the product and see how/where it stands.
+- In order to market the version, or PR, and see the implications of using.
 
 **When are we measuring?**
 - Every version that causes a change to the format or impacts output size.
 
 **How are we measuring?**
 We have a multi-step process.
-- Download the datasets
-- Run the generator CLI to setup the Luau files
+- Download the resources (datasets and luau-bench)
+- Run the generate-scripts CLI to setup the Luau files
 - Run the benchmark CLI to run the files and store the results
 - Run the output-size CLI to read the results
 
