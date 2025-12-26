@@ -34,16 +34,62 @@ type GitHubResult = {
 	download_url: string,
 }
 
+local options = {
+	versions = {},
+	exclude_datasets = false,
+	exclude_bench = false,
+}
+
+function printHelp()
+	print(string.format(
+		[[
+Usage: %s [options]
+
+Fetches datasets and luau-bench from GitHub.
+
+Available options:
+  -h, --help: Display this usage message
+  --verisons=<tag[,tag]>: Fetches the versions and puts them into resources/BufferSerializer{VERSION}
+    ALL can be used to get all versions.
+  --exclude-datasets: Does not fetch datasets
+  --exclude-bench: Does not fetch luau-bench
+	]],
+		process.env._
+	))
+end
+
+for _, input in process.args do
+	if input == "-h" or input == "--help" then
+		printHelp()
+		process.exit(0)
+	end
+	if input:sub(1, 10) == "--version=" then
+		options.versions = input:sub(11):split(",")
+		continue
+	end
+	if input:sub(1, 18) == "--exclude-datasets" then
+		options.exclude_datasets = true
+		continue
+	end
+	if input:sub(1, 15) == "--exclude-bench" then
+		options.exclude_bench = true
+		continue
+	end
+	print(`{input} is not a valid command, see help:`)
+	printHelp()
+	process.exit(0)
+end
+
 local datasets_root =
 	"https://api.github.com/repos/jviotti/binary-json-size-benchmark/contents"
 local raw_datasets_root =
 	"https://raw.github.com/jviotti/binary-json-size-benchmark/main"
 local bench_root =
 	"https://api.github.com/repos/nwinn-student/luau-bench/contents"
-local bs_root =
-	"https://api.github.com/repos/nwinn-student/luau-buffer-serialize/contents"
+local bs_pre_root =
+	"https://api.github.com/repos/nwinn-student/luau-buffer-serialize"
 
-local function ghrequest(url: string, root: string): net.FetchResponse
+local function ghrequest(url: string, root: string)
 	return net.request({
 		url = `{root}/{url}`,
 		headers = {
@@ -69,105 +115,74 @@ local function set_content(file_path: string, url_path: string)
 	end)
 end
 
-print("FETCHING DATASET...")
+local function fetch_dataset()
+	print("FETCHING DATASET...")
 
-local success, dataset_result = pcall(ghrequest, "benchmark", datasets_root)
+	local success, dataset_result = pcall(ghrequest, "benchmark", datasets_root)
 
-if not success then
-	print(tostring(dataset_result))
-	process.exit(1)
-	-- is requestResult valuable?
-	--error("turn on your network connection")
-end
-
-assert(dataset_result.ok, `failure to get content from dataset benchmark`)
-
-local datasetDirs = serde.decode("json", dataset_result.body)
-
-if not fs.isDir("resources") or not fs.isDir("resources/datasets") then
-	fs.writeDir("resources/datasets")
-end
-
--- The dataset repo is a public archive, so we can make the
--- assumption that all file locations are stationary
-
-for _, dir: GitHubResult in datasetDirs do
-	if not fs.isDir(`resources/datasets/{dir.name}`) then
-		fs.writeDir(`resources/datasets/{dir.name}`)
+	if not success then
+		print(tostring(dataset_result))
+		process.exit(1)
+		-- is requestResult valuable?
+		--error("turn on your network connection")
 	end
 
-	local data_url = `{raw_datasets_root}/{dir.path}/document.json`
-	local taxonomy_url = `{raw_datasets_root}/{dir.path}/TAXONOMY`
-	local source_url = `{raw_datasets_root}/{dir.path}/SOURCE`
+	assert(dataset_result.ok, `failure to get content from dataset benchmark`)
 
-	-- will not yield!
-	set_content(`resources/datasets/{dir.name}/{dir.name}.json`, data_url)
-	set_content(`resources/datasets/{dir.name}/TAXONOMY`, taxonomy_url)
-	set_content(`resources/datasets/{dir.name}/SOURCE`, source_url)
-end
+	local datasetDirs = serde.decode("json", dataset_result.body)
 
-print("FETCHING LUAU-BENCH...")
-
-local bench_result = ghrequest("src", bench_root)
-
-assert(bench_result.ok, `failure to get content from luau-bench src`)
-
-local benchDirs = serde.decode("json", bench_result.body)
-
-if not fs.isDir("resources") or not fs.isDir("resources/luau-bench") then
-	fs.writeDir("resources/luau-bench")
-end
-
-for _, dir: GitHubResult in benchDirs do
-	set_content(`resources/luau-bench/{dir.name}`, dir.download_url)
-end
-
---TODO: Finish version support
--- [[ [OPTIONAL] FETCH VERSION(S) ]] --
-
-local options = {
-	versions = {},
-}
-
-function printHelp()
-	print(string.format(
-		[[
-Usage: %s [options]
-
-Fetches datasets and luau-bench from GitHub.
-
-Available options:
-  -h, --help: Display this usage message
-  --verisons=<tag[,tag]>: Fetches the versions and puts them into resources/BufferSerializer{VERSION}
-  	ALL can be used to get all versions.
-	]],
-		process.env._
-	))
-end
-
-for _, input in process.args do
-	if input == "-h" or input == "--help" then
-		printHelp()
-		process.exit(0)
+	if not fs.isDir("resources") or not fs.isDir("resources/datasets") then
+		fs.writeDir("resources/datasets")
 	end
-	if input:sub(1, 10) == "--version=" then
-		options.versions = input:split(",")
-		continue
+
+	-- The dataset repo is a public archive, so we can make the
+	-- assumption that all file locations are stationary
+
+	for _, dir: GitHubResult in datasetDirs do
+		if not fs.isDir(`resources/datasets/{dir.name}`) then
+			fs.writeDir(`resources/datasets/{dir.name}`)
+		end
+
+		local data_url = `{raw_datasets_root}/{dir.path}/document.json`
+		local taxonomy_url = `{raw_datasets_root}/{dir.path}/TAXONOMY`
+		local source_url = `{raw_datasets_root}/{dir.path}/SOURCE`
+
+		set_content(`resources/datasets/{dir.name}/{dir.name}.json`, data_url)
+		set_content(`resources/datasets/{dir.name}/TAXONOMY`, taxonomy_url)
+		set_content(`resources/datasets/{dir.name}/SOURCE`, source_url)
 	end
 end
 
--- lune run tools/fetch-resources v123
--- actually.. just do --versions=a,b,c,...
--- it is better.  Could even do ALL (?)
+local function fetch_bench()
+	print("FETCHING LUAU-BENCH...")
 
--- if ALL we should use https://api.github.com/repos/nwinn-student/luau-buffer-serialize/releases
--- and loop through each to get the tag_name
+	local success, bench_result = pcall(ghrequest, "src", bench_root)
 
-for _, version in options.versions do
-	local version_result = ghrequest(`src?ref={version}`, bs_root)
+	if not success then
+		print(tostring(bench_result))
+		process.exit(1)
+		-- is requestResult valuable?
+		--error("turn on your network connection")
+	end
+
+	assert(bench_result.ok, `failure to get content from luau-bench src`)
+
+	local benchDirs = serde.decode("json", bench_result.body)
+
+	if not fs.isDir("resources") or not fs.isDir("resources/luau-bench") then
+		fs.writeDir("resources/luau-bench")
+	end
+
+	for _, dir: GitHubResult in benchDirs do
+		set_content(`resources/luau-bench/{dir.name}`, dir.download_url)
+	end
+end
+
+local function set_tag(version: string)
+	local version_result = ghrequest(`contents/src?ref={version}`, bs_pre_root)
 
 	assert(
-		bench_result.ok,
+		version_result.ok,
 		`failure to get content from bufferserializer src?ref={version}`
 	)
 
@@ -186,6 +201,39 @@ for _, version in options.versions do
 			dir.download_url
 		)
 	end
+end
+
+-- Actual fetching
+
+if not options.exclude_datasets then
+	fetch_dataset()
+end
+
+if not options.exclude_bench then
+	fetch_bench()
+end
+
+for _, version in options.versions do
+	if version == "ALL" then
+		print("FETCHING ALL VERSIONS...")
+		local list_version_result = ghrequest("releases", bs_pre_root)
+
+		assert(
+			list_version_result.ok,
+			`failure to get content from bufferserializer releases`
+		)
+
+		local listversionDirs = serde.decode("json", list_version_result.body)
+
+		for _, version in listversionDirs do
+			set_tag(version.tag_name)
+		end
+
+		break
+	end
+
+	print(`FETCHING {version}...`)
+	set_tag(version)
 end
 
 return {}
