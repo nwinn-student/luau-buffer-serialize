@@ -11,11 +11,16 @@
 	- /resources
 	 - /datasets
 	 - /luau-bench
+	 - /BufferSerializer{VERSION_TAG}
 
 	To run:
 	cd to/repo/path
 
-	lune run tools/fetch-resources
+	lune run tools/fetch-resources --versions=ALL
+
+	It is recommended that subsequent runs be the below to avoid excessive API calls.
+
+	lune run tools/fetch-resources --exclude-datasets --exclude-bench --version=v1.2.3
 ]]
 
 local fs = require("@lune/fs")
