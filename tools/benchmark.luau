@@ -95,7 +95,12 @@ local function processPath(file: string, data, fn)
 	end
 
 	if fs.isFile(prefile .. file) and (fileExt == "luau" or fileExt == "lua") then
-		data[fileName] = fn(relfile .. path.removeextension(file))
+		local results = fn(relfile .. path.removeextension(file))
+
+		if results then
+			data[fileName] = results
+		end
+
 		return
 	elseif fs.isFile(prefile .. file) then
 		return
@@ -125,7 +130,9 @@ type BenchData = {
 
 processPath(options.path:sub(#prefile + 1), data, function(file: string)
 	progressCounter:run(file:sub(1 + #relfile))
+
 	local data: BenchData = require(file)
+
 	progressCounter:complete(file:sub(1 + #relfile))
 
 	return {
