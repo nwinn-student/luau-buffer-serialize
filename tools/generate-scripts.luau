@@ -167,6 +167,11 @@ return {
 end
 
 local function gen_version(version: string)
+	assert(
+		fs.isDir(`resources/BufferSerializer/{version}`),
+		`resources/BufferSerializer/{version} must be a directory`
+	)
+
 	local path = `../../resources/BufferSerializer/{version}`
 
 	local from = "results/BufferSerializer"
@@ -186,7 +191,6 @@ local function gen_version(version: string)
 	)
 end
 
---TODO: Add version support
 for _, version in options.versions do
 	if version == "ALL" then
 		assert(
