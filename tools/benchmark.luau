@@ -26,8 +26,6 @@ local progress = require("./utils/progress")
 local serde = require("@lune/serde")
 local summarize = require("./utils/summarize")
 
-local args = process.args
-
 local options = {
 	path = "",
 	skip = {} :: { string },
@@ -52,7 +50,7 @@ Available options:
 	))
 end
 
-for _, input in args do
+for _, input in process.args do
 	if input == "-h" or input == "--help" then
 		printHelp()
 		process.exit(0)
