@@ -38,10 +38,9 @@ if not fs.isFile("results/.luaurc") then
 	fs.writeFile("results/.luaurc", serde.encode("json", config, true))
 end
 
-assert(
-	fs.isDir("resources") and fs.isDir("resources/datasets"),
-	"resources/datasets directory must exist"
-)
+assert(fs.isDir("resources"), "resources directory must exist")
+
+assert(fs.isDir("resources/datasets"), "resources/datasets directory must exist")
 
 --[[
 	Do we make two generators or have one?
@@ -49,14 +48,46 @@ assert(
 
 
 ]]
-local version: string
 
-for _, arg in process.args do
-	-- .... same as usual...?
+local options = {
+	versions = {},
+	size = false, -- ????
+}
+
+function printHelp()
+	print(string.format(
+		[[
+Usage: %s [options]
+
+Available options:
+  -h, --help: Display this usage message
+  --verisons=<tag[,tag]>: Generates time/space benchmark scripts for the provided versions
+      ALL can be used to generate all downloaded versions.
+  -s, --size: Generates output size benchmark scripts for the current version and all prior.
+	]],
+		process.env._
+	))
+end
+
+for _, input in process.args do
+	if input == "-h" or input == "--help" then
+		printHelp()
+		process.exit(0)
+	end
+	if input:sub(1, 11) == "--versions=" then
+		options.versions = input:sub(12):split(",")
+		continue
+	end
+	if input == "-s" or input == "--size" then
+		options.size = true
+		continue
+	end
+	print(`{input} is not a valid command, see help:`)
+	printHelp()
+	process.exit(0)
 end
 
 -- [[ GENERATE SERIALIZE ]]
---
 
 for _, path in fs.readDir("resources/datasets") do
 	assert(
@@ -106,7 +137,6 @@ return {
 end
 
 -- [[ GENERATE DESERIALIZE ]]
---
 
 for _, path in fs.readDir("resources/datasets") do
 	local contents = string.format(
@@ -136,13 +166,8 @@ return {
 	fs.writeFile(`results/BufferSerializer/deserialize/{path}.luau`, contents)
 end
 
---TODO: Add version support
-if process.args[1] ~= "" then
-	-- copy the above scripts, but also re-assign @BufferSerializer to another path in a localized .luaurc
-	-- we would need a tool to download versions then
-	-- idk... i feel like this tool should not need the internet at all
-	-- fetch-resources could do downloading versions tho
-	local path = `../../resources/BufferSerializer{version}`
+local function gen_version(version: string)
+	local path = `../../resources/BufferSerializer/{version}`
 
 	local from = "results/BufferSerializer"
 	local to = `results/BufferSerializer/v{version}`
@@ -159,6 +184,24 @@ if process.args[1] ~= "" then
 		`results/BufferSerializer/v{version}/.luaurc`,
 		serde.encode("json", contents, true)
 	)
+end
+
+--TODO: Add version support
+for _, version in options.versions do
+	if version == "ALL" then
+		assert(
+			fs.isDir("resources/BufferSerializer"),
+			"resources/BufferSerializer directory must exist when generating version scripts"
+		)
+
+		for _, version in fs.readDir("resources/BufferSerializer") do
+			gen_version(version)
+		end
+
+		break
+	end
+
+	gen_version(version)
 end
 
 return {}
