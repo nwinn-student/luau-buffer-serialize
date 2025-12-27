@@ -11,7 +11,7 @@
 	- /resources
 	 - /datasets
 	 - /luau-bench
-	 - /BufferSerializer{VERSION_TAG}
+	 - /BufferSerializer/{VERSION_TAG}
 
 	To run:
 	cd to/repo/path
@@ -54,7 +54,7 @@ Fetches datasets and luau-bench from GitHub.
 
 Available options:
   -h, --help: Display this usage message
-  --verisons=<tag[,tag]>: Fetches the versions and puts them into resources/BufferSerializer{VERSION}
+  --verisons=<tag[,tag]>: Fetches the versions and puts them into resources/BufferSerializer/{VERSION}
     ALL can be used to get all versions.
   --exclude-datasets: Does not fetch datasets
   --exclude-bench: Does not fetch luau-bench
