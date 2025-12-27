@@ -183,7 +183,7 @@ local function fetch_bench()
 	end
 end
 
-local function set_tag(version: string)
+local function fetch_tag(version: string)
 	local version_result = ghrequest(`contents/src?ref={version}`, bs_pre_root)
 
 	assert(
@@ -232,14 +232,14 @@ for _, version in options.versions do
 		local listversionDirs = serde.decode("json", list_version_result.body)
 
 		for _, version in listversionDirs do
-			set_tag(version.tag_name)
+			fetch_tag(version.tag_name)
 		end
 
 		break
 	end
 
 	print(`FETCHING {version}...`)
-	set_tag(version)
+	fetch_tag(version)
 end
 
 return {}
