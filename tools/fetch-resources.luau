@@ -68,8 +68,8 @@ for _, input in process.args do
 		printHelp()
 		process.exit(0)
 	end
-	if input:sub(1, 10) == "--version=" then
-		options.versions = input:sub(11):split(",")
+	if input:sub(1, 11) == "--versions=" then
+		options.versions = input:sub(12):split(",")
 		continue
 	end
 	if input:sub(1, 18) == "--exclude-datasets" then
@@ -136,7 +136,7 @@ local function fetch_dataset()
 
 	local datasetDirs = serde.decode("json", dataset_result.body)
 
-	if not fs.isDir("resources") or not fs.isDir("resources/datasets") then
+	if not fs.isDir("resources/datasets") then
 		fs.writeDir("resources/datasets")
 	end
 
@@ -174,7 +174,7 @@ local function fetch_bench()
 
 	local benchDirs = serde.decode("json", bench_result.body)
 
-	if not fs.isDir("resources") or not fs.isDir("resources/luau-bench") then
+	if not fs.isDir("resources/luau-bench") then
 		fs.writeDir("resources/luau-bench")
 	end
 
@@ -193,22 +193,23 @@ local function set_tag(version: string)
 
 	local versionDirs = serde.decode("json", version_result.body)
 
-	if
-		not fs.isDir("resources")
-		or not fs.isDir(`resources/BufferSerializer{version}`)
-	then
-		fs.writeDir(`resources/BufferSerializer{version}`)
+	if not fs.isDir(`resources/BufferSerializer/{version}`) then
+		fs.writeDir(`resources/BufferSerializer/{version}`)
 	end
 
 	for _, dir: GitHubResult in versionDirs do
 		set_content(
-			`resources/BufferSerializer{version}/{dir.name}`,
+			`resources/BufferSerializer/{version}/{dir.name}`,
 			dir.download_url
 		)
 	end
 end
 
 -- Actual fetching
+
+if not fs.isDir("resources") then
+	fs.writeDir("resources")
+end
 
 if not options.exclude_datasets then
 	fetch_dataset()
