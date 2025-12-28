@@ -103,6 +103,7 @@ local Bench = require("@resources/luau-bench")
 local format = require("@BufferSerializer")
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
+local summarize = require("@summarize")
 
 local rawdata = serde.decode("json", fs.readFile("resources/datasets/%s/document.json"))
 
@@ -214,9 +215,13 @@ return {
 	space = benchData.Memory.Data,
 	metadata = {
 		taxonomy = "%s",
+		size = benchData.Output,
 		pair = {
-			pair_benchData.Speed.Data,
-			pair_benchData.Speed.Data,
+			time = summarize.format(pair_benchData.Speed.Data),
+			space = summarize.format(pair_benchData.Speed.Data),
+			metadata = {
+				size = pair_benchData.Output,
+			}
 		}
 	}
 }
@@ -237,6 +242,7 @@ local Bench = require("@resources/luau-bench")
 local format = require("@BufferSerializer")
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
+local summarize = require("@summarize")
 
 local rawdata = serde.decode("json", fs.readFile("resources/datasets/%s/document.json"))
 
@@ -341,8 +347,8 @@ return {
 	metadata = {
 		taxonomy = "%s",
 		pair = {
-			time = pair_benchData.Speed.Data,
-			space = pair_benchData.Memory.Data,
+			time = summarize.format(pair_benchData.Speed.Data),
+			space = summarize.format(pair_benchData.Speed.Data),
 		}
 	}
 }
