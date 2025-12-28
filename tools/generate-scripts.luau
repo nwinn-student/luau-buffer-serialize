@@ -104,10 +104,9 @@ local format = require("@BufferSerializer")
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 
-local benchData = Bench(
-	format.serialize,
-	serde.decode("json", fs.readFile("resources/datasets/%s/document.json"))
-):updateOutput(function(output)
+local rawdata = serde.decode("json", fs.readFile("resources/datasets/%s/document.json"))
+
+local benchData = Bench(format.serialize, rawdata):updateOutput(function(output)
 	if type(output) == "string" then
 		return string.len(output)
 	elseif type(output) == "buffer" then
@@ -116,12 +115,109 @@ local benchData = Bench(
 	return
 end)
 
+function get_freq(data: any, par: { any })
+	local data_type = type(data)
+
+	if data_type ~= "table" then
+		return { [data] = 1 }
+	end
+
+	if par[data] then
+		return {}
+	end
+	par[data] = true
+
+	local freq = {}
+
+	for key, value in data do
+		local key_freq = get_freq(key, par)
+		local value_freq = get_freq(value, par)
+
+		for i, v in key_freq do
+			freq[i] = (freq[i] or 0) + v
+		end
+		for i, v in value_freq do
+			freq[i] = (freq[i] or 0) + v
+		end
+	end
+
+	return freq
+end
+
+function populate_pairs(data: any)
+	local freq = get_freq(data, {})
+
+	local words = {}
+	for word, count in freq do
+		table.insert(words, word)
+	end
+
+	table.sort(words, function(a0, a1): boolean
+		return freq[a0] > freq[a1]
+	end)
+
+	local ids = {
+		string = 0,
+		number = 0,
+	}
+
+	for _, word in words do
+		local count = freq[word]
+		if count < 5 then
+			continue
+		end
+		if word == 0 or word == 1 or word == "" then
+			continue
+		end
+		if word == true or word == false then
+			continue
+		end
+		-- we don't have nan or vectors or userdata
+		-- since json doesn't support?
+
+		ids[type(word)] += 1
+		local new_id = ids[type(word)]
+
+		-- we could limit id but our datasets are small enough
+
+		format.pair(new_id, word)
+	end
+end
+populate_pairs(rawdata)
+
+local pair_benchData = Bench(format.serialize, rawdata):updateOutput(function(output)
+	if type(output) == "string" then
+		return string.len(output)
+	elseif type(output) == "buffer" then
+		return buffer.len(output)
+	end
+	return
+end)
+
+do
+	local string = require("@BufferSerializer/string")
+	local number = require("@BufferSerializer/number")
+
+	if string.resetWrite then
+		string.resetWrite()
+		string.resetRead()
+		number.resetWrite()
+		number.resetRead()
+	else
+		local link = require("@BufferSerializer/link")
+		table.clear(link.values)
+	end
+end
+
 return {
 	time = benchData.Speed.Data,
 	space = benchData.Memory.Data,
 	metadata = {
-		output_size = benchData.Output,
-		taxonomy = "%s"
+		taxonomy = "%s",
+		pair = {
+			pair_benchData.Speed.Data,
+			pair_benchData.Speed.Data,
+		}
 	}
 }
 	]],
@@ -142,17 +238,113 @@ local format = require("@BufferSerializer")
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 
+local rawdata = serde.decode("json", fs.readFile("resources/datasets/%s/document.json"))
+
 local benchData = Bench(
 	format.deserialize,
-	format.serialize(
-		serde.decode("json", fs.readFile("resources/datasets/%s/document.json"))
-	)
+	format.serialize(rawdata)
 ):updateOutput()
+
+function get_freq(data: any, par: { any })
+	local data_type = type(data)
+
+	if data_type ~= "table" then
+		return { [data] = 1 }
+	end
+
+	if par[data] then
+		return {}
+	end
+	par[data] = true
+
+	local freq = {}
+
+	for key, value in data do
+		local key_freq = get_freq(key, par)
+		local value_freq = get_freq(value, par)
+
+		for i, v in key_freq do
+			freq[i] = (freq[i] or 0) + v
+		end
+		for i, v in value_freq do
+			freq[i] = (freq[i] or 0) + v
+		end
+	end
+
+	return freq
+end
+
+function populate_pairs(data: any)
+	local freq = get_freq(data, {})
+
+	local words = {}
+	for word, count in freq do
+		table.insert(words, word)
+	end
+
+	table.sort(words, function(a0, a1): boolean
+		return freq[a0] > freq[a1]
+	end)
+
+	local ids = {
+		string = 0,
+		number = 0,
+	}
+
+	for _, word in words do
+		local count = freq[word]
+		if count < 5 then
+			continue
+		end
+		if word == 0 or word == 1 or word == "" then
+			continue
+		end
+		if word == true or word == false then
+			continue
+		end
+		-- we don't have nan or vectors or userdata
+		-- since json doesn't support?
+
+		ids[type(word)] += 1
+		local new_id = ids[type(word)]
+
+		-- we could limit id but our datasets are small enough
+
+		format.pair(new_id, word)
+	end
+end
+populate_pairs(rawdata)
+
+local pair_benchData = Bench(
+	format.deserialize,
+	format.serialize(rawdata)
+):updateOutput()
+
+do
+	local string = require("@BufferSerializer/string")
+	local number = require("@BufferSerializer/number")
+
+	if string.resetWrite then
+		string.resetWrite()
+		string.resetRead()
+		number.resetWrite()
+		number.resetRead()
+	else
+		local link = require("@BufferSerializer/link")
+		table.clear(link.values)
+	end
+end
 
 return {
 	time = benchData.Speed.Data,
 	space = benchData.Memory.Data,
-	metadata = { taxonomy = "%s" }
+	metadata = {
+		taxonomy = "%s",
+		pair = {
+			time = pair_benchData.Speed.Data,
+			space = pair_benchData.Memory.Data,
+		}
+	}
 }
 	]],
 		path,
@@ -262,24 +454,18 @@ do
 end
 
 return {
-	time = { 0 },
-	space = { 0 },
+	time = {},
+	space = {},
 	metadata = {
 		taxonomy = "%s",
 		size = buffer.len(data),
 		pair_size = buffer.len(pair_data),
 		compression = {
-			brotli = #serde.compress("brotli", data),
-			gzip = #serde.compress("gzip", data),
-			lz4 = #serde.compress("lz4", data),
-			zlib = #serde.compress("zlib", data),
-			zstd = #serde.compress("zstd", data),
+			gzip = #serde.compress("gzip", data, 9),
+			lz4 = #serde.compress("lz4", data, 9),
 
-			pair_brotli = #serde.compress("brotli", pair_data),
-			pair_gzip = #serde.compress("gzip", pair_data),
-			pair_lz4 = #serde.compress("lz4", pair_data),
-			pair_zlib = #serde.compress("zlib", pair_data),
-			pair_zstd = #serde.compress("zstd", pair_data),
+			pair_gzip = #serde.compress("gzip", pair_data, 9),
+			pair_lz4 = #serde.compress("lz4", pair_data, 9),
 		},
 	}
 }
