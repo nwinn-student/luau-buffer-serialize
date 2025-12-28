@@ -152,7 +152,7 @@ local function fetch_dataset()
 		local taxonomy_url = `{raw_datasets_root}/{dir.path}/TAXONOMY`
 		local source_url = `{raw_datasets_root}/{dir.path}/SOURCE`
 
-		set_content(`resources/datasets/{dir.name}/{dir.name}.json`, data_url)
+		set_content(`resources/datasets/{dir.name}/document.json`, data_url)
 		set_content(`resources/datasets/{dir.name}/TAXONOMY`, taxonomy_url)
 		set_content(`resources/datasets/{dir.name}/SOURCE`, source_url)
 	end
