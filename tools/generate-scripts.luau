@@ -228,6 +228,9 @@ function populate_pairs(data: any)
 		if word == 0 or word == 1 or word == "" then
 			continue
 		end
+		if word == true or word == false then
+			continue
+		end
 		-- we don't have nan or vectors or userdata
 		-- since json doesn't support?
 
@@ -239,7 +242,7 @@ function populate_pairs(data: any)
 		format.pair(new_id, word)
 	end
 end
-populate_pairs(data)
+populate_pairs(rawdata)
 
 local pair_data = format.serialize(rawdata)
 
