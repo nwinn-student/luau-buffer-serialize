@@ -84,7 +84,7 @@ local function processPath(file: string, data, fn)
 		end
 	end
 
-	local fileName = path.name(file)
+	local fileName = path.name(prefile .. file)
 	local fileExt = path.getextension(file)
 
 	if fileName == "init" and (fileExt == "luau" or fileExt == "lua") then

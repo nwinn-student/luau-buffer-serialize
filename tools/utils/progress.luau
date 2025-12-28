@@ -35,6 +35,8 @@ function progress.new(totalTasks: number)
 			print("\x1b[2K\n\x1b[2K") -- clear old
 			print(resetToStart)
 			display = nil
+
+			print(`TOTAL TIME TAKEN: {os.clock() - startTime} s`)
 		end
 	end
 
