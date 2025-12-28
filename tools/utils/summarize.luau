@@ -63,7 +63,7 @@ function metrics(self: Format, data: { number })
 	local q3 = data[(0.75 * len) // 1]
 	local q1 = data[(0.25 * len) // 1]
 
-	self.iqr = if q3 and q1 then q3 - q1 else nil
+	self.iqr = if q3 and q1 then q3 - q1 else 0
 end
 
 function hist(self: Format, data: { number })
@@ -154,6 +154,10 @@ type Format = {
 }
 
 function summarize.format(data: { number }): Format
+	if #data == 0 then
+		return {}
+	end
+
 	local format = { hist = {} }
 
 	table.sort(data)
