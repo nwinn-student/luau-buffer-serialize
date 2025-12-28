@@ -298,7 +298,7 @@ local function gen_version(version: string)
 		fs.writeDir(`results/BufferSerializer/{version}`)
 	end
 
-	local path = `../../resources/BufferSerializer/{version}`
+	local path = `../../../resources/BufferSerializer/{version}`
 
 	local serial_from = "results/BufferSerializer/serialize"
 	local serial_to = `results/BufferSerializer/{version}/serialize`
