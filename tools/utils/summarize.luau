@@ -59,7 +59,11 @@ function metrics(self: Format, data: { number })
 	self.max = data[len]
 
 	self.median = data[(0.5 * len) // 1]
-	self.iqr = data[(0.75 * len) // 1] - data[(0.25 * len) // 1]
+
+	local q3 = data[(0.75 * len) // 1]
+	local q1 = data[(0.25 * len) // 1]
+
+	self.iqr = if q3 and q1 then q3 - q1 else nil
 end
 
 function hist(self: Format, data: { number })
@@ -70,7 +74,9 @@ function hist(self: Format, data: { number })
 	local lowIndex = (0.05 * len) // 1
 	local histLow = data[lowIndex ~= 0 and lowIndex or 1]
 	local histHigh = data[(0.95 * len) // 1]
-	local histRange = (histHigh - histLow) / boxCount
+	local histRange = if histHigh and histLow
+		then (histHigh - histLow) / boxCount
+		else 0
 
 	if histRange == 0 then
 		self.hist[`({precision(0, 4)} to {precision(0, 4)})`] = len
