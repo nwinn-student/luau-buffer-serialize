@@ -266,17 +266,17 @@ return {
 		size = buffer.len(data),
 		pair_size = buffer.len(pair_data),
 		compression = {
-			brotli = serde.compress("brotli", data),
-			gzip = serde.compress("gzip", data),
-			lz4 = serde.compress("lz4", data),
-			zlib = serde.compress("zlib", data),
-			zstd = serde.compress("zstd", data),
+			brotli = #serde.compress("brotli", data),
+			gzip = #serde.compress("gzip", data),
+			lz4 = #serde.compress("lz4", data),
+			zlib = #serde.compress("zlib", data),
+			zstd = #serde.compress("zstd", data),
 
-			pair_brotli = serde.compress("brotli", pair_data),
-			pair_gzip = serde.compress("gzip", pair_data),
-			pair_lz4 = serde.compress("lz4", pair_data),
-			pair_zlib = serde.compress("zlib", pair_data),
-			pair_zstd = serde.compress("zstd", pair_data),
+			pair_brotli = #serde.compress("brotli", pair_data),
+			pair_gzip = #serde.compress("gzip", pair_data),
+			pair_lz4 = #serde.compress("lz4", pair_data),
+			pair_zlib = #serde.compress("zlib", pair_data),
+			pair_zstd = #serde.compress("zstd", pair_data),
 		},
 	}
 }
