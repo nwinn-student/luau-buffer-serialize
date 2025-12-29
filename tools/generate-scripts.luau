@@ -218,7 +218,7 @@ return {
 		size = benchData.Output,
 		pair = {
 			time = summarize.format(pair_benchData.Speed.Data),
-			space = summarize.format(pair_benchData.Speed.Data),
+			space = summarize.format(pair_benchData.Memory.Data),
 			metadata = {
 				size = pair_benchData.Output,
 			}
