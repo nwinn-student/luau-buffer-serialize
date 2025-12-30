@@ -30,6 +30,8 @@ BufferSerializer supports most of the built-in Luau types, excluding `function`
   - Users can add support for (de)serializing userdata using the internal API.
 - Cyclic tables
   - See [limitations](./docs/risks.md#limitations) for more information.
+- Pairs
+  - Pays an upfront cost for future duplicates of the paired value to be cheaper.
 
 ### Usage Cases
 A user needs to prepare data for storing in a database, they will use
