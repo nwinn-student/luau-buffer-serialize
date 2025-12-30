@@ -19,7 +19,7 @@ local options = {
 function printHelp()
 	print(string.format(
 		[[
-Usage: %s <name>
+Usage: %s [options] <name>
 
 Available options:
   -h, --help: Display this usage message
@@ -46,13 +46,18 @@ for _, input in process.args do
 		end
 		continue
 	end
-	print(`{input} is not a valid command, see help:`)
-	printHelp()
-	process.exit(0)
+	options.name = input
 end
 
-local data: { [string]: VersionData } =
-	serde.decode("json", fs.readFile("benchmark-results.json")).BufferSerializer
+assert(
+	fs.isFile(options.name or "benchmark-results.json"),
+	`results not found ({options.name or "benchmark-results.json"})`
+)
+
+local data: { [string]: VersionData } = serde.decode(
+	"json",
+	fs.readFile(options.name or "benchmark-results.json")
+).BufferSerializer
 
 local current_data: VersionData = {
 	serialize = data.serialize,
