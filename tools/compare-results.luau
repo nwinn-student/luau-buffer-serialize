@@ -152,17 +152,26 @@ end
 
 -- Uncertain what we need from this
 local function size_compare(version: string?, version_data: VersionData)
-	local size_data = version_data.size
-
 	if not version then
 		version = "CURRENT"
 	end
 
-	for dataset, results in size_data do
-		--results.metadata
+	compare_info.size[version] = {}
+
+	for dataset, results in version_data.size do
+		compare_info.size[version][dataset] = {
+			BufferSerializer = {
+				uncompressed = results.metadata.size,
+				gzip = results.metadata.compression.gzip,
+				lz4 = results.metadata.compression.lz4,
+			},
+			["BufferSerializer (paired)"] = {
+				uncompressed = results.metadata.pair_size,
+				gzip = results.metadata.compression.pair_gzip,
+				lz4 = results.metadata.compression.pair_lz4,
+			},
+		}
 	end
-	--
-	--compare_info.size[version] = {}
 end
 
 local function version_compare(version: string, version_data: VersionData)
@@ -368,7 +377,7 @@ local function version_compare(version: string, version_data: VersionData)
 	size_compare(version, version_data)
 end
 
-size_compare(current_data, compare_info)
+size_compare(nil, current_data)
 
 -- Attempt to compare each version to the current
 if options.all_versions then
