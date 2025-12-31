@@ -256,35 +256,31 @@ local function version_compare(version: string, version_data: VersionData)
 		),
 		size = process_results("size", result_categories.size.ALL),
 		pair_size = process_results("pair size", result_categories.pair_size.ALL),
-		per_category = {
-			time = {},
-			pair_time = {},
-			space = {},
-			pair_space = {},
-			size = {},
-			pair_size = {},
-		},
+		per_category = {},
 	}
 
 	-- process per-category
 	for category, count in count_categories do
 		local per_category = compare_info.serialize[version].per_category
 
-		per_category.time[category] =
+		local category_table = {}
+		per_category[category] = category_table
+
+		category_table.time =
 			process_results("time", result_categories.time[category] / count)
-		per_category.pair_time[category] = process_results(
+		category_table.pair_time = process_results(
 			"pair time",
 			result_categories.pair_time[category] / count
 		)
-		per_category.space[category] =
+		category_table.space =
 			process_results("space", result_categories.space[category] / count)
-		per_category.pair_space[category] = process_results(
+		category_table.pair_space = process_results(
 			"pair space",
 			result_categories.pair_space[category] / count
 		)
-		per_category.size[category] =
+		category_table.size =
 			process_results("size", result_categories.size[category] / count)
-		per_category.pair_size[category] = process_results(
+		category_table.pair_size = process_results(
 			"pair size",
 			result_categories.pair_size[category] / count
 		)
@@ -347,27 +343,25 @@ local function version_compare(version: string, version_data: VersionData)
 			"pair space",
 			result_categories.pair_space.ALL
 		),
-		per_category = {
-			time = {},
-			pair_time = {},
-			space = {},
-			pair_space = {},
-		},
+		per_category = {},
 	}
 
 	-- process per-category
 	for category, count in count_categories do
 		local per_category = compare_info.deserialize[version].per_category
 
-		per_category.time[category] =
+		local category_table = {}
+		per_category[category] = category_table
+
+		category_table.time =
 			process_results("time", result_categories.time[category] / count)
-		per_category.pair_time[category] = process_results(
+		category_table.pair_time = process_results(
 			"pair time",
 			result_categories.pair_time[category] / count
 		)
-		per_category.space[category] =
+		category_table.space =
 			process_results("space", result_categories.space[category] / count)
-		per_category.pair_space[category] = process_results(
+		category_table.pair_space = process_results(
 			"pair space",
 			result_categories.pair_space[category] / count
 		)
