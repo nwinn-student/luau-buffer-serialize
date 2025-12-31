@@ -129,10 +129,9 @@ do
 		`{options.prefix}{options.tag}.rbxm`,
 	})
 
-	if options.delete then
+	if options.delete and fs.isFile(`{options.prefix}{options.tag}.rbxm`) then
 		fs.removeFile(`{options.prefix}{options.tag}.rbxm`)
 	end
-
 	assert(ghRelease.ok, ghRelease.stderr)
 end
 
