@@ -79,11 +79,12 @@ end
 tag_name = `v{options.tag}`
 
 if options.build then
-	process.exec("lune", {
+	local build_process = process.exec("lune", {
 		"run",
 		"tools/build.luau",
 		`--name={options.prefix}{options.tag}`,
 	})
+	assert(build_process.ok, build_process.stderr)
 end
 
 do
