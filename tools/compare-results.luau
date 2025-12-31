@@ -141,10 +141,20 @@ local function sum(tab: { [any]: number })
 end
 
 local function percentage_change(first: number, second: number)
+	if second == 0 then
+		if first == 0 then
+			return 0
+		end
+		return -1 * percentage_change(second, first)
+	end
 	return 100 * (first - second) / second
 end
 
 local function process_results(msg: string, avg_perc: number)
+	if avg_perc == 0 then
+		--return ("Unchanged %s"):format(msg)
+		return
+	end
 	local optim = if avg_perc > 0 then "Optimized" else "Regressed"
 
 	return ("%s %s (%.2f%%)"):format(optim, msg, avg_perc)
@@ -204,12 +214,12 @@ local function version_compare(version: string, version_data: VersionData)
 		local category = results.metadata.taxonomy
 
 		result_categories.time[category] += percentage_change(
-			results.time.average,
-			version_results.time.average
+			results.time.median,
+			version_results.time.median
 		)
 		result_categories.pair_time[category] += percentage_change(
-			results.metadata.pair.time.average,
-			version_results.metadata.pair.time.average
+			results.metadata.pair.time.median,
+			version_results.metadata.pair.time.median
 		)
 		result_categories.space[category] += percentage_change(
 			results.space.average,
@@ -289,7 +299,7 @@ local function version_compare(version: string, version_data: VersionData)
 	table.clear(count_categories) -- could differ
 
 	-- setup count
-	for dataset, results in current_data.serialize do
+	for dataset, results in current_data.deserialize do
 		local category = results.metadata.taxonomy
 		count_categories[category] = (count_categories[category] or 0) + 1
 
@@ -305,12 +315,12 @@ local function version_compare(version: string, version_data: VersionData)
 		local category = results.metadata.taxonomy
 
 		result_categories.time[category] += percentage_change(
-			results.time.average,
-			version_results.time.average
+			results.time.median,
+			version_results.time.median
 		)
 		result_categories.pair_time[category] += percentage_change(
-			results.metadata.pair.time.average,
-			version_results.metadata.pair.time.average
+			results.metadata.pair.time.median,
+			version_results.metadata.pair.time.median
 		)
 		result_categories.space[category] += percentage_change(
 			results.space.average,
