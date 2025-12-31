@@ -176,27 +176,42 @@ if compare_results then
 	local compare_string = "\n"
 
 	compare_string ..= "**Serialize**\n"
-	for _, msg in serialize do
-		if type(msg) ~= "string" then
-			continue
+	local ordered = {
+		"time",
+		"pair_time",
+		"space",
+		"pair_space",
+		"size",
+		"pair_size",
+	}
+	table.sort(ordered, function(a0, a1): boolean
+		return a0 > a1
+	end)
+	for _, key in ordered do
+		local msg = serialize[key]
+		if type(msg) == "string" then
+			compare_string ..= `* {msg}\n`
 		end
-		compare_string ..= `* {msg}\n`
 	end
 
 	compare_string ..= "\n**Deserialize**\n"
-	for _, msg in deserialize do
-		if type(msg) ~= "string" then
-			continue
+	for _, key in ordered do
+		local msg = deserialize[key]
+		if type(msg) == "string" then
+			compare_string ..= `* {msg}\n`
 		end
-		compare_string ..= `* {msg}\n`
 	end
 
 	compare_string ..= "<details><summary>Per Category</summary>\n\n"
 	compare_string ..= "**Serialize**\n\n| Category | Results |\n|--|--|\n"
+
 	for category, results in serialize.per_category do
 		local results_string = ""
-		for _, msg in results do
-			results_string ..= `{msg}<br/>`
+		for _, key in ordered do
+			local msg = results[key]
+			if type(msg) == "string" then
+				results_string ..= `{msg}<br/>`
+			end
 		end
 
 		compare_string ..= `| {category} | {results_string:sub(1, -6)} |\n`
@@ -205,8 +220,11 @@ if compare_results then
 	compare_string ..= "\n**Deserialize**\n\n| Category | Results |\n|--|--|\n"
 	for category, results in deserialize.per_category do
 		local results_string = ""
-		for _, msg in results do
-			results_string ..= `{msg}<br/>`
+		for _, key in ordered do
+			local msg = results[key]
+			if type(msg) == "string" then
+				results_string ..= `{msg}<br/>`
+			end
 		end
 
 		compare_string ..= `| {category} | {results_string:sub(1, -6)} |\n`
