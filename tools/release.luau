@@ -205,7 +205,15 @@ if compare_results then
 	compare_string ..= "<details><summary>Per Category</summary>\n\n"
 	compare_string ..= "**Serialize**\n\n| Category | Results |\n|--|--|\n"
 
-	for category, results in serialize.per_category do
+	local ordered_categories = {}
+	for category in serialize.per_category do
+		table.insert(ordered_categories, category)
+	end
+	table.sort(ordered_categories, function(a0, a1): boolean
+		return a0 < a1
+	end)
+	for _, category in ordered_categories do
+		local results = serialize.per_category[category]
 		local results_string = ""
 		for _, key in ordered do
 			local msg = results[key]
@@ -216,9 +224,18 @@ if compare_results then
 
 		compare_string ..= `| {category} | {results_string:sub(1, -6)} |\n`
 	end
+	table.clear(ordered_categories) -- could differ?
 
 	compare_string ..= "\n**Deserialize**\n\n| Category | Results |\n|--|--|\n"
-	for category, results in deserialize.per_category do
+
+	for category in deserialize.per_category do
+		table.insert(ordered_categories, category)
+	end
+	table.sort(ordered_categories, function(a0, a1): boolean
+		return a0 < a1
+	end)
+	for _, category in ordered_categories do
+		local results = deserialize.per_category[category]
 		local results_string = ""
 		for _, key in ordered do
 			local msg = results[key]
