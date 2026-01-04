@@ -348,7 +348,7 @@ return {
 		taxonomy = "%s",
 		pair = {
 			time = summarize.format(pair_benchData.Speed.Data),
-			space = summarize.format(pair_benchData.Speed.Data),
+			space = summarize.format(pair_benchData.Memory.Data),
 		}
 	}
 }
