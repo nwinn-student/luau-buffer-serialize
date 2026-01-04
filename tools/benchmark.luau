@@ -106,9 +106,20 @@ local function processPath(file: string, data, fn)
 	end
 end
 
-local data = if fs.isFile(options.output)
-	then serde.decode("json", fs.readFile(options.output))
-	else {}
+local data = {}
+
+if fs.isFile(options.output) then
+	local success, output_data =
+		pcall(serde.decode, "json", fs.readFile(options.output))
+	assert(success, `{options.output} was not valid JSON`)
+	if success then
+		assert(
+			type(output_data) == "table",
+			`{options.output} did not contain a table`
+		)
+		data = output_data
+	end
+end
 
 local count = 0
 processPath(options.path:sub(#prefile + 1), {}, function(_: string)
