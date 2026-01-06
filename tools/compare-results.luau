@@ -174,7 +174,6 @@ local function populate_changes(
 	end
 end
 
--- Uncertain what we need from this
 local function size_compare(version: string?, version_data: VersionData)
 	if not version then
 		version = "CURRENT"
