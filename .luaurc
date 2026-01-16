@@ -2,6 +2,6 @@
   "aliases": {
     "BufferSerializer": "./src/",
     "lune": "~/.lune/.typedefs/0.10.2/",
-    "summarize": "./tools/utils/summarize",
+    "summarize": "./tools/benchmark/summarize",
   }
 }
