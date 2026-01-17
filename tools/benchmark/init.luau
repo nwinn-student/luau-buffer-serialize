@@ -16,11 +16,11 @@ local benchmark = {}
 ]]
 
 local fs = require("@lune/fs")
-local path = require("./utils/path")
+local path = require("@self/path")
 local process = require("@lune/process")
-local progress = require("./utils/progress")
+local progress = require("@self/progress")
 local serde = require("@lune/serde")
-local summarize = require("./utils/summarize")
+local summarize = require("@self/summarize")
 
 local options = {
 	path = "",
@@ -136,15 +136,42 @@ type BenchData = {
 processPath(options.path:sub(#prefile + 1), data, function(file: string)
 	progressCounter:run(file:sub(1 + #relfile))
 
-	local data: BenchData = require(file)
+	-- table expected, ensures we can modify the values without errors
+	local data: BenchData = table.clone(require(file))
+
+	-- Validation of BenchData format
+	assert(type(data) == "table", `table expected (got {type(data)})`)
+
+	for key, value in data do
+		assert(
+			key == "metadata" or key == "time" or key == "space",
+			`{key} is not supported`
+		)
+		assert(
+			type(value) == "table",
+			`table expected for '{key}' (got {type(data)})`
+		)
+	end
+
+	for meta_key in data.metadata do
+		assert(
+			type(meta_key) == "string",
+			`string expected for 'metadata' key (got {type(meta_key)})`
+		)
+	end
+
+	data.time = summarize.format(data.time)
+	data.space = summarize.format(data.space)
 
 	progressCounter:complete(file:sub(1 + #relfile))
 
-	return {
-		time = summarize.format(data.time),
-		space = summarize.format(data.space),
-		metadata = data.metadata,
-	}
+	return data
+
+	--return {
+	--	time = summarize.format(data.time),
+	--	space = summarize.format(data.space),
+	--	metadata = data.metadata,
+	--}
 end)
 
 if options.output then
