@@ -12,7 +12,7 @@ local benchmark = {}
 	To run:
 	cd to/repo/path
 
-	lune run tools/benchmark results/BufferSerializer
+	lune run tools/benchmark results
 ]]
 
 local fs = require("@lune/fs")
