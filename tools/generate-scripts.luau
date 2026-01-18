@@ -109,7 +109,7 @@ local rawdata = {}
 do
 	local file_name = "resources/datasets/%s/document.json"
 	assert(fs.isFile(file_name), `{file_name} does not exist`)
-	local success, file_data = pcall(sede.decode, "json", fs.readFile(file_name))
+	local success, file_data = pcall(serde.decode, "json", fs.readFile(file_name))
 	assert(success, `{file_name} could not be parsed`)
 	rawdata = file_data
 end
