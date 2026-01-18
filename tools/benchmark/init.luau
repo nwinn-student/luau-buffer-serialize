@@ -41,6 +41,13 @@ Available options:
   --skip=<path[,path]>: Excludes the given paths that match from running
   --output=<file>: Which file to store the results in
     Defaults to benchmark-results.json
+
+Examples:
+Runs all .lua(u) files, recursively, under the 'results' directory
+  lune run tools/benchmark results
+
+Same as above, but does not run the files/directories starting with 'foo' or 'bar'
+  lune run tools/benchmark results --skip=foo,bar
 	]],
 		process.env._
 	))
@@ -59,18 +66,17 @@ for _, input in process.args do
 		options.output = input:sub(10)
 		continue
 	end
+	assert(fs.isDir(input), `{input} does not exist in the file system`)
 	options.path = input
 end
 
+assert(#options.path ~= 0, "path was not initialized")
+
 local source = debug.info(1, "s")
-local prefile = options.path:sub(
-	1,
-	-1 - #path.name(options.path) - #path.getextension(options.path)
-)
-local relfile = path.relativeTo(source) .. prefile
+local relfile = path.relativeTo(source) -- .. options.path
 
 local function processPath(file: string, data, fn)
-	if not fs.isDir(prefile .. file) and not fs.isFile(prefile .. file) then
+	if not fs.isDir(file) and not fs.isFile(file) then
 		return
 	end
 
@@ -80,7 +86,7 @@ local function processPath(file: string, data, fn)
 		end
 	end
 
-	local fileName = path.name(prefile .. file)
+	local fileName = path.name(file)
 	local fileExt = path.getextension(file)
 
 	if fileName == "init" and (fileExt == "luau" or fileExt == "lua") then
@@ -88,7 +94,7 @@ local function processPath(file: string, data, fn)
 		return
 	end
 
-	if fs.isFile(prefile .. file) and (fileExt == "luau" or fileExt == "lua") then
+	if fs.isFile(file) and (fileExt == "luau" or fileExt == "lua") then
 		local results = fn(relfile .. path.removeextension(file))
 
 		if results then
@@ -96,12 +102,12 @@ local function processPath(file: string, data, fn)
 		end
 
 		return
-	elseif fs.isFile(prefile .. file) then
+	elseif fs.isFile(file) then
 		return
 	end
 
 	data[fileName] = data[fileName] or {}
-	for _, fi in fs.readDir(prefile .. file) do
+	for _, fi in fs.readDir(file) do
 		processPath(file .. "/" .. fi, data[fileName], fn)
 	end
 end
@@ -122,9 +128,12 @@ if fs.isFile(options.output) then
 end
 
 local count = 0
-processPath(options.path:sub(#prefile + 1), {}, function(_: string)
-	count += 1
-end)
+for _, name in fs.readDir(options.path) do
+	processPath(`{options.path}/{name}`, {}, function(_: string)
+		count += 1
+	end)
+end
+
 local progressCounter = progress.new(count)
 
 type BenchData = {
@@ -133,8 +142,13 @@ type BenchData = {
 	metadata: { [string]: any }?,
 }
 
-processPath(options.path:sub(#prefile + 1), data, function(file: string)
-	progressCounter:run(file:sub(1 + #relfile))
+-- The relative to root to source to path
+-- Relative to root to source: (../../../usr/prog/bs/)
+-- Source to path: (results/)
+local pathsize = #relfile + #options.path + 1
+
+local function processData(file: string)
+	progressCounter:run(file:sub(1 + pathsize))
 
 	-- table expected, ensures we can modify the values without errors
 	local data: BenchData = table.clone(require(file))
@@ -160,19 +174,18 @@ processPath(options.path:sub(#prefile + 1), data, function(file: string)
 		)
 	end
 
+	-- performs validation and morphs table to fit desired shape
 	data.time = summarize.format(data.time)
 	data.space = summarize.format(data.space)
 
-	progressCounter:complete(file:sub(1 + #relfile))
+	progressCounter:complete(file:sub(1 + pathsize))
 
 	return data
+end
 
-	--return {
-	--	time = summarize.format(data.time),
-	--	space = summarize.format(data.space),
-	--	metadata = data.metadata,
-	--}
-end)
+for _, name in fs.readDir(options.path) do
+	processPath(`{options.path}/{name}`, data, processData)
+end
 
 if options.output then
 	fs.writeFile(options.output, serde.encode("json", data, true))
