@@ -1,5 +1,11 @@
+**Table of Contents**
 
-## BufferSerializer.serialize
+- (serialize)[#serialize]
+- (deserialize)[#deserialize]
+- (pair)[#pair]
+
+
+## Serialize
 
 **Type**
 
@@ -24,11 +30,16 @@ local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
 **Returns**
 - a buffer representing the serialized value
 
+## Deserialize
 
-`deserialize(data: buffer): any`: Takes in a serialized version of some data
-and **recreates** and returns the original data.
+**Type**
 
-## BufferSerializer.pair
+`(value: buffer): any`
+
+
+
+
+## Pair
 
 **Type**
 
