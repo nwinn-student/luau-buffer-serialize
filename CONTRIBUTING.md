@@ -1,15 +1,6 @@
 # Contributing to BufferSerializer
 Thank you for your interest in contributing to BufferSerializer!
 
-## Table of Contents
-- [Questions](#questions)
-- [Documentation](#documentation)
-- [How to Contribute Code](#how-to-contribute-code)
-- [Coding Standards](#coding-standards)
-- [Reporting Issues](#reporting-issues)
-- [Pull Requests](#pull-requests)
-- [Code Review](#code-review)
-
 ## Questions
 If you have any questions, feel free to create a new discussion or reach out to the maintainers.
 
