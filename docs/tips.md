@@ -12,8 +12,6 @@ When migrating, the following steps are used.
    - Easier to iterate since the output is readable.
    - Improvements here often reflect in BufferSerializer, except number to
  string precision reduction and a few other edge cases.
-   - Userdata and vectors will need to be converted into tables, strings, or
- numbers.  When switching to BufferSerializer, both can be swapped back in.
 
 2. Find strings, numbers, vectors, or userdata that is repeatedly stored in
  the dataset and pair the values to identifiers.
