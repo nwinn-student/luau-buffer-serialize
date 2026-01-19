@@ -12,12 +12,13 @@ When migrating, the following steps are used.
    - Easier to iterate since the output is readable.
    - Reductions are often reflected in BufferSerializer.
 
-2. Find strings, numbers, vectors, or userdata that are repeatedly stored in
- the dataset and pair the values to identifiers.
+2. Pair frequently used values.  Only strings, numbers, vectors, or userdata
+ values are supported.
 
 3. Convert strings that can be expressed as unions into numbers, ids.
    - A `Greeting` union would be "Hello" -> 1, "Hey" -> 2, "What's up" -> 3, etc.
-   - **Use with caution.** Haphazard changes from idd and values causes migration concerns.  See [patch for pairs](https://github.com/nwinn-student/luau-buffer-serialize/discussions/36).
+   - **Use with caution.** Haphazard changes from idd and values causes migration
+ concerns.  See [patch for pairs](https://github.com/nwinn-student/luau-buffer-serialize/discussions/36).
 
 4. Identify whether there are arrays in the dataset with gaps worth filling
  with nil bytes, functions and threads can be used to represent `nil`.
