@@ -28,7 +28,7 @@ end
 
 local data = {}
 
-for i=0, 100 do
+for i=0, 30 do
     table.insert(data, GenerateFruit())
 end
 
