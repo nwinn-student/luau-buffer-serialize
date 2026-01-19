@@ -1,18 +1,43 @@
 local bufferSerial = require("./BufferSerializer")
 
-local data = {
-	Foo = "Baz",
-	Fruit = "Apple"
+type Fruit = {
+    seed_count: number,
+    is_ripe: boolean,
+    species: string,
 }
 
--- We don't know if Baz or Apple are constant, but we can assume
--- that Foo and Fruit are
-bufferSerial.pair(1, "Foo")
-bufferSerial.pair(2, "Fruit")
+-- the keys will take 1 byte each
+-- after the first store
+bufferSerial.pair(1, "seed_count")
+bufferSerial.pair(2, "is_ripe")
+bufferSerial.pair(3, "species")
+
+local function GenerateFruit()
+    local seed_count = math.floor(10,25)
+    local is_ripe = math.random(0,1) == 1
+    local species = `{
+        string.char(math.random(64,86))
+    }{math.random(100,999)}`
+
+    return {
+        seed_count = seed_count,
+        is_ripe = is_ripe,
+        species = species,
+    }
+end
+
+local data = {}
+
+for i=0, 100 do
+    table.insert(data, GenerateFruit())
+end
 
 local serData = bufferSerial.serialize(data)
 
 -- ...
 
 local deserData = bufferSerial.deserialize(serData)
-print(deserData.Foo, deserData.Fruit) -- Baz	Apple
+
+for _, fruit in deserData do
+    print(`{fruit.species} has {fruit.seed_count} seeds`)
+end
