@@ -59,8 +59,8 @@ BufferSerializer.pair(5, "Foo")
 local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
 ```
 **Parameters**
-- id the number associated with the value
-- value the value reference compared against when serializing
+- id - the number associated with the value
+- value - the value reference compared against when serializing
 
 **Errors**
 - Invalid type: When the value is not a string, number, vector, or userdata
