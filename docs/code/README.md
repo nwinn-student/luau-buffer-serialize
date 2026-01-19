@@ -1,11 +1,29 @@
-<!--
 
-Needs alot of work, can pull from other prs
+## BufferSerializer.serialize
 
--->
+**Type**
 
-`serialize(data: any): buffer`: Takes in a value and spits out the serialized
-version within a buffer.
+`(value: any): buffer`
+
+Serializes the provided value into a buffer.
+
+- Follows the specified format in [FORMAT.md](../FORMAT.md).
+
+**Recommendations:**
+- Protect value from concurrent modifications, specifically tables and buffers.
+
+**Example:**
+```luau
+local BufferSerializer = require("./path/to/BufferSerializer")
+
+local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
+```
+**Parameters**
+- value - the value to serialize
+
+**Returns**
+- a buffer representing the serialized value
+
 
 `deserialize(data: buffer): any`: Takes in a serialized version of some data
 and **recreates** and returns the original data.
