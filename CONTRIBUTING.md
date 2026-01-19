@@ -29,10 +29,6 @@ If you find any part of the documentation unclear, please let us know.
  directory of the repository, assuming luau-analyze is installed.
 4. Submit a pull request with a clear description.
 
-## Coding Standards
-
-- Follow the [Roblox Lua Style Guide](https://roblox.github.io/lua-style-guide/).
-
 ## Reporting Issues
 
 - Search existing issues first.
