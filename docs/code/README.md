@@ -14,7 +14,7 @@ and **recreates** and returns the original data.
 
 **Type**
 
-`(id: number, data: any): ()`
+`(id: number, value: any): ()`
 
 - Ids replace the value when serializing, should the value be rawequal.
 	- Only applicable within tables.
