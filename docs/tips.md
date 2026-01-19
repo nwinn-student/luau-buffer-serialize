@@ -7,20 +7,28 @@ When migrating, the following steps are used.
 
 ## Reducing output size
 
-Reformat the dataset into a form that produces a minimal output size in
+1. Reformat the dataset to produce a minimal output size in
  JSON.
+   - Easier to iterate since the output is readable.
+   - Reductions are often reflected in BufferSerializer.
 
-Identify whether there are arrays in the dataset with gaps worth filling
-     >  with nil bytes, functions and threads can be used to represent `nil`.
+2. Pair frequently used values.  For more information
+ see [pairs](https://github.com/nwinn-student/luau-buffer-serialize/blob/main/docs/code/README.md).
 
-Supply known pairs to BufferSerializer.
+3. Convert strings that can be expressed as unions into numbers, identifiers.
+   - A `Greeting` union would be "Hello" -> 1, "Hey" -> 2, "What's up" -> 3, etc.
+   - **Use with caution.** Haphazard changes to id-value pairs causes migration
+ concerns.  See [patch for pairs](https://github.com/nwinn-student/luau-buffer-serialize/discussions/36).
 
-Reformatting using JSON as a reference is much simpler than understanding how
-BufferSerializer internals function in order to reduce the output size.  Most
-improvements to the JSON version of the format will improve the output of
-BufferSerializer.  The more information known regarding the dataset, the smaller
-the output size can be, and at some point, schema-based serializers will be more
-optimal, and beyond that a custom-made serializer based on the specific
-information.  BufferSerializer sits right before schema-based serializers in
-that it assumes less knowledge is known regarding the format and the little
-known can be conveyed through pairings and userdata functions.
+4. Identify whether there are arrays in the dataset with gaps worth filling
+ with nil bytes, functions and threads can be used to represent `nil`.
+   - In `{ 1, 2, _, 4, 5 }`, where `_` denotes a gap, adding a placeholder function
+ will reduce the output size from 14 to 10 bytes.
+   - Determining worth requires looking at the output size as combinations of gaps
+ are filled.
+
+5. The more known about the dataset, the smaller the output size can be.
+   - Knowledge of a dataset's schema (or shape) can be used to morph the dataset
+ into a cheaper form (using 3.).
+   - Numbers can be compressed when precision is not important.  Ex: A random number (0-1) can be stored as a byte when we only care about nearest 0.005.
+
