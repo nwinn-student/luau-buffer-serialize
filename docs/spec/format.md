@@ -26,11 +26,6 @@ Paired ids are stored either in the byte itself, or as a 2 byte number.
 
 ## Design
 
-**Under construction..**
-
-
-<!--
-
 | Tag(s)  | Cost     | Type       | Description                             |
 |---------|----------|------------|-----------------------------------------|
 | 0       | 1        | `nil`      | The constant `nil` or unsupported types |
@@ -93,5 +88,3 @@ Paired ids are stored either in the byte itself, or as a 2 byte number.
 | 214-215 | 2        | `userdata` | The id for a paired userdata value      |
 | 216-239 | 0        | `future`   | Reserved for new types or expansions    |
 | 240-255 | 0        | `extend`   | Reserved for extenders                  |
-
--->
