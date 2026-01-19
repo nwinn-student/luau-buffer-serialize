@@ -36,9 +36,6 @@ When migrating, the following steps are used.
 
 5. The more known about the dataset, the smaller the output size can be.
    - Knowledge of a dataset's schema (or shape) can be used to morph the dataset
- into a cheaper form (using 3.).  Ideally, the dataset would be wrapped to provide
- users a better experience.
-   - Numbers can be compressed when precision is not important.  Such as storing a
- random number between 0 and 1, which is only checked to the nearest 0.005, can be
- converted into a byte (5/9 -> 2).
+ into a cheaper form (using 3.).
+   - Numbers can be compressed when precision is not important.  Ex: A random number (0-1) can be stored as a byte when we only care about nearest 0.005.
 
