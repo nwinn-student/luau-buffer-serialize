@@ -7,7 +7,7 @@ When migrating, the following steps are used.
 
 ## Reducing output size
 
-1. Reformat the dataset into a form that produces a minimal output size in
+1. Reformat the dataset to produce a minimal output size in
  JSON.
    - Easier to iterate since the output is readable.
    - Reductions are often reflected in BufferSerializer.
