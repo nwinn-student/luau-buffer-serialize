@@ -18,7 +18,7 @@ When migrating, the following steps are used.
 3. Convert strings that can be expressed as unions into numbers, identifiers.
    - A `Greeting` union would be "Hello" -> 1, "Hey" -> 2, "What's up" -> 3, etc.
    - **Use with caution.** Haphazard changes to id-value pairs causes migration
- concerns.  See [patch for pairs](#36)
+ concerns.  See [patch for pairs](https://github.com/nwinn-student/luau-buffer-serialize/discussions/36).
 
 4. Identify whether there are arrays in the dataset with gaps worth filling
  with nil bytes, functions and threads can be used to represent `nil`.
