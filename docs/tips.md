@@ -12,8 +12,8 @@ When migrating, the following steps are used.
    - Easier to iterate since the output is readable.
    - Reductions are often reflected in BufferSerializer.
 
-2. Pair frequently used values.  Only strings, numbers, vectors, or userdata
- values are supported.
+2. Pair frequently used values.  For more information
+ see [pairs](../code/README.md).
 
 3. Convert strings that can be expressed as unions into numbers, identifiers.
    - A `Greeting` union would be "Hello" -> 1, "Hey" -> 2, "What's up" -> 3, etc.
