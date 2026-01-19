@@ -18,14 +18,7 @@ When migrating, the following steps are used.
 
 3. Convert strings that can be expressed as unions into numbers, ids.
    - A `Greeting` union would be "Hello" -> 1, "Hey" -> 2, "What's up" -> 3, etc.
-   - **Use with caution.** The ids must be unchanged through future versions,
- thus avoid when the union is not guaranteed to be fixed.
-   - This approach produces smaller output sizes than the built-in duplicate
- value approach, going from N + 3M to 2M (assuming -128-127 as id range) where
- N is cost of initial string and M is number of usages.
-   - History: Initially pairs used this approach, however it lead to **migration
- concerns** and was revamped to store the value-identifier pair first, then solely
- the identifier on subsequent usages.
+   - **Use with caution.** Haphazard changes from idd and values causes migration concerns.  See #33.
 
 4. Identify whether there are arrays in the dataset with gaps worth filling
  with nil bytes, functions and threads can be used to represent `nil`.
