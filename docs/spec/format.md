@@ -12,7 +12,11 @@ Numbers are stored in little-endian.
 
 **Are strings compressed?**
 
-No, strings and buffers are stored in their raw form.
+No, strings and buffers are stored in their raw form, as sequences of bytes.
+
+**How are cyclic tables stored?**
+
+Values are recorded and any duplicate is fast pathed to avoid re-serializing and is compressed to 3 bytes (`196`).  Tables are recorded before serializing, so cyclic tables are stored as 3 byte references to prior serialized or currently serializing tables.
 
 **How can I find the size of a table?**
 
