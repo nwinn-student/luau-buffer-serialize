@@ -75,8 +75,6 @@ local originData = BufferSerializer.deserialize(serialData)
 	 stored as [ID].
 - Values replace the id when deserializing.
 - Equivalent userdata may not be rawequal
-	- See [userdata.luau](./userdata.luau) for information about supporting
-	 userdata.
 
 - Ids are stored as 1-2 bytes, depending on the number associated with the id
  and the value's type.
