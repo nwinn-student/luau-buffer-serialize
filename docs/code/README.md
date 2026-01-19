@@ -1,8 +1,8 @@
 **Table of Contents**
 
-- (serialize)[#serialize]
-- (deserialize)[#deserialize]
-- (pair)[#pair]
+- [serialize](#serialize)
+- [deserialize](#deserialize)
+- [pair](#pair)
 
 
 ## Serialize
@@ -36,6 +36,30 @@ local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
 
 `(value: buffer): any`
 
+Deserializes the provided buffer, producing the value originally serialized.
+
+- Operates under the assumption that the buffer follows the specified format in
+	[FORMAT.md](../FORMAT.md).
+- Capable of deserializing values impossible for `serialize` to produce.
+
+**Recommendations:**
+- Protect value from concurrent modifications.
+
+**Example:**
+```luau
+local BufferSerializer = require("./path/to/BufferSerializer")
+local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
+
+local originData = BufferSerializer.deserialize(serialData)
+```
+** Parameters**
+- value - buffer containing a serialized value
+
+**Errors**
+- buffer access out of bounds
+
+**Returns**
+- the original value
 
 
 
