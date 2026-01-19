@@ -13,7 +13,7 @@ When migrating, the following steps are used.
    - Improvements here often reflect in BufferSerializer, except number to
  string precision reduction and a few other edge cases.
 
-2. Find strings, numbers, vectors, or userdata that is repeatedly stored in
+2. Find strings, numbers, vectors, or userdata that are repeatedly stored in
  the dataset and pair the values to identifiers.
 
 3. Convert strings that can be expressed as unions into numbers, ids.
