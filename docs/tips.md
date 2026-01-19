@@ -10,7 +10,7 @@ When migrating, the following steps are used.
 1. Reformat the dataset into a form that produces a minimal output size in
  JSON.
    - Easier to iterate since the output is readable.
-   - Improvements here often reflect in BufferSerializer.
+   - Reductions are often reflected in BufferSerializer.
 
 2. Find strings, numbers, vectors, or userdata that are repeatedly stored in
  the dataset and pair the values to identifiers.
