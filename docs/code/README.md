@@ -13,7 +13,7 @@
 
 Serializes the provided value into a buffer.
 
-- Follows the specified format in [FORMAT.md](../FORMAT.md).
+- Follows the specified format in the [spec](../spec/format.md).
 
 **Recommendations:**
 - Protect value from concurrent modifications, specifically tables and buffers.
@@ -39,7 +39,7 @@ local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
 Deserializes the provided buffer, producing the value originally serialized.
 
 - Operates under the assumption that the buffer follows the specified format in
-	[FORMAT.md](../FORMAT.md).
+	[spec](../spec/format.md).
 - Capable of deserializing values impossible for `serialize` to produce.
 
 **Recommendations:**
@@ -52,7 +52,7 @@ local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
 
 local originData = BufferSerializer.deserialize(serialData)
 ```
-** Parameters**
+**Parameters**
 - value - buffer containing a serialized value
 
 **Errors**
