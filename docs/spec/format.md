@@ -12,7 +12,11 @@ Numbers are stored in little-endian.
 
 **Are strings compressed?**
 
-No, strings and buffers are stored in their raw form.
+No, strings and buffers are stored in their raw form, as sequences of bytes.
+
+**How are cyclic tables stored?**
+
+Values are recorded and any duplicate is fast pathed to avoid re-serializing and is compressed to 3 bytes (`196`).  Tables are recorded before serializing, so cyclic tables are stored as 3 byte references to prior serialized or currently serializing tables.
 
 **How can I find the size of a table?**
 
@@ -24,12 +28,11 @@ Paired ids are stored either in the byte itself, or as a 2 byte number.
  For the 2 byte number, the first byte represents which batch to enter, 
  and the second byte represents the id linked to the value.
 
+**Why are vectors stored in different formats?**
+
+Vectors have multiple modes: scalar multiple, multi-set (byte, char, tryte), and set.  Scalar multiple vectors are multiples of the constant vectors, thus they can be stored in less bytes.  The intent behind multiple modes is primarily to produce smaller output sizes.  Vectors are basically numerical arrays of size 3, so two common cases (multi-set and set) were chosen to account for all cases and then special cases (scalar multiple) get a fast path with little cost.
+
 ## Design
-
-**Under construction..**
-
-
-<!--
 
 | Tag(s)  | Cost     | Type       | Description                             |
 |---------|----------|------------|-----------------------------------------|
@@ -93,5 +96,3 @@ Paired ids are stored either in the byte itself, or as a 2 byte number.
 | 214-215 | 2        | `userdata` | The id for a paired userdata value      |
 | 216-239 | 0        | `future`   | Reserved for new types or expansions    |
 | 240-255 | 0        | `extend`   | Reserved for extenders                  |
-
--->
