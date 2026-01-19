@@ -33,7 +33,7 @@ If you find any part of the documentation unclear, please let us know.
 
 - Search existing issues first.
 - Provide a clear title, description, and steps to reproduce, if applicable.
-- Include relevant logs or screenshots.
+- Include relevant logs or screenshots or bytecode.
 - Suggest possible solutions if you have any.
 
 ## Pull Requests
@@ -41,10 +41,7 @@ If you find any part of the documentation unclear, please let us know.
 - Should an issue be attached, add `Closes #1`.
 - Run benchmarks if performance is affected, and include results.
 - Ensure all tests pass, adding new tests if necessary.
-  - The test suite can be run with `luau ./tests` in the root directory,
- assuming Luau is installed.
 - Ensure documentation is updated if necessary.
-- Keep your branch up to date with `main`.
 - Respond to feedback.
 
 ## Code Review
