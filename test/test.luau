@@ -96,7 +96,7 @@ local test = {
 		end
 		return buf
 	end,
-	serial = function(ori: buffer, new: buffer)
+	serial = function(new: buffer, ori: buffer)
 		local testFail = false
 
 		local oriSize = buffer.len(ori)
