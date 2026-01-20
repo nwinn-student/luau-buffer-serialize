@@ -31,7 +31,9 @@ The recommended solution in both cases is to use standard
 #### Userdata Custom Approach
 
 Requires careful handling to ensure custom serialization and
- deserialization functions are compatible.
+ deserialization functions are compatible.  The buffer containing
+ the serialization data could be modified illegally, the userdata
+ could also be modified.
 
 #### Limitations
 
