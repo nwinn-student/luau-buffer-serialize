@@ -33,9 +33,9 @@ local deserialModules = table.freeze({
 	table = require("@self/table").deserialize,
 	userdata = require("@self/userdata").deserialize,
 })
-local pairModules = link.values :: { [any]: any }
 
 local calcId = link.calculateId
+local linkSet = link.set
 local linkType = link.type
 
 type Serialize = (
@@ -220,7 +220,7 @@ function BufferSerializer.pair(id: number, value: any): ()
 		`Invalid vector {value} (cannot be a built-in)`
 	)
 
-	pairModules[value] = calcId(id, typeV)
+	linkSet(value, calcId(id, typeV))
 end
 
 return table.freeze(BufferSerializer)
