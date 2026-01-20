@@ -90,8 +90,6 @@ local ghRelease = process.exec("gh", {
 	"--discussion-category",
 	"Announcements",
 	"--fail-on-no-commits",
-	"--title",
-	`Version {options.tag}`,
 	-- If lune fails, this will fail too
 	`{options.prefix}{options.tag}.rbxm`,
 })
