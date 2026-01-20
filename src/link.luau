@@ -28,7 +28,21 @@ local USER_DUOSTART = 214
 -- vector: 1 to 1055
 -- userdata: 1 to 521
 
-link.values = {}
+local values = {}
+
+function link.get(key: any): number?
+	return values[key]
+end
+function link.set(key: any, value: number?)
+	-- TODO: Add validation
+	values[key] = value
+end
+function link.clear()
+	table.clear(values)
+end
+function link.length()
+	return #values
+end
 
 --[[
 	Appends the id to the buffer at the given position, returning the inputs.
