@@ -14,7 +14,7 @@ local release = {}
 	lune run tools/build.luau --name=BufferSerializerTAG
 	gh release create vTAG \
 		--generate-notes --discussion-category Announcements \
-		--fail-on-no-commits --title Version TAG \
+		--fail-on-no-commits \
 		BufferSerializerTAG.rbxm
 ]]
 
