@@ -34,7 +34,22 @@ function link.get(key: any): number?
 	return values[key]
 end
 function link.set(key: any, value: number?)
-	-- TODO: Add validation
+	local typeKey = type(key)
+	assert(typeKey == "string"
+		or typeKey == "number"
+		or typeKey == "vector"
+		or typeKey == "userdata",
+		`expected supported (got {typeKey})`
+	)
+	if value == nil then
+		values[key] = nil
+		return
+	end
+
+	assert(
+		type(value) == "number" and id % 1 == 0 and id == id,
+		`Invalid id {id} (must be an integer)`
+	)
 	values[key] = value
 end
 function link.clear()
