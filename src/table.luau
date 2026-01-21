@@ -2,7 +2,7 @@
 --!strict
 local inflate = require("./inflate")
 local link = require("./link")
-local linkValues = link.values :: { [any]: any }
+local linkGet = link.get
 local linkSer = link.serialize
 local linkType = link.type
 local isLink = link.islink
@@ -30,28 +30,28 @@ local serialSwitch: Switch<string, Serialize> = table.freeze({
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
 	string = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = linkValues[data]
+		local linkId = linkGet(data)
 		if linkId then
 			return linkSer(linkId, buf, pos, size)
 		end
 		return strSer(data, buf, pos, size)
 	end,
 	number = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = linkValues[data]
+		local linkId = linkGet(data)
 		if linkId then
 			return linkSer(linkId, buf, pos, size)
 		end
 		return numSer(data, buf, pos, size)
 	end,
 	vector = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = linkValues[data]
+		local linkId = linkGet(data)
 		if linkId then
 			return linkSer(linkId, buf, pos, size)
 		end
 		return vecSer(data, buf, pos, size)
 	end,
 	userdata = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = linkValues[data]
+		local linkId = linkGet(data)
 		if linkId then
 			return linkSer(linkId, buf, pos, size)
 		end

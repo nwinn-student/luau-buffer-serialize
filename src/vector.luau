@@ -144,6 +144,17 @@ local function vecSerializer(
 	if not isNumber then
 		typeZ = getType(valueZ)
 		isNumber = typeY ~= typeZ
+		if
+        isNumber
+        and (typeX == FLOAT
+        or typeY == FLOAT
+        or typeZ == FLOAT)
+    then
+        -- fft = 15, ftt = 14
+        -- so no floats
+        typeX = FLOAT
+        isNumber = false
+    end
 	end
 
 	-- 4+ bytes (NOT intelligent, as a const byte will be more expensive)
