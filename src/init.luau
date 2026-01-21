@@ -159,7 +159,7 @@ type TYPES = "userdata" | "number" | "string" | "vector"
 	```luau
 	local BufferSerializer = require("./path/to/BufferSerializer")
 
-	-- 5 is between 1 and 64, so it will take 1 byte to store "Foo"
+	-- 5 is between 1 and 64, so it will take 1 byte to store subsequent "Foo"s
 	BufferSerializer.pair(5, "Foo")
 
 	local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
