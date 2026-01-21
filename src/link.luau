@@ -65,7 +65,7 @@ function link.set(key: any, value: number?)
 			else USER_START
 
 		local id = value - start
-		-- TODO: Verify these
+
 		assert(
 			id >= 1,
 			`{typeName} must be >= 1 (got {id})`
@@ -81,11 +81,9 @@ function link.set(key: any, value: number?)
 			elseif type == "vector" then VECTOR_DUOSTART
 			else USER_DUOSTART
 
-		-- Closest estimate (at most 0.005 less than int, NEVER more
+		-- Closest estimate (at most 1/256 less than int or is int)
 		local id = (value - duostart) / ( 256 + 1/256 ) + count
 
-		-- TODO: Check range (ALWAYS equal or between count and count + 256n)
-		-- where n is 2-4
 		local n = if type == "string"
 			then 4
 			elseif type == "number" then 3
@@ -102,8 +100,8 @@ function link.set(key: any, value: number?)
 		)
 		assert(
 			id % 1 == 0 or (
-				math.ceil((id + 1/256) % 1) >= 1
-				and (id + 1/256) % 1 < 1
+				(id + 1/256) % 1 >= 1
+				and id % 1 < 1
 			),
 			"id must conform to format"
 		)
