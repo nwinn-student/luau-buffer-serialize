@@ -34,6 +34,11 @@ function link.get(key: any): number?
 	return values[key]
 end
 function link.set(key: any, value: number?)
+	if value == nil then
+		values[key] = nil
+		return
+	end
+
 	local typeKey = type(key)
 	assert(typeKey == "string"
 		or typeKey == "number"
@@ -41,15 +46,49 @@ function link.set(key: any, value: number?)
 		or typeKey == "userdata",
 		`expected supported (got {typeKey})`
 	)
-	if value == nil then
-		values[key] = nil
-		return
-	end
-
 	assert(
 		type(value) == "number" and id % 1 == 0 and id == id,
 		`Invalid id {id} (must be an integer)`
 	)
+
+	local count = if type == "string"
+		then STRING_COUNT
+		elseif type == "number" then NUMBER_COUNT
+		elseif type == "vector" then VECTOR_COUNT
+		else USER_COUNT
+
+	if value <= 255 then
+		local start = if type == "string"
+			then STRING_START
+			elseif type == "number" then NUMBER_START
+			elseif type == "vector" then VECTOR_START
+			else USER_START
+
+		local id = value - start
+		-- TODO: Verify these
+		assert(
+			id >= start,
+			`{typeName} must be above {start} (got {id})`
+		)
+				assert(
+			id <= count + start,
+			`{typeName} must be below {count + start} (got {id})`
+		)
+	else
+		local duostart = if type == "string"
+			then STRING_DUOSTART
+			elseif type == "number" then NUMBER_DUOSTART
+			elseif type == "vector" then VECTOR_DUOSTART
+			else USER_DUOSTART
+
+		-- Closest estimate (at most 0.005 less than int, NEVER more
+		local id = (value - duostart) / ( 256 + 1/256 ) + count
+
+		-- TODO: Check range (ALWAYS equal or between count and count + 256n)
+		-- where n is 2-4
+		
+	end
+
 	values[key] = value
 end
 function link.clear()
