@@ -67,12 +67,12 @@ function link.set(key: any, value: number?)
 		local id = value - start
 		-- TODO: Verify these
 		assert(
-			id >= start,
-			`{typeName} must be above {start} (got {id})`
+			id >= 1,
+			`{typeName} must be >= 1 (got {id})`
 		)
-				assert(
-			id <= count + start,
-			`{typeName} must be below {count + start} (got {id})`
+		assert(
+			id <= count,
+			`{typeName} must be <= {count} (got {id})`
 		)
 	else
 		local duostart = if type == "string"
@@ -86,7 +86,27 @@ function link.set(key: any, value: number?)
 
 		-- TODO: Check range (ALWAYS equal or between count and count + 256n)
 		-- where n is 2-4
-		
+		local n = if type == "string"
+			then 4
+			elseif type == "number" then 3
+			elseif type == "vector" then 3
+			else 2
+
+		assert(
+			id > count,
+			`{typeName} must be above {count} (got {id})`
+		)
+		assert(
+			id <= count + 256 * n,
+			`{typeName} must be below {count + 256 * n} (got {id})`
+		)
+		assert(
+			id % 1 == 0 or (
+				math.ceil((id + 1/256) % 1) >= 1
+				and (id + 1/256) % 1 < 1
+			),
+			"id must conform to format"
+		)
 	end
 
 	values[key] = value
