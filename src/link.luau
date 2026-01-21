@@ -30,9 +30,26 @@ local USER_DUOSTART = 214
 
 local values = {}
 
+--[[
+	Returns the id associated with the provided pair, or nil if the
+	 value is not paired.
+
+	@param key the value in the value-id pair
+]]
 function link.get(key: any): number?
 	return values[key]
 end
+
+--[[
+	Sets the paired key to the value, assuming it meets the requirements.
+
+	@param key the value in the value-id pair
+	@param value the id in the value-id pair
+
+	@error Invalid key type: When the key is not a string, number, vector, or userdata
+	@error Invalid value: When the value is not an integer
+	@error Invalid value: When the value is not between 1 and N, where N depends on the key's type
+]]
 function link.set(key: any, value: number?)
 	if value == nil then
 		values[key] = nil
@@ -63,9 +80,17 @@ function link.set(key: any, value: number?)
 
 	values[key] = link.calculateId(value, typeKey)
 end
+
+--[[
+	Removes all of the value-id pairs
+]]
 function link.clear()
 	table.clear(values)
 end
+
+--[[
+	Returns the amount of value-id pairs
+]]
 function link.length()
 	return #values
 end
