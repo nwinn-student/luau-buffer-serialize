@@ -40,70 +40,59 @@ function link.set(key: any, value: number?)
 	end
 
 	local typeKey = type(key)
-	assert(typeKey == "string"
-		or typeKey == "number"
-		or typeKey == "vector"
-		or typeKey == "userdata",
+	assert(
+		typeKey == "string"
+			or typeKey == "number"
+			or typeKey == "vector"
+			or typeKey == "userdata",
 		`expected supported (got {typeKey})`
 	)
 	assert(
-		type(value) == "number" and id % 1 == 0 and id == id,
-		`Invalid id {id} (must be an integer)`
+		type(value) == "number" and value % 1 == 0 and value == value,
+		`Invalid value {value} (must be an integer)`
 	)
 
-	local count = if type == "string"
+	local count = if typeKey == "string"
 		then STRING_COUNT
-		elseif type == "number" then NUMBER_COUNT
-		elseif type == "vector" then VECTOR_COUNT
+		elseif typeKey == "number" then NUMBER_COUNT
+		elseif typeKey == "vector" then VECTOR_COUNT
 		else USER_COUNT
 
 	if value <= 255 then
-		local start = if type == "string"
+		local start = if typeKey == "string"
 			then STRING_START
-			elseif type == "number" then NUMBER_START
-			elseif type == "vector" then VECTOR_START
+			elseif typeKey == "number" then NUMBER_START
+			elseif typeKey == "vector" then VECTOR_START
 			else USER_START
 
 		local id = value - start
 
-		assert(
-			id >= 1,
-			`{typeName} must be >= 1 (got {id})`
-		)
-		assert(
-			id <= count,
-			`{typeName} must be <= {count} (got {id})`
-		)
+		assert(id >= 1, `{typeKey} must be >= 1 (got {id})`)
+		assert(id <= count, `{typeKey} must be <= {count} (got {id})`)
 	else
-		local duostart = if type == "string"
+		local duostart = if typeKey == "string"
 			then STRING_DUOSTART
-			elseif type == "number" then NUMBER_DUOSTART
-			elseif type == "vector" then VECTOR_DUOSTART
+			elseif typeKey == "number" then NUMBER_DUOSTART
+			elseif typeKey == "vector" then VECTOR_DUOSTART
 			else USER_DUOSTART
 
 		-- Closest estimate (at most 1/256 less than int or is int)
-		local id = (value - duostart) / ( 256 + 1/256 ) + count
+		local id = (value - duostart) / (256 + 1 / 256) + count
 
-		local n = if type == "string"
-			then 4
-			elseif type == "number" then 3
-			elseif type == "vector" then 3
+		local n = if typeKey == "string"
+			then 5
+			elseif typeKey == "number" then 4
+			elseif typeKey == "vector" then 4
 			else 2
 
+		assert(id > count, `{typeKey} must be > {count} (got {id})`)
 		assert(
-			id > count,
-			`{typeName} must be above {count} (got {id})`
+			id < count + 256 * n,
+			`{typeKey} must be < {count + 256 * n} (got {id})`
 		)
 		assert(
-			id <= count + 256 * n,
-			`{typeName} must be below {count + 256 * n} (got {id})`
-		)
-		assert(
-			id % 1 == 0 or (
-				(id + 1/256) % 1 >= 1
-				and id % 1 < 1
-			),
-			"id must conform to format"
+			id % 1 == 0 or ((id + 1 / 256) % 1 <= 1 / 256 and id % 1 < 1),
+			`id must be an int OR at most 1/256 below an int (got {id})`
 		)
 	end
 

@@ -123,4 +123,14 @@ test.compare(true, link.isduo(12508, "userdata"))
 test.compare(true, link.isduo(28892, "userdata"))
 test.compare(true, link.isduo(127197, "userdata"))
 
+-- Verify set
+test.compare(false, pcall(link.set, 1, 1))
+test.compare(false, pcall(link.set, 1, link.calculateId(0, "number")))
+test.compare(false, pcall(link.set, 1, link.calculateId(32, "number") + 1))
+test.compare(false, pcall(link.set, 1, link.calculateId(33, "number") - 1))
+test.compare(false, pcall(link.set, 1, link.calculateId(33, "number") + 1))
+test.compare(false, pcall(link.set, 1, link.calculateId(1055, "number") - 1))
+test.compare(false, pcall(link.set, 1, link.calculateId(1055, "number") + 1))
+test.compare(false, pcall(link.set, 1, link.calculateId(1056, "number")))
+
 return {}
