@@ -34,7 +34,6 @@ local deserialModules = table.freeze({
 	userdata = require("@self/userdata").deserialize,
 })
 
-local calcId = link.calculateId
 local linkSet = link.set
 local linkType = link.type
 
@@ -220,7 +219,7 @@ function BufferSerializer.pair(id: number, value: any): ()
 		`Invalid vector {value} (cannot be a built-in)`
 	)
 
-	linkSet(value, calcId(id, typeV))
+	linkSet(value, id)
 end
 
 return table.freeze(BufferSerializer)

@@ -39,64 +39,29 @@ function link.set(key: any, value: number?)
 		return
 	end
 
-	local typeKey = type(key)
+	local typeKey = type(key) :: TYPES
+
+	local maxId = if typeKey == "string"
+		then 1343
+		elseif typeKey == "number" then 1055
+		elseif typeKey == "vector" then 1055
+		elseif typeKey == "userdata" then 521
+		else 0
+
 	assert(
-		typeKey == "string"
-			or typeKey == "number"
-			or typeKey == "vector"
-			or typeKey == "userdata",
-		`expected supported (got {typeKey})`
+		maxId ~= 0,
+		`Invalid key type {typeKey} (must be string | number | vector | userdata)`
 	)
 	assert(
 		type(value) == "number" and value % 1 == 0 and value == value,
 		`Invalid value {value} (must be an integer)`
 	)
+	assert(
+		value >= 1 and value <= maxId,
+		`Invalid value {value} (must be between 1 and {maxId})`
+	)
 
-	local count = if typeKey == "string"
-		then STRING_COUNT
-		elseif typeKey == "number" then NUMBER_COUNT
-		elseif typeKey == "vector" then VECTOR_COUNT
-		else USER_COUNT
-
-	if value <= 255 then
-		local start = if typeKey == "string"
-			then STRING_START
-			elseif typeKey == "number" then NUMBER_START
-			elseif typeKey == "vector" then VECTOR_START
-			else USER_START
-
-		local id = value - start
-
-		assert(id >= 1, `{typeKey} must be >= 1 (got {id})`)
-		assert(id <= count, `{typeKey} must be <= {count} (got {id})`)
-	else
-		local duostart = if typeKey == "string"
-			then STRING_DUOSTART
-			elseif typeKey == "number" then NUMBER_DUOSTART
-			elseif typeKey == "vector" then VECTOR_DUOSTART
-			else USER_DUOSTART
-
-		-- Closest estimate (at most 1/256 less than int or is int)
-		local id = (value - duostart) / (256 + 1 / 256) + count
-
-		local n = if typeKey == "string"
-			then 5
-			elseif typeKey == "number" then 4
-			elseif typeKey == "vector" then 4
-			else 2
-
-		assert(id > count, `{typeKey} must be > {count} (got {id})`)
-		assert(
-			id < count + 256 * n,
-			`{typeKey} must be < {count + 256 * n} (got {id})`
-		)
-		assert(
-			id % 1 == 0 or ((id + 1 / 256) % 1 <= 1 / 256 and id % 1 < 1),
-			`id must be an int OR at most 1/256 below an int (got {id})`
-		)
-	end
-
-	values[key] = value
+	values[key] = link.calculateId(value, typeKey)
 end
 function link.clear()
 	table.clear(values)
