@@ -33,9 +33,8 @@ local deserialModules = table.freeze({
 	table = require("@self/table").deserialize,
 	userdata = require("@self/userdata").deserialize,
 })
-local pairModules = link.values :: { [any]: any }
 
-local calcId = link.calculateId
+local linkSet = link.set
 local linkType = link.type
 
 type Serialize = (
@@ -160,7 +159,7 @@ type TYPES = "userdata" | "number" | "string" | "vector"
 	```luau
 	local BufferSerializer = require("./path/to/BufferSerializer")
 
-	-- 5 is between 1 and 64, so it will take 1 byte to store "Foo"
+	-- 5 is between 1 and 64, so it will take 1 byte to store subsequent "Foo"s
 	BufferSerializer.pair(5, "Foo")
 
 	local serialData = BufferSerializer.serialize({ "Foo", "Foo" })
@@ -220,7 +219,7 @@ function BufferSerializer.pair(id: number, value: any): ()
 		`Invalid vector {value} (cannot be a built-in)`
 	)
 
-	pairModules[value] = calcId(id, typeV)
+	linkSet(value, id)
 end
 
 return table.freeze(BufferSerializer)
