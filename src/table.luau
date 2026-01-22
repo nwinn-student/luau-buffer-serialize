@@ -69,6 +69,12 @@ local deserialSwitch: Switch<string, Deserialize> =
 	table.freeze({
 		["nil"] = function(buf: buffer, pos: number)
 			local valId = buffer.readu8(buf, pos)
+
+			-- Dictionary sections cannot store nil
+			if valId == 0 then
+				error(`Failed to parse nil in a dictionary at position {pos}`)
+			end
+
 			local var = if valId < 240 then "future" else "extension"
 			error(`Failed to parse {var} using byte: {valId} at position {pos}`)
 		end,
