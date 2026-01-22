@@ -65,6 +65,16 @@ local function userSerializer(value: any, buf: buffer, pos: number, size: number
 	return buf, pos + 1, size
 end
 
+--[[
+	Produces a userdata from the buffer starting at the given position.
+
+	@param buf buffer containing the userdata
+	@param pos the starting position of the userdata
+
+	@error buffer access out of bounds
+
+	@return the userdata and the end of the userdata position + 1
+]]
 local function userDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
