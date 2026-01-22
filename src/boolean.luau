@@ -17,13 +17,6 @@ return table.freeze({
 		return buf, pos + 1, size
 	end,
 	deserialize = function(buf: buffer, pos: number)
-		local id = buffer.readu8(buf, pos)
-		
-		-- Can happen in the dictionary section of tables
-		if id == 0 then
-				error(`Failed to parse boolean using byte: {id} at position {pos}`)
-		end
-		
-		return id == 1, pos + 1
+		return buffer.readu8(buf, pos) == 1, pos + 1
 	end,
 })
