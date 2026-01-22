@@ -21,7 +21,7 @@ return table.freeze({
 		
 		-- Can happen in the dictionary section of tables
 		if id == 0 then
-				error(`Failed to parse boolean at pos {pos}`)
+				error(`Failed to parse boolean using byte: {id} at position {pos}`)
 		end
 		
 		return id == 1, pos + 1
