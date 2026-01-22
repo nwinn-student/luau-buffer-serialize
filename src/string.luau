@@ -50,6 +50,16 @@ local function strSerializer(
 	return buf, pos + newSize + len, size
 end
 
+--[[
+	Produces a string from the buffer starting at the given position.
+
+	@param buf buffer containing the string
+	@param pos the starting position of the string
+
+	@error Failed to parse string
+
+	@return the string and the end string position + 1
+]]
 @native
 local function strDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)

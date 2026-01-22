@@ -102,6 +102,16 @@ local function numSerializer(
 	return buf, pos + newSize, size
 end
 
+--[[
+	Produces a number from the buffer starting at the given position.
+
+	@param buf buffer containing the number
+	@param pos the starting position of the number
+
+	@error Failed to parse number
+
+	@return the number and the end number position + 1
+]]
 @native
 local function numDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)

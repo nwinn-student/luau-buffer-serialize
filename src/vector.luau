@@ -144,17 +144,12 @@ local function vecSerializer(
 	if not isNumber then
 		typeZ = getType(valueZ)
 		isNumber = typeY ~= typeZ
-		if
-        isNumber
-        and (typeX == FLOAT
-        or typeY == FLOAT
-        or typeZ == FLOAT)
-    then
-        -- fft = 15, ftt = 14
-        -- so no floats
-        typeX = FLOAT
-        isNumber = false
-    end
+		if isNumber and (typeX == FLOAT or typeY == FLOAT or typeZ == FLOAT) then
+			-- fft = 15, ftt = 14
+			-- so no floats
+			typeX = FLOAT
+			isNumber = false
+		end
 	end
 
 	-- 4+ bytes (NOT intelligent, as a const byte will be more expensive)
@@ -195,6 +190,18 @@ local function vecSerializer(
 	return buf, pos + newSize, size
 end
 
+--[[
+	Produces a vector from the buffer starting at the given position.
+
+	@param buf buffer containing the vector
+	@param pos the starting position of the vector
+
+	@error Failed to parse number
+	@error Failed to parse built-in vector constant
+	@error Failed to parse vector
+
+	@return the vector and the end vector position + 1
+]]
 @native
 local function vecDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)

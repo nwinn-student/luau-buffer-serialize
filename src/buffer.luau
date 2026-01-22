@@ -46,6 +46,17 @@ return table.freeze({
 		buffer.copy(buf, pos + newSize, value)
 		return buf, pos + newSize + len, size
 	end,
+
+	--[[
+		Produces a buffer from the buffer starting at the given position.
+
+		@param buf buffer containing the buffer
+		@param pos the starting position of the buffer
+
+		@error Failed to parse buffer
+
+		@return the buffer and the end buffer position + 1
+	]]
 	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
 
