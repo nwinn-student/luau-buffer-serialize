@@ -79,7 +79,7 @@ local originData = BufferSerializer.deserialize(serialData)
 
 - Ids replace the value when serializing, should the value be rawequal.
 	- Only applicable within tables.
-	- Initially stored [ID][VALUE], all further instances of the value are
+	- Initially stored `[ID][VALUE]`, all further instances of the value are
 	 stored as [ID].
 - Values replace the id when deserializing.
 - Equivalent userdata may not be rawequal
