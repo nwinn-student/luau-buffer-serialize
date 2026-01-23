@@ -54,6 +54,7 @@ return table.freeze({
 		@param pos the starting position of the buffer
 
 		@error Failed to parse buffer
+		@error buffer access out of bounds
 
 		@return the buffer and the end buffer position + 1
 	]]

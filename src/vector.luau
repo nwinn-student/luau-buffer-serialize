@@ -199,6 +199,7 @@ end
 	@error Failed to parse number
 	@error Failed to parse built-in vector constant
 	@error Failed to parse vector
+	@error buffer access out of bounds
 
 	@return the vector and the end vector position + 1
 ]]

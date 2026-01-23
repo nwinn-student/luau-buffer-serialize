@@ -57,6 +57,7 @@ end
 	@param pos the starting position of the string
 
 	@error Failed to parse string
+	@error buffer access out of bounds
 
 	@return the string and the end string position + 1
 ]]

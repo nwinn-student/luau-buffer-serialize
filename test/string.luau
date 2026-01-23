@@ -32,4 +32,9 @@ test.compare(string.rep("\0", 2 ^ 8), deserialize(Sir_Char))
 test.compare(string.rep("\0", 2 ^ 16), deserialize(Sir_Tryte))
 test.compare(string.rep("\0", 2 ^ 24), deserialize(Sir_Int))
 
+-- error checks
+local strDeserialize = require("../src/string").deserialize
+test.compare(false, pcall(strDeserialize, test.newBuffer(BYTE), 0)) -- out of bounds
+test.compare(false, pcall(strDeserialize, test.newBuffer(0), 0)) -- failure to parse
+
 return {}

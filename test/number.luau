@@ -51,4 +51,9 @@ test.compare(2 ^ -8, deserialize(Sir_Float))
 test.compare(2 ^ -256, deserialize(Sir_Double))
 test.compare(0 / 0, deserialize(Sir_NaN))
 
+-- error checks
+local numDeserialize = require("../src/number").deserialize
+test.compare(false, pcall(numDeserialize, test.newBuffer(BYTE), 0)) -- out of bounds
+test.compare(false, pcall(numDeserialize, test.newBuffer(0), 0)) -- failure to parse
+
 return {}

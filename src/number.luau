@@ -109,6 +109,7 @@ end
 	@param pos the starting position of the number
 
 	@error Failed to parse number
+	@error buffer access out of bounds
 
 	@return the number and the end number position + 1
 ]]
