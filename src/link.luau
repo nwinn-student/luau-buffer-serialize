@@ -162,9 +162,9 @@ function link.type(refId: number): SERIALIZABLE_TYPES
 	return if refId == 0
 		then "nil"
 		elseif refId <= 2 then "boolean"
-		elseif refId <= 8 then "buffer"
-		elseif refId <= 87 then "string"
-		elseif refId <= 135 then "number"
+		elseif refId <= 7 then "buffer"
+		elseif refId <= 96 then "string"
+		elseif refId <= 141 then "number"
 		elseif refId <= 193 then "vector"
 		elseif refId <= 201 then "table"
 		elseif refId <= 215 then "userdata"
