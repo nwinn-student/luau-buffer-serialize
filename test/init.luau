@@ -91,15 +91,15 @@ local Sir_User = serialize({ proxy, yxorp, roxyp })
 -- serialize
 test.serial(
 	Sir_String,
-	test.newBuffer("\197\19\10\5value\82\10\5eulav\87\255\10\5lueva\200")
+	test.newBuffer("\197\28\17value\91\17eulav\96\255\17lueva\200")
 )
 test.serial(
 	Sir_Number,
-	test.newBuffer(197, 100, 90, 5, 131, 90, 25, 135, 255, 90, 125, 200)
+	test.newBuffer(197, 106, 99, 5, 137, 99, 25, 141, 255, 99, 125, 200)
 )
 test.serial(
 	Sir_Vector,
-	test.newBuffer("\197\158\144\1\2\0\189\144\3\4\0\193\255\144\5\6\0\200")
+	test.newBuffer("\197\158\150\1\2\0\189\150\3\4\0\193\255\150\5\6\0\200")
 )
 test.serial(
 	Sir_User,

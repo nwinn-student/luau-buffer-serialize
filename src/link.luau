@@ -13,13 +13,13 @@ local NUMBER_COUNT = 32
 local VECTOR_COUNT = 32
 local USER_COUNT = 10
 
-local STRING_START = 18
-local NUMBER_START = 99
+local STRING_START = 27
+local NUMBER_START = 105
 local VECTOR_START = 157
 local USER_START = 203
 
-local STRING_DUOSTART = 83
-local NUMBER_DUOSTART = 132
+local STRING_DUOSTART = 92
+local NUMBER_DUOSTART = 138
 local VECTOR_DUOSTART = 190
 local USER_DUOSTART = 214
 
@@ -162,9 +162,9 @@ function link.type(refId: number): SERIALIZABLE_TYPES
 	return if refId == 0
 		then "nil"
 		elseif refId <= 2 then "boolean"
-		elseif refId <= 8 then "buffer"
-		elseif refId <= 87 then "string"
-		elseif refId <= 135 then "number"
+		elseif refId <= 7 then "buffer"
+		elseif refId <= 96 then "string"
+		elseif refId <= 141 then "number"
 		elseif refId <= 193 then "vector"
 		elseif refId <= 201 then "table"
 		elseif refId <= 215 then "userdata"

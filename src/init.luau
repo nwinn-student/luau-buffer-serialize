@@ -44,10 +44,6 @@ type Serialize = (
 	size: number
 ) -> (buffer, number, number)
 type Deserialize = (value: buffer, pos: number) -> (any, number)
-type Pair = {
-	[any]: any,
-	Write: { [any]: any },
-}
 
 --[[
 	Serializes the provided value into a buffer.

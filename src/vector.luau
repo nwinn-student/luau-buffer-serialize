@@ -5,20 +5,20 @@ local inflate = require("./inflate")
 local numSerializer = require("./number").serialize
 local numDeserializer = require("./number").deserialize
 
-local ZERO = 136
-local ONE = 137
-local X_AXIS = 138
-local Y_AXIS = 139
-local Z_AXIS = 140
-local XY_AXIS = 141
-local XZ_AXIS = 142
-local YZ_AXIS = 143
-local BYTE = 144
-local CHAR = 145
-local THREE_BYTE = 146
-local FLOAT = 147
-local NUMBER = 148
-local SCALAR_NUMBER = 149
+local ZERO = 142
+local ONE = 143
+local X_AXIS = 144
+local Y_AXIS = 145
+local Z_AXIS = 146
+local XY_AXIS = 147
+local XZ_AXIS = 148
+local YZ_AXIS = 149
+local BYTE = 150
+local CHAR = 151
+local THREE_BYTE = 152
+local FLOAT = 153
+local NUMBER = 154
+local SCALAR_NUMBER = 155
 
 local builtinSerialConst = table.freeze({
 	-- Used for serialization
@@ -163,7 +163,7 @@ local function vecSerializer(
 		return numSerializer(valueZ, buf, pos, size)
 	end
 
-	local newSize = 3 * ((typeX :: number) - 143) + 1
+	local newSize = 3 * ((typeX :: number) - YZ_AXIS) + 1
 	-- 4, 7, 10, 13
 	if pos + newSize > size then
 		buf, size = inflate(buf, pos + newSize, size)

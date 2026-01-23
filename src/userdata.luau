@@ -18,7 +18,7 @@ export type Reader = (buf: buffer, pos: number) -> (unknown, number)
 
 --[[
 	The serializer function for custom userdata.
-	
+
 	- If the position is unchanged when exiting the function, then
 	 the userdata will be considered **unsupported**.
 	  - Unsupported userdata is stored as a NIL userdata, which is

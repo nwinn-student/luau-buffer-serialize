@@ -2,11 +2,12 @@
 --!strict
 local inflate = require("./inflate")
 
-local EMPTY = 9
-local BYTE = 10
-local CHAR = 11
-local THREE_BYTE = 12
-local INT = 13
+local EMPTY = 8
+local BYTE = 9
+local CHAR = 10
+local THREE_BYTE = 11
+local INT = 12
+local STRING_15 = 27
 
 @native
 local function strSerializer(
@@ -25,8 +26,9 @@ local function strSerializer(
 
 	local len = #value
 
-	local newSize = if len < 256
-		then 2
+	local newSize = if len < 16
+		then 1
+		elseif len < 256 then 2
 		elseif len < 65_536 then 3
 		elseif len < 16_777_216 then 4
 		else 5
@@ -34,7 +36,14 @@ local function strSerializer(
 	if pos + len + newSize > size then
 		buf, size = inflate(buf, pos + len + newSize, size)
 	end
-	buffer.writeu8(buf, pos, 8 + newSize)
+
+	if len < 16 then
+		buffer.writeu8(buf, pos, INT + len)
+		buffer.writestring(buf, pos + 1, value :: string, len)
+		return buf, pos + 1 + len, size
+	end
+
+	buffer.writeu8(buf, pos, 7 + newSize)
 
 	if len < 256 then
 		buffer.writeu8(buf, pos + 1, len)
@@ -67,6 +76,10 @@ local function strDeserializer(buf: buffer, pos: number)
 
 	if id == EMPTY then
 		return "", pos + 1
+	end
+
+	if id > INT and id <= STRING_15 then
+		return buffer.readstring(buf, pos + 1, id - INT), pos + id - INT + 1
 	end
 
 	local lenSize = id - EMPTY

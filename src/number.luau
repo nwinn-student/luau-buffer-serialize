@@ -2,15 +2,15 @@
 --!strict
 local inflate = require("./inflate")
 
-local ZERO = 88
-local ONE = 89
-local BYTE = 90
-local CHAR = 91
-local THREE_BYTE = 92
-local INT = 93
-local FLOAT = 94
-local DOUBLE = 95
-local NAN = 96
+local ZERO = 97
+local ONE = 98
+local BYTE = 99
+local CHAR = 100
+local THREE_BYTE = 101
+local INT = 102
+local FLOAT = 103
+local DOUBLE = 104
+local NAN = 105
 
 local MIN_BYTE = -2 ^ 7
 local MAX_BYTE = 2 ^ 7 - 1

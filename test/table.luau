@@ -26,12 +26,12 @@ local Sir_Recurs = serialize(recurse)
 
 -- serialization
 test.serial(Sir_Empty, test.newBuffer(EMPTY))
-test.serial(Sir_Table, test.newBuffer(TABLE, 89, ARRAYEND, 88, 89, TABLEEND))
-test.serial(Sir_Array, test.newBuffer(ARRAY, 89, TABLEEND))
-test.serial(Sir_Dict, test.newBuffer(DICT, 88, 89, TABLEEND))
+test.serial(Sir_Table, test.newBuffer(TABLE, 98, ARRAYEND, 97, 98, TABLEEND))
+test.serial(Sir_Array, test.newBuffer(ARRAY, 98, TABLEEND))
+test.serial(Sir_Dict, test.newBuffer(DICT, 97, 98, TABLEEND))
 test.serial(
 	Sir_Exist,
-	test.newBuffer(ARRAY, 10, 3, 98, 98, 98, EXIST, 1, 0, TABLEEND)
+	test.newBuffer(ARRAY, 15, 98, 98, 98, EXIST, 1, 0, TABLEEND)
 )
 test.serial(Sir_Recurs, test.newBuffer(ARRAY, EXIST, 0, 0, TABLEEND))
 
@@ -55,10 +55,10 @@ local Sir_Paired = serialize({ "aaa" })
 local Sir_DuoPaired = serialize({ "aaa", "aaa" })
 
 -- serialization
-test.serial(Sir_Paired, test.newBuffer(ARRAY, aaaId, 10, 3, "aaa", TABLEEND))
+test.serial(Sir_Paired, test.newBuffer(ARRAY, aaaId, 15, "aaa", TABLEEND))
 test.serial(
 	Sir_DuoPaired,
-	test.newBuffer(ARRAY, aaaId, 10, 3, "aaa", aaaId, TABLEEND)
+	test.newBuffer(ARRAY, aaaId, 15, "aaa", aaaId, TABLEEND)
 )
 
 -- deserialization
@@ -70,11 +70,7 @@ local tabDeserialize = require("../src/table").deserialize
 test.compare(false, pcall(tabDeserialize, test.newBuffer(0), 0)) -- failure to parse table
 test.compare(
 	false,
-	pcall(
-		tabDeserialize,
-		test.newBuffer(ARRAY, 10, 3, 98, 98, 98, EXIST, 0, 1),
-		0
-	)
+	pcall(tabDeserialize, test.newBuffer(ARRAY, 15, 98, 98, 98, EXIST, 0, 1), 0)
 ) -- failure to parse existing
 test.compare(false, pcall(tabDeserialize, test.newBuffer(DICT, 1, 0), 0)) -- failure to parse nil in dict
 test.compare(false, pcall(tabDeserialize, test.newBuffer(DICT, 1, 232), 0)) -- failure to parse future
