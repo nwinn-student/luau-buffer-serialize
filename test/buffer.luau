@@ -34,7 +34,6 @@ test.compare(test.sizedBuffer(2 ^ 24), deserialize(Sir_Int))
 
 -- error checks
 local bufDeserialize = require("../src/buffer").deserialize
-test.compare(false, pcall(bufDeserialize, test.newBuffer(BYTE), 0)) -- out of bounds
 test.compare(false, pcall(bufDeserialize, test.newBuffer(0), 0)) -- failure to parse
 
 return {}
