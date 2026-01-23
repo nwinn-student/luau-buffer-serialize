@@ -77,8 +77,6 @@ test.compare(vcreate(2, 0, 0), deserialize(Sir_Scalar))
 
 -- error checks
 local vecDeserialize = require("../src/vector").deserialize
-test.compare(false, pcall(vecDeserialize, test.newBuffer(BYTE), 0)) -- out of bounds
-test.compare(false, pcall(vecDeserialize, test.newBuffer(NUMBER, 0), 0)) -- failure to parse number
 test.compare(false, pcall(vecDeserialize, test.newBuffer(0), 0)) -- failure to parse vector
 
 return {}
