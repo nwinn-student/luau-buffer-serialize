@@ -32,4 +32,8 @@ test.compare(test.sizedBuffer(2 ^ 8), deserialize(Sir_Char))
 test.compare(test.sizedBuffer(2 ^ 16), deserialize(Sir_Tryte))
 test.compare(test.sizedBuffer(2 ^ 24), deserialize(Sir_Int))
 
+-- error checks
+local bufDeserialize = require("../src/buffer").deserialize
+test.compare(false, pcall(bufDeserialize, test.newBuffer(0), 0)) -- failure to parse
+
 return {}

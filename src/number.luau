@@ -102,8 +102,19 @@ local function numSerializer(
 	return buf, pos + newSize, size
 end
 
+--[[
+	Produces a number from the buffer starting at the given position.
+
+	@param buf buffer containing the number
+	@param pos the starting position of the number
+
+	@error Failed to parse number
+	@error buffer access out of bounds
+
+	@return the number and the end number position + 1
+]]
 @native
-local function numDeserializer(buf: buffer, pos: number): (number?, number)
+local function numDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then
@@ -131,7 +142,7 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	elseif id == DOUBLE then
 		return buffer.readf64(buf, pos + 1), pos + 9
 	else
-		return nil, pos + 1 -- data corruption
+		error(`Failed to parse number using byte: {id} at position {pos}`)
 	end
 end
 

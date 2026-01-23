@@ -99,6 +99,16 @@ end
 
 	@param value buffer containing a serialized value
 
+	@error Failed to parse buffer
+	@error Failed to parse string
+	@error Failed to parse number
+	@error Failed to parse built-in vector constant
+	@error Failed to parse vector
+	@error Failed to parse table
+	@error Failed to parse existing value
+	@error Failed to parse nil in a dictionary
+	@error Failed to parse future
+	@error Failed to parse extension
 	@error buffer access out of bounds
 
 	@return the original value

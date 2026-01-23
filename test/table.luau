@@ -65,4 +65,19 @@ test.serial(
 test.compare({ "aaa" }, deserialize(Sir_Paired))
 test.compare({ "aaa", "aaa" }, deserialize(Sir_DuoPaired))
 
+-- error check
+local tabDeserialize = require("../src/table").deserialize
+test.compare(false, pcall(tabDeserialize, test.newBuffer(0), 0)) -- failure to parse table
+test.compare(
+	false,
+	pcall(
+		tabDeserialize,
+		test.newBuffer(ARRAY, 10, 3, 98, 98, 98, EXIST, 0, 1),
+		0
+	)
+) -- failure to parse existing
+test.compare(false, pcall(tabDeserialize, test.newBuffer(DICT, 1, 0), 0)) -- failure to parse nil in dict
+test.compare(false, pcall(tabDeserialize, test.newBuffer(DICT, 1, 232), 0)) -- failure to parse future
+test.compare(false, pcall(tabDeserialize, test.newBuffer(DICT, 1, 255), 0)) -- failure to parse extension
+
 return {}

@@ -50,8 +50,19 @@ local function strSerializer(
 	return buf, pos + newSize + len, size
 end
 
+--[[
+	Produces a string from the buffer starting at the given position.
+
+	@param buf buffer containing the string
+	@param pos the starting position of the string
+
+	@error Failed to parse string
+	@error buffer access out of bounds
+
+	@return the string and the end string position + 1
+]]
 @native
-local function strDeserializer(buf: buffer, pos: number): (string?, number)
+local function strDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == EMPTY then
@@ -71,8 +82,7 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 	elseif id == INT then
 		len = buffer.readu32(buf, pos + 1)
 	else
-		-- DATA CORRUPTED (for now)
-		return nil, pos + 1 -- for future version
+		error(`Failed to parse string using byte: {id} at position {pos}`)
 	end
 
 	return buffer.readstring(buf, pos + lenSize + 1, len), pos + len + 1 + lenSize

@@ -144,17 +144,12 @@ local function vecSerializer(
 	if not isNumber then
 		typeZ = getType(valueZ)
 		isNumber = typeY ~= typeZ
-		if
-        isNumber
-        and (typeX == FLOAT
-        or typeY == FLOAT
-        or typeZ == FLOAT)
-    then
-        -- fft = 15, ftt = 14
-        -- so no floats
-        typeX = FLOAT
-        isNumber = false
-    end
+		if isNumber and (typeX == FLOAT or typeY == FLOAT or typeZ == FLOAT) then
+			-- fft = 15, ftt = 14
+			-- so no floats
+			typeX = FLOAT
+			isNumber = false
+		end
 	end
 
 	-- 4+ bytes (NOT intelligent, as a const byte will be more expensive)
@@ -195,8 +190,21 @@ local function vecSerializer(
 	return buf, pos + newSize, size
 end
 
+--[[
+	Produces a vector from the buffer starting at the given position.
+
+	@param buf buffer containing the vector
+	@param pos the starting position of the vector
+
+	@error Failed to parse number
+	@error Failed to parse built-in vector constant
+	@error Failed to parse vector
+	@error buffer access out of bounds
+
+	@return the vector and the end vector position + 1
+]]
 @native
-local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
+local function vecDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then
@@ -218,13 +226,18 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 	end
 
 	if id == SCALAR_NUMBER then
-		local vecVal = builtinDeserialConst[buffer.readu8(buf, pos + 1)]
+		local constId = buffer.readu8(buf, pos + 1)
+		local vecVal = builtinDeserialConst[constId]
+		if not vecVal then
+			-- Must be ONE to YZ_AXIS
+			error(
+				`Failed to parse built-in vector constant using byte: {constId} at position {pos}`
+			)
+		end
+
 		local numVal
 		numVal, pos = numDeserializer(buf, pos + 2)
-		if vecVal and numVal then
-			return numVal * vecVal, pos
-		end
-		return nil, pos + 1 -- data corruption
+		return numVal * vecVal, pos
 	elseif id == BYTE then
 		return vector.create(
 			buffer.readi8(buf, pos + 1),
@@ -263,13 +276,9 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		yVal, pos = numDeserializer(buf, pos)
 		zVal, pos = numDeserializer(buf, pos)
 
-		if xVal and yVal and zVal then
-			return vector.create(xVal, yVal, zVal), pos
-		end
-		-- fill with 0's instead?
-		return nil, pos + 1 -- data corrupted
+		return vector.create(xVal, yVal, zVal), pos
 	else
-		return nil, pos + 1 -- data corrupted
+		error(`Failed to parse vector using byte: {id} at position {pos}`)
 	end
 end
 

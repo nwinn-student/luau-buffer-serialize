@@ -56,12 +56,20 @@ local originData = BufferSerializer.deserialize(serialData)
 - value - buffer containing a serialized value
 
 **Errors**
+- Failed to parse buffer
+- Failed to parse string
+- Failed to parse number
+- Failed to parse built-in vector constant
+- Failed to parse vector
+- Failed to parse table
+- Failed to parse existing value
+- Failed to parse nil in a dictionary
+- Failed to parse future
+- Failed to parse extension
 - buffer access out of bounds
 
 **Returns**
 - the original value
-
-
 
 ## Pair
 
@@ -71,7 +79,7 @@ local originData = BufferSerializer.deserialize(serialData)
 
 - Ids replace the value when serializing, should the value be rawequal.
 	- Only applicable within tables.
-	- Initially stored [ID][VALUE], all further instances of the value are
+	- Initially stored `[ID][VALUE]`, all further instances of the value are
 	 stored as [ID].
 - Values replace the id when deserializing.
 - Equivalent userdata may not be rawequal

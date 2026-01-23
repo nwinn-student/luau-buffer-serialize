@@ -159,8 +159,9 @@ end
 ]]
 @native
 function link.type(refId: number): SERIALIZABLE_TYPES
-	return if refId <= 2
-		then "boolean"
+	return if refId == 0
+		then "nil"
+		elseif refId <= 2 then "boolean"
 		elseif refId <= 8 then "buffer"
 		elseif refId <= 87 then "string"
 		elseif refId <= 135 then "number"
