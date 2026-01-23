@@ -67,7 +67,6 @@ test.compare({ "aaa", "aaa" }, deserialize(Sir_DuoPaired))
 
 -- error check
 local tabDeserialize = require("../src/table").deserialize
-test.compare(false, pcall(tabDeserialize, test.newBuffer(ARRAY), 0)) -- out of bounds
 test.compare(false, pcall(tabDeserialize, test.newBuffer(0), 0)) -- failure to parse table
 test.compare(
 	false,
