@@ -163,7 +163,7 @@ local function vecSerializer(
 		return numSerializer(valueZ, buf, pos, size)
 	end
 
-	local newSize = 3 * ((typeX :: number) - 143) + 1
+	local newSize = 3 * ((typeX :: number) - YZ_AXIS) + 1
 	-- 4, 7, 10, 13
 	if pos + newSize > size then
 		buf, size = inflate(buf, pos + newSize, size)

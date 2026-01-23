@@ -99,7 +99,7 @@ test.serial(
 )
 test.serial(
 	Sir_Vector,
-	test.newBuffer("\197\158\144\1\2\0\189\144\3\4\0\193\255\144\5\6\0\200")
+	test.newBuffer("\197\158\150\1\2\0\189\150\3\4\0\193\255\150\5\6\0\200")
 )
 test.serial(
 	Sir_User,
