@@ -78,10 +78,8 @@ local function strDeserializer(buf: buffer, pos: number)
 		return "", pos + 1
 	end
 
-	-- TODO: Make sure it checks the upper range**
-	if id > INT then
-		return buffer.readstring(buf, pos + 1, id - INT),
-		pos + id - INT + 1
+	if id > INT and id <= STRING_15 then
+		return buffer.readstring(buf, pos + 1, id - INT), pos + id - INT + 1
 	end
 
 	local lenSize = id - EMPTY
