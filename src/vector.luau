@@ -4,7 +4,6 @@ local inflate = require("./inflate")
 
 local numSerializer = require("./number").serialize
 local numDeserializer = require("./number").deserialize
-local numWrite = require("./number").Write
 
 local ZERO = 142
 local ONE = 143
@@ -21,10 +20,7 @@ local FLOAT = 153
 local NUMBER = 154
 local SCALAR_NUMBER = 155
 
-local READ = {}
-local WRITE = {} -- 1 to 1055
-
-local builtinSerialConst = {
+local builtinSerialConst = table.freeze({
 	-- Used for serialization
 	[vector.zero] = ZERO,
 	[vector.one] = ONE,
@@ -34,8 +30,8 @@ local builtinSerialConst = {
 	[vector.create(1, 1, 0)] = XY_AXIS,
 	[vector.create(1, 0, 1)] = XZ_AXIS,
 	[vector.create(0, 1, 1)] = YZ_AXIS,
-}
-local builtinDeserialConst = {
+})
+local builtinDeserialConst = table.freeze({
 	-- Used for deserialization, indexing this is 30% faster
 	-- than calling vector.create (vector.one/zero is 120% faster)
 	[ONE] = vector.one,
@@ -45,7 +41,7 @@ local builtinDeserialConst = {
 	[XY_AXIS] = vector.create(1, 1, 0),
 	[XZ_AXIS] = vector.create(1, 0, 1),
 	[YZ_AXIS] = vector.create(0, 1, 1),
-}
+})
 
 local MIN_BYTE = -2 ^ 7
 local MAX_BYTE = 2 ^ 7 - 1
@@ -81,25 +77,6 @@ local function vecSerializer(
 		end
 		buffer.writeu8(buf, pos, builtin)
 		return buf, pos + 1, size
-	end
-
-	local cachedConstant: number? = WRITE[value]
-	if cachedConstant then
-		local newSize = if cachedConstant <= 32 then 1 else 2
-
-		if pos + newSize > size then
-			buf, size = inflate(buf, pos + newSize, size)
-		end
-
-		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + 157)
-		else
-			local constVal = cachedConstant - 32
-			buffer.writeu8(buf, pos, 190 + (constVal // 256))
-			buffer.writeu8(buf, pos + 1, constVal)
-		end
-
-		return buf, pos + newSize, size
 	end
 
 	-- now we check scalar
@@ -167,12 +144,12 @@ local function vecSerializer(
 	if not isNumber then
 		typeZ = getType(valueZ)
 		isNumber = typeY ~= typeZ
-	end
-	if not isNumber and typeX ~= BYTE then
-		-- if num is a constant and all types aren't byte
-		-- char/tryte COULD be cheaper (1 + 2 (const) + 5 (float) + 5 (float) is worst case)
-		-- the checks are VERY expensive (from a line perspective) though
-		isNumber = (numWrite[valueX] or numWrite[valueY] or numWrite[valueZ])
+		if isNumber and (typeX == FLOAT or typeY == FLOAT or typeZ == FLOAT) then
+			-- fft = 15, ftt = 14
+			-- so no floats
+			typeX = FLOAT
+			isNumber = false
+		end
 	end
 
 	-- 4+ bytes (NOT intelligent, as a const byte will be more expensive)
@@ -213,8 +190,21 @@ local function vecSerializer(
 	return buf, pos + newSize, size
 end
 
+--[[
+	Produces a vector from the buffer starting at the given position.
+
+	@param buf buffer containing the vector
+	@param pos the starting position of the vector
+
+	@error Failed to parse number
+	@error Failed to parse built-in vector constant
+	@error Failed to parse vector
+	@error buffer access out of bounds
+
+	@return the vector and the end vector position + 1
+]]
 @native
-local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
+local function vecDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then
@@ -235,38 +225,19 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		return builtinDeserialConst[YZ_AXIS], pos + 1
 	end
 
-	if id > 157 then
-		local cachedId = if id > 189
-			then (id - 190) * 256 + 32 + buffer.readu8(buf, pos + 1)
-			else id - 157
-
-		local cachedConstant: vector? = READ[cachedId]
-		if cachedConstant then
-			return cachedConstant, pos + (if cachedId > 32 then 2 else 1)
-		end
-
-		error(`Failed to parse vector constant with id: {
-				cachedId
-			} ({id}) at position {
-				pos
-			}`)
-	end
-
 	if id == SCALAR_NUMBER then
-		local vecVal = builtinDeserialConst[buffer.readu8(buf, pos + 1)]
-
+		local constId = buffer.readu8(buf, pos + 1)
+		local vecVal = builtinDeserialConst[constId]
 		if not vecVal then
-			error(`Failed to parse built-in vector constant with id: {
-					buffer.readu8(buf, pos + 1)
-				} at position {
-					pos
-				}`)
+			-- Must be ONE to YZ_AXIS
+			error(
+				`Failed to parse built-in vector constant using byte: {constId} at position {pos}`
+			)
 		end
 
 		local numVal
 		numVal, pos = numDeserializer(buf, pos + 2)
-
-		return (numVal :: number) * vecVal, pos
+		return numVal * vecVal, pos
 	elseif id == BYTE then
 		return vector.create(
 			buffer.readi8(buf, pos + 1),
@@ -304,48 +275,16 @@ local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 		xVal, pos = numDeserializer(buf, pos + 1)
 		yVal, pos = numDeserializer(buf, pos)
 		zVal, pos = numDeserializer(buf, pos)
-		
-		return vector.create(
-			xVal :: number,
-			yVal :: number,
-			zVal :: number
-		), pos
+
+		return vector.create(xVal, yVal, zVal), pos
 	else
-		error(`Failed to parse vector using byte: {
-				id
-			} at position {
-				pos
-			}`)
+		error(`Failed to parse vector using byte: {id} at position {pos}`)
 	end
 end
 
 local Vector = {
-	Read = READ,
-	Write = WRITE,
-
 	serialize = vecSerializer,
 	deserialize = vecDeserializer,
 }
 
---[[
-	Clears and replaces the read table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Vector.resetRead()
-	table.clear(READ)
-	READ = {}
-	Vector.Read = READ
-end
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Vector.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	Vector.Write = WRITE
-end
-
-return Vector
+return table.freeze(Vector)

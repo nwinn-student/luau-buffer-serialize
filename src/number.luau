@@ -28,9 +28,6 @@ local MAX_FLOAT = 2 ^ 127
 
 local vecX = vector.create(1, 0)
 
-local READ = {}
-local WRITE = {} -- 1 to 1055
-
 @native
 local function numSerializer(
 	value: number,
@@ -50,25 +47,6 @@ local function numSerializer(
 		)
 
 		return buf, pos + 1, size
-	end
-
-	local cachedConstant: number? = WRITE[value]
-	if cachedConstant then
-		local newSize = if cachedConstant <= 32 then 1 else 2
-
-		if pos + newSize > size then
-			buf, size = inflate(buf, pos + newSize, size)
-		end
-
-		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + 105)
-		else
-			local constVal = cachedConstant - 32
-			buffer.writeu8(buf, pos, 138 + (constVal // 256))
-			buffer.writeu8(buf, pos + 1, constVal)
-		end
-
-		return buf, pos + newSize, size
 	end
 
 	-- Floating points
@@ -124,8 +102,19 @@ local function numSerializer(
 	return buf, pos + newSize, size
 end
 
+--[[
+	Produces a number from the buffer starting at the given position.
+
+	@param buf buffer containing the number
+	@param pos the starting position of the number
+
+	@error Failed to parse number
+	@error buffer access out of bounds
+
+	@return the number and the end number position + 1
+]]
 @native
-local function numDeserializer(buf: buffer, pos: number): (number?, number)
+local function numDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then
@@ -134,23 +123,6 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 		return 1, pos + 1
 	elseif id == NAN then
 		return 0 / 0, pos + 1
-	end
-
-	if id > 105 then
-		local cachedId = if id > 137
-			then (id - 138) * 256 + 32 + buffer.readu8(buf, pos + 1)
-			else id - 105
-
-		local cachedConstant = READ[cachedId]
-		if cachedConstant then
-			return cachedConstant, pos + (if cachedId > 32 then 2 else 1)
-		end
-
-		error(`Failed to parse number constant with id: {
-				cachedId
-			} ({id}) at position {
-				pos
-			}`)
 	end
 
 	if id == BYTE then
@@ -167,38 +139,16 @@ local function numDeserializer(buf: buffer, pos: number): (number?, number)
 		return buffer.readi32(buf, pos + 1), pos + 5
 	elseif id == FLOAT then
 		return buffer.readf32(buf, pos + 1), pos + 5
-	else -- id == DOUBLE
+	elseif id == DOUBLE then
 		return buffer.readf64(buf, pos + 1), pos + 9
+	else
+		error(`Failed to parse number using byte: {id} at position {pos}`)
 	end
 end
 
 local Number = {
-	Read = READ,
-	Write = WRITE,
-
 	serialize = numSerializer,
 	deserialize = numDeserializer,
 }
 
---[[
-	Clears and replaces the read table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Number.resetRead()
-	table.clear(READ)
-	READ = {}
-	Number.Read = READ
-end
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function Number.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	Number.Write = WRITE
-end
-
-return Number
+return table.freeze(Number)

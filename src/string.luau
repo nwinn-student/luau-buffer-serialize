@@ -9,9 +9,6 @@ local THREE_BYTE = 11
 local INT = 12
 local STRING_15 = 27
 
-local READ = {}
-local WRITE = {} -- 1 to 1343
-
 @native
 local function strSerializer(
 	value: string,
@@ -25,25 +22,6 @@ local function strSerializer(
 		end
 		buffer.writeu8(buf, pos, EMPTY)
 		return buf, pos + 1, size
-	end
-
-	local cachedConstant: number? = WRITE[value]
-	if cachedConstant then
-		local newSize = if cachedConstant <= 64 then 1 else 2
-
-		if pos + newSize > size then
-			buf, size = inflate(buf, pos + newSize, size)
-		end
-
-		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + STRING_15)
-		else
-			local constVal = cachedConstant - 64
-			buffer.writeu8(buf, pos, 92 + (constVal // 256))
-			buffer.writeu8(buf, pos + 1, constVal)
-		end
-
-		return buf, pos + newSize, size
 	end
 
 	local len = #value
@@ -81,78 +59,53 @@ local function strSerializer(
 	return buf, pos + newSize + len, size
 end
 
+--[[
+	Produces a string from the buffer starting at the given position.
+
+	@param buf buffer containing the string
+	@param pos the starting position of the string
+
+	@error Failed to parse string
+	@error buffer access out of bounds
+
+	@return the string and the end string position + 1
+]]
 @native
-local function strDeserializer(buf: buffer, pos: number): (string?, number)
+local function strDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == EMPTY then
 		return "", pos + 1
 	end
 
-	if id > STRING_15 then
-		local cachedId = if id > 91
-			then (id - 92) * 256 + 64 + buffer.readu8(buf, pos + 1)
-			else id - STRING_15
-
-		local cachedConstant: string? = READ[cachedId]
-		if cachedConstant then
-			return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
-		end
-
-		error(`Failed to parse string constant with id: {
-					cachedId
-				} ({id}) at position {
-					pos
-				}`)
-	end
-
+	-- TODO: Make sure it checks the upper range**
 	if id > INT then
 		return buffer.readstring(buf, pos + 1, id - INT),
-			pos + id - INT + 1
+		pos + id - INT + 1
 	end
 
 	local lenSize = id - EMPTY
 
-	local len = if id == BYTE then
-			buffer.readu8(buf, pos + 1)
-		elseif id == CHAR then
-			buffer.readu16(buf, pos + 1)
-		elseif id == THREE_BYTE then
-			buffer.readbits(buf, (pos + 1)*8, 24)
-		else -- id == INT
-			buffer.readu32(buf, pos + 1)
+	local len: number
 
-	return buffer.readstring(buf, pos + lenSize + 1, len), 
-		pos + len + 1 + lenSize
+	if id == BYTE then
+		len = buffer.readu8(buf, pos + 1)
+	elseif id == CHAR then
+		len = buffer.readu16(buf, pos + 1)
+	elseif id == THREE_BYTE then
+		len = buffer.readbits(buf, (pos + 1) * 8, 24)
+	elseif id == INT then
+		len = buffer.readu32(buf, pos + 1)
+	else
+		error(`Failed to parse string using byte: {id} at position {pos}`)
+	end
+
+	return buffer.readstring(buf, pos + lenSize + 1, len), pos + len + 1 + lenSize
 end
 
 local String = {
-	Read = READ,
-	Write = WRITE,
-
 	serialize = strSerializer,
 	deserialize = strDeserializer,
 }
 
---[[
-	Clears and replaces the read table
-
-	@ Mainly used to reduce memory usage
-]]
-function String.resetRead()
-	table.clear(READ)
-	READ = {}
-	String.Read = READ
-end
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function String.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	String.Write = WRITE
-end
-
-return String
+return table.freeze(String)

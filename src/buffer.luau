@@ -10,7 +10,7 @@ local INT = 7
 
 local EMPTY_BUFFER = buffer.create(0)
 
-return {
+return table.freeze({
 	serialize = function(value: buffer, buf: buffer, pos: number, size: number)
 		local len = buffer.len(value)
 
@@ -46,6 +46,18 @@ return {
 		buffer.copy(buf, pos + newSize, value)
 		return buf, pos + newSize + len, size
 	end,
+
+	--[[
+		Produces a buffer from the buffer starting at the given position.
+
+		@param buf buffer containing the buffer
+		@param pos the starting position of the buffer
+
+		@error Failed to parse buffer
+		@error buffer access out of bounds
+
+		@return the buffer and the end buffer position + 1
+	]]
 	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
 
@@ -70,10 +82,12 @@ return {
 		elseif id == INT then
 			len = buffer.readu32(buf, pos)
 			pos += lenSize
+		else
+			error(`Failed to parse buffer using byte: {id} at position {pos}`)
 		end
 
 		local value = buffer.create(len)
 		buffer.copy(value, 0, buf, pos, len)
 		return value, pos + len
 	end,
-}
+})

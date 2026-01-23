@@ -7,7 +7,7 @@ local inflate = require("./inflate")
 		into a single byte for storage
 	Deserializes a buffer into a boolean value if applicable
 ]]
-return {
+return table.freeze({
 	serialize = function(value: boolean, buf: buffer, pos: number, size: number)
 		if pos + 1 > size then
 			buf, size = inflate(buf, pos + 1, size)
@@ -19,4 +19,4 @@ return {
 	deserialize = function(buf: buffer, pos: number)
 		return buffer.readu8(buf, pos) == 1, pos + 1
 	end,
-}
+})
