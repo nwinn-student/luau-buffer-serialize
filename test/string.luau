@@ -2,11 +2,11 @@
 -- Runs tests for ../src/string
 
 local test = require("./test")
-local EMPTY = 9
-local BYTE = 10
-local CHAR = 11
-local TRYTE = 12
-local INT = 13
+local EMPTY = 8
+local BYTE = 9
+local CHAR = 10
+local TRYTE = 11
+local INT = 12
 
 -- Check that string.luau works properly
 local serialize = require("../src").serialize

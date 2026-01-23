@@ -2,15 +2,15 @@
 -- Runs tests for ../src/number
 
 local test = require("./test")
-local ZERO = 88
-local ONE = 89
-local BYTE = 90
-local CHAR = 91
-local TRYTE = 92
-local INT = 93
-local FLOAT = 94
-local DOUBLE = 95
-local NAN = 96
+local ZERO = 97
+local ONE = 98
+local BYTE = 99
+local CHAR = 100
+local TRYTE = 101
+local INT = 102
+local FLOAT = 103
+local DOUBLE = 104
+local NAN = 105
 
 -- Check that number.luau works properly
 local serialize = require("../src").serialize

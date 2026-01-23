@@ -3,20 +3,20 @@
 
 local test = require("./test")
 local vcreate = vector.create
-local ZERO = 136
-local ONE = 137
-local X = 138
-local Y = 139
-local Z = 140
-local XY = 141
-local XZ = 142
-local YZ = 143
-local BYTE = 144
-local CHAR = 145
-local TRYTE = 146
-local FLOAT = 147
-local NUMBER = 148
-local SCALAR = 149
+local ZERO = 142
+local ONE = 143
+local X = 144
+local Y = 145
+local Z = 146
+local XY = 147
+local XZ = 148
+local YZ = 149
+local BYTE = 150
+local CHAR = 151
+local TRYTE = 152
+local FLOAT = 153
+local NUMBER = 154
+local SCALAR = 155
 
 -- Check that vector.luau works properly
 local serialize = require("../src").serialize
@@ -55,8 +55,8 @@ test.serial(
 	Sir_Float,
 	test.newBuffer(FLOAT, 0, 0, 128, 75, 0, 0, 0, 76, 0, 0, 128, 76)
 )
-test.serial(Sir_Number, test.newBuffer(NUMBER, 90, 2, 91, 0, 1, 92, 0, 0, 1))
-test.serial(Sir_Scalar, test.newBuffer(SCALAR, 138, 90, 2))
+test.serial(Sir_Number, test.newBuffer(NUMBER, 99, 2, 100, 0, 1, 101, 0, 0, 1))
+test.serial(Sir_Scalar, test.newBuffer(SCALAR, 144, 99, 2))
 
 -- deserialization
 test.compare(vector.zero, deserialize(Sir_Zero))
