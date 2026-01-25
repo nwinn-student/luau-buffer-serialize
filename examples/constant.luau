@@ -1,4 +1,4 @@
-local bufferSerial = require("./BufferSerializer")
+local bufferSerial = require("@BufferSerializer")
 
 type Fruit = {
 	seed_count: number,
