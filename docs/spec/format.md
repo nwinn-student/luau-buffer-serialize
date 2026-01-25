@@ -21,7 +21,8 @@ An array is a list of elements from index 1 to n where there exist no gaps
 
 **What are vectors?**
 
-Vectors are storage mediums for three 32-bit floating point numbers `(x,y,z)`.
+Vectors are immutable storage mediums for three 32-bit floating point numbers
+ `(x,y,z)`.
 
 **How are cyclic tables stored?**
 
