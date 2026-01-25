@@ -4,11 +4,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL_3.0-yellow.svg)](https://opensource.org/licenses/GPL-3.0)
 
 > [!CAUTION]
-> Unstable data format, see [migration path](./docs/tips.md#migration).
-
-> [!CAUTION]
-> External API is stable, except for the planned addition of errors in a later
->  version.
+> Userdata support will be moved from the internal API into the external API.
 
 ## Purpose
 
