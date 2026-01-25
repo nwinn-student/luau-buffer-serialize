@@ -14,6 +14,15 @@ Numbers are stored in little-endian.
 
 No, strings and buffers are stored in their raw form, as sequences of bytes.
 
+**What constitutes an array?**
+
+An array is a list of elements from index 1 to n where there exist no gaps
+ between the indeces 1 and n when incrementing the index by 1.
+
+**What are vectors?**
+
+Vectors are storage mediums for three 32-bit floating point numbers `(x,y,z)`.
+
 **How are cyclic tables stored?**
 
 Values are recorded and any duplicate is fast pathed to avoid re-serializing and is compressed to 3 bytes (`196`).  Tables are recorded before serializing, so cyclic tables are stored as 3 byte references to prior serialized or currently serializing tables.
