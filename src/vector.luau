@@ -145,10 +145,16 @@ local function vecSerializer(
 		typeZ = getType(valueZ)
 		isNumber = typeY ~= typeZ
 		if isNumber and (typeX == FLOAT or typeY == FLOAT or typeZ == FLOAT) then
-			-- fft = 15, ftt = 14
-			-- so no floats
-			typeX = FLOAT
-			isNumber = false
+			-- fft = 15, ftt = 14, ffc = 14
+			-- so no floats and trytes
+			local hasTryte = typeX == THREE_BYTE or typeY == THREE_BYTE or typeZ == THREE_BYTE
+			local hasChar = typeX == CHAR or typeY == CHAR or typeZ == CHAR
+			local twoFloat = typeX == FLOAT and (typeX == typeY or typeX == typeZ)
+				or (typeY == FLOAT and typeY == typeZ)
+			if hasTryte or (hasChar and twoFloat) then
+				typeX = FLOAT
+				isNumber = false
+			end
 		end
 	end
 
