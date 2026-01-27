@@ -151,7 +151,12 @@ local function vecSerializer(
 			local hasChar = typeX == CHAR or typeY == CHAR or typeZ == CHAR
 			local twoFloat = typeX == FLOAT and (typeX == typeY or typeX == typeZ)
 				or (typeY == FLOAT and typeY == typeZ)
-			if hasTryte or (hasChar and twoFloat) then
+			local twoTryte = typeX == THREE_BYTE and (typeX == typeY or typeX == typeZ)
+				or (typeY == THREE_BYTE and typeY == typeZ)
+			if (hasTryte and twoFloat)
+				or (hasChar and twoFloat)
+				or twoTryte
+			then
 				typeX = FLOAT
 				isNumber = false
 			end
