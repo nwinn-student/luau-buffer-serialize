@@ -21,36 +21,6 @@ test.compare("userdata", type(deserialize(Sir_Proxy)))
 -- Custom reader/writer functions
 local userdata = require("../src/userdata")
 
--- By default (currently) the reader and writer are initialized to nil
---test.compare(nil, userdata.getReader())
---test.compare(nil, userdata.getWriter())
---test.compare(false, pcall(userdata.setReader, nil :: any))
---test.compare(false, pcall(userdata.setWriter, nil :: any))
-
-local function reader(buf: buffer, pos: number): (unknown, number)
-	test.serial(buf, test.newBuffer(202, 203))
-	test.compare(pos, 1)
-	return proxy, pos
-end
-
-local function writer(
-	value: unknown,
-	buf: buffer,
-	pos: number,
-	size: number
-): (buffer, number, number)
-	test.compare(value, proxy)
-	test.serial(buf, test.newBuffer(202))
-	test.compare(pos, 1)
-	test.compare(size, 1)
-	return buf, pos, size
-end
---userdata.setReader(reader)
---userdata.setWriter(writer)
-
---test.compare(reader, userdata.getReader())
---test.compare(writer, userdata.getWriter())
-
 userdata.addSupport({
 	tag = function(data: any)
 		return 0

@@ -30,8 +30,6 @@ local serialize = require("./src").serialize
 local deserialize = require("./src").deserialize
 local pair = require("./src").pair
 
-local inflate = require("./src/inflate")
-
 local proxyTable = {
 	newproxy(), -- proxy
 	newproxy(), -- yxorp
