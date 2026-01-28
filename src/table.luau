@@ -13,7 +13,7 @@ type Serialize = (
 	buf: buffer,
 	pos: number,
 	size: number
-) -> (buffer, number, number)
+) -> (buffer, number, number, number?, any?)
 
 type Deserialize = (buf: buffer, pos: number) -> (any, number)
 
@@ -27,6 +27,7 @@ local vecSer = require("./vector").serialize
 local userSer = require("./userdata").serialize
 
 local serialSwitch: Switch<string, Serialize> = table.freeze({
+	["nil"] = require("./nil").serialize,
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
 	string = @native function(data: any, buf: buffer, pos: number, size: number)
@@ -186,13 +187,27 @@ function tabSerializer(
 			return
 		end
 
-		local oldPos, pairedId = pos, nil
-		buf, pos, size, pairedId = serialSwitch[typeName](data, buf, pos, size)
+		local oldPos, pairedId, store = pos, nil, nil
+		buf, pos, size, pairedId, store =
+			serialSwitch[typeName](data, buf, pos, size)
 
+		-- Userdata specific
+		if store ~= nil then
+			existingCache(data)
+			serialCache(store, type(store))
+			return
+		end
+
+		-- we need to change this TOO to account for userdata pairs
 		if pos - oldPos == 1 then
 			if pairedId then
 				constants[data] = pairedId
-				buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
+				buf, pos, size, _, store =
+					unlinkedSwitch[typeName](data, buf, pos, size)
+				if store ~= nil then
+					existingCache(data)
+					serialCache(store, type(store))
+				end
 				return
 			end
 
@@ -201,7 +216,12 @@ function tabSerializer(
 		elseif pos - oldPos == 2 then
 			if pairedId then
 				constants[data] = pairedId
-				buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
+				buf, pos, size, _, store =
+					unlinkedSwitch[typeName](data, buf, pos, size)
+				if store ~= nil then
+					existingCache(data)
+					serialCache(store, type(store))
+				end
 				return
 			end
 
@@ -400,7 +420,8 @@ function tabDeserializer(buf: buffer, pos: number)
 	end
 
 	@native
-	local function deserialCache(valId: number): unknown
+	local function deserialCache(valId: number, tpos: number?): unknown
+		pos = tpos or pos -- ????
 		if valId == EMPTY then
 			pos += 1
 			return {}

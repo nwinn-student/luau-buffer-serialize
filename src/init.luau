@@ -72,7 +72,17 @@ function BufferSerializer.serialize(value: any): buffer
 
 	local serial: Serialize = (serialModules :: any)[typeValue]
 
-	return trim(serial(value, nil, 0, 0))
+	local buf, pos, size, _a, store = serial(value, nil, 0, 0)
+
+	if store ~= nil then
+		local typeStore = type(store)
+		if typeStore == "function" or typeStore == "thread" then
+			typeStore = "nil"
+		end
+		buf, pos, size = (serialModules :: any)[typeStore](store, buf, pos, size)
+	end
+
+	return trim(buf, pos, size)
 end
 
 --[[
@@ -109,8 +119,13 @@ end
 
 	@return the original value
 ]]
-function BufferSerializer.deserialize(value: buffer): any
-	local pointer = buffer.readu8(value, 0)
+function BufferSerializer.deserialize(value: buffer, pos: number?): any
+	assert(
+		pos == nil or type(pos) == "number",
+		`expected pos to be number (got {type(pos)})`
+	)
+
+	local pointer = buffer.readu8(value, pos or 0)
 	if pointer == 0 then
 		return nil
 	end
@@ -119,7 +134,7 @@ function BufferSerializer.deserialize(value: buffer): any
 
 	local deserial: Deserialize = (deserialModules :: any)[pointer]
 
-	return (deserial(value, 0))
+	return (deserial(value, pos or 0))
 end
 
 -- narrows the type emitted by `type(any): string` would like for it to error

@@ -38,32 +38,26 @@ local proxyTable = {
 	newproxy(), -- roxyp
 }
 
-require("./src/userdata").setReader(
-	function(buf: buffer, pos: number): (unknown, number)
-		local tablePosition = buffer.readu8(buf, pos)
-		local proxy = proxyTable[tablePosition]
-		return proxy, pos + 1
-	end
-)
-require("./src/userdata").setWriter(
-	function(
-		value: unknown,
-		buf: buffer,
-		pos: number,
-		size: number
-	): (buffer, number, number)
-		local tablePosition = table.find(proxyTable, value)
+-- Multiple approaches that could be taken
+-- I will assume that each userdata has its own tag
+--  based on its position in the table.
+-- Another approach would be to store them all under
+--  under a single tag, and return a number in serialize
+require("./src/userdata").addSupport({
+	tag = function(data)
+		local tablePosition = table.find(proxyTable, data)
 		if tablePosition then
-			if pos + 1 > size then
-				buf, size = inflate(buf, pos + 1, size)
-			end
-			buffer.writeu8(buf, pos, tablePosition)
-			return buf, pos + 1, size
+			return tablePosition
 		end
-
-		return buf, pos, size
-	end
-)
+	end,
+	serialize = function()
+		-- what if we don't need this byte? do we NEED to have it?
+		return false
+	end,
+	deserialize = function(data, tag: number)
+		return proxyTable[tag]
+	end,
+})
 
 local proxy = proxyTable[1]
 local yxorp = proxyTable[2]
@@ -103,7 +97,7 @@ test.serial(
 )
 test.serial(
 	Sir_User,
-	test.newBuffer(197, 204, 202, 1, 213, 202, 2, 215, 255, 202, 3, 200)
+	test.newBuffer(197, 204, 202, 1, 2, 213, 202, 2, 2, 215, 255, 202, 3, 2, 200)
 )
 
 -- deserialize

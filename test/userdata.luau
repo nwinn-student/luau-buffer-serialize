@@ -22,10 +22,10 @@ test.compare("userdata", type(deserialize(Sir_Proxy)))
 local userdata = require("../src/userdata")
 
 -- By default (currently) the reader and writer are initialized to nil
-test.compare(nil, userdata.getReader())
-test.compare(nil, userdata.getWriter())
-test.compare(false, pcall(userdata.setReader, nil :: any))
-test.compare(false, pcall(userdata.setWriter, nil :: any))
+--test.compare(nil, userdata.getReader())
+--test.compare(nil, userdata.getWriter())
+--test.compare(false, pcall(userdata.setReader, nil :: any))
+--test.compare(false, pcall(userdata.setWriter, nil :: any))
 
 local function reader(buf: buffer, pos: number): (unknown, number)
 	test.serial(buf, test.newBuffer(202, 203))
@@ -45,18 +45,34 @@ local function writer(
 	test.compare(size, 1)
 	return buf, pos, size
 end
-userdata.setReader(reader)
-userdata.setWriter(writer)
+--userdata.setReader(reader)
+--userdata.setWriter(writer)
 
-test.compare(reader, userdata.getReader())
-test.compare(writer, userdata.getWriter())
+--test.compare(reader, userdata.getReader())
+--test.compare(writer, userdata.getWriter())
+
+userdata.addSupport({
+	tag = function(data: any)
+		return 0
+	end,
+	serialize = function()
+		return false
+	end,
+	deserialize = function(data, tag)
+		test.compare(data, false)
+		test.compare(tag, 0)
+		return proxy
+	end,
+})
 
 local Sir_Custom = serialize(proxy)
 
 -- serialization
-test.serial(Sir_Custom, test.newBuffer(CUSTOM, NIL))
+test.serial(Sir_Custom, test.newBuffer(CUSTOM, 0, 2))
 
 -- deserialization
 test.compare(proxy, deserialize(Sir_Custom))
+
+userdata.clearSupport()
 
 return {}
