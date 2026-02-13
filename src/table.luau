@@ -127,7 +127,9 @@ function tabSerializer(
 
 	local serialTable: (data: { [any]: any }) -> ()
 
-	buf, size = buffer.create(64), 64
+	if size == 0 then
+		buf, size = buffer.create(64), 64
+	end
 
 	@native
 	local function existingCache(data: any)
