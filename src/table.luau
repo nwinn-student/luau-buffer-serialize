@@ -2,8 +2,6 @@
 --!strict
 local inflate = require("./inflate")
 local link = require("./link")
-local linkGet = link.get
-local linkSer = link.serialize
 local linkType = link.type
 local isLink = link.islink
 local isDuo = link.isduo
@@ -21,49 +19,14 @@ type Switch<VAR, F> = {
 	[VAR]: F,
 }
 
-local strSer = require("./string").serialize
-local numSer = require("./number").serialize
-local vecSer = require("./vector").serialize
-local userSer = require("./userdata").serialize
-
 local serialSwitch: Switch<string, Serialize> = table.freeze({
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
-	string = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = linkGet(data)
-		if linkId then
-			return linkSer(linkId, buf, pos, size)
-		end
-		return strSer(data, buf, pos, size)
-	end,
-	number = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = linkGet(data)
-		if linkId then
-			return linkSer(linkId, buf, pos, size)
-		end
-		return numSer(data, buf, pos, size)
-	end,
-	vector = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = linkGet(data)
-		if linkId then
-			return linkSer(linkId, buf, pos, size)
-		end
-		return vecSer(data, buf, pos, size)
-	end,
-	userdata = @native function(data: any, buf: buffer, pos: number, size: number)
-		local linkId = linkGet(data)
-		if linkId then
-			return linkSer(linkId, buf, pos, size)
-		end
-		return userSer(data, buf, pos, size)
-	end,
+	string = require("./string").serialize,
+	number = require("./number").serialize,
+	vector = require("./vector").serialize,
+	userdata = require("./userdata").serialize,
 }) :: Switch<string, Serialize>
-local unlinkedSwitch: Switch<string, Serialize> = {
-	string = strSer,
-	number = numSer,
-	vector = vecSer,
-	userdata = userSer,
-}
 
 local deserialSwitch: Switch<string, Deserialize> =
 	table.freeze({
@@ -186,27 +149,13 @@ function tabSerializer(
 			return
 		end
 
-		local oldPos, pairedId = pos, nil
-		buf, pos, size, pairedId = serialSwitch[typeName](data, buf, pos, size)
+		local oldPos = pos
+		buf, pos, size = serialSwitch[typeName](data, buf, pos, size)
 
 		if pos - oldPos == 1 then
-			if pairedId then
-				constants[data] = pairedId
-				buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
-				return
-			end
-
-			local serValue = buffer.readu8(buf, oldPos)
-			constants[data] = serValue
+			constants[data] = buffer.readu8(buf, oldPos)
 		elseif pos - oldPos == 2 then
-			if pairedId then
-				constants[data] = pairedId
-				buf, pos, size = unlinkedSwitch[typeName](data, buf, pos, size)
-				return
-			end
-
-			local serValue = buffer.readu16(buf, oldPos)
-			constants[data] = serValue
+			constants[data] = buffer.readu16(buf, oldPos)
 		elseif data == data then
 			existingCache(data)
 		end
