@@ -43,28 +43,6 @@ test.compare({ [0] = 1 }, deserialize(Sir_Dict))
 test.compare({ "bbb", "bbb" }, deserialize(Sir_Exist))
 test.compare(recurse, deserialize(Sir_Recurs))
 
--- pairs
-local pair = require("../src").pair
-local calcId = require("../src/link").calculateId
-
-pair(5, "aaa")
-
-local aaaId = calcId(5, "string")
-
-local Sir_Paired = serialize({ "aaa" })
-local Sir_DuoPaired = serialize({ "aaa", "aaa" })
-
--- serialization
-test.serial(Sir_Paired, test.newBuffer(ARRAY, aaaId, 15, "aaa", TABLEEND))
-test.serial(
-	Sir_DuoPaired,
-	test.newBuffer(ARRAY, aaaId, 15, "aaa", aaaId, TABLEEND)
-)
-
--- deserialization
-test.compare({ "aaa" }, deserialize(Sir_Paired))
-test.compare({ "aaa", "aaa" }, deserialize(Sir_DuoPaired))
-
 -- error check
 local tabDeserialize = require("../src/table").deserialize
 test.compare(false, pcall(tabDeserialize, test.newBuffer(0), 0)) -- failure to parse table

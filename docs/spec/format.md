@@ -32,12 +32,6 @@ Values are recorded and any duplicate is fast pathed to avoid re-serializing and
 
 The table size is not stored by default, see [extension support](../extension.md).
 
-**How are paired ids stored?**
-
-Paired ids are stored either in the byte itself, or as a 2 byte number.
- For the 2 byte number, the first byte represents which batch to enter, 
- and the second byte represents the id linked to the value.
-
 **Why are vectors stored in different formats?**
 
 Vectors have multiple modes: scalar multiple, multi-set (byte, char, tryte), and set.  Scalar multiple vectors are multiples of the constant vectors, thus they can be stored in less bytes.  The intent behind multiple modes is primarily to produce smaller output sizes.  Vectors are basically numerical arrays of size 3, so two common cases (multi-set and set) were chosen to account for all cases and then special cases (scalar multiple) get a fast path with little cost.
