@@ -54,7 +54,7 @@ local function reader(buf: buffer, pos: number): (unknown, number)
 		local tab
 		tab, pos = tabDeserialize(buf, pos)
 		test.compare(true, tab[1])
-		test.compare(5, pos)
+		test.compare(4, pos)
 		return usertable, pos
 	end
 end

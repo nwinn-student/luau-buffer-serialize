@@ -370,7 +370,7 @@ function tabDeserializer(buf: buffer, pos: number)
 	do
 		local id = buffer.readu8(buf, pos)
 		if id == EMPTY then
-			return returnedTab, 1
+			return returnedTab, pos + 1
 		end
 
 		if id ~= ARRAY and id ~= TABLE and id ~= DICT then
@@ -548,7 +548,7 @@ function tabDeserializer(buf: buffer, pos: number)
 
 	table.clear(existing)
 
-	return data, pos + 1
+	return data, pos
 end
 
 return table.freeze({
