@@ -122,10 +122,6 @@ local function tableCompare(expected: { [any]: any }, obtained: { [any]: any })
 		for key, value in expected do
 			keyStorage[key] = true
 
-			if cyclicStorage[value] then
-				continue
-			end
-
 			local obtainedValueAtKey = obtained[key]
 			if obtainedValueAtKey == nil then
 				print(
@@ -135,14 +131,27 @@ local function tableCompare(expected: { [any]: any }, obtained: { [any]: any })
 				continue
 			end
 
+			if cyclicStorage[value] then
+				-- Q: Not entirely correct, we can link the two tables so if one is used we can tell
+				--  if the correct cyclic table is the value of obtained.
+				--if not cyclicStorage[obtainedValueAtKey] then
+				--	print(`Expected [{tosimplestring(key)}] = *CYCLIC* (got {tosimplestring(value)})`)
+				--	hasFailed = true
+				--end
+				continue
+			end
+
 			-- we need to also account for keys when they are tables
 			if type(key) == "table" then
 				-- Q: Do we add it to cyclicStorage?
 				-- A: Yes, we do not want to recheck it.
-				cyclicStorage[key] = true
+				--cyclicStorage[key] = true
 				-- Q: Table keys (or userdata) cannot be remade using the same ref
 				--  what do we do?
 				-- A: We can check all table keys in obtained.  But recursion.. ugh
+				-- Q: How do we know which table that is checked should print messages when incorrect?
+				-- A: That means we cannot support these cases and should just continue.
+				continue
 				--comparer(key, obtained)
 			end
 			if type(value) == "table" and type(obtainedValueAtKey) == "table" then
@@ -150,6 +159,7 @@ local function tableCompare(expected: { [any]: any }, obtained: { [any]: any })
 				-- Q: do we also add obtainedValueAtKey?
 				-- A: Yes, if it gets past the first check we know it is wrong
 				--  when obtainedValueAtKey is a backreference.
+				cyclicStorage[obtainedValueAtKey] = true
 				comparer(value, obtainedValueAtKey)
 				continue
 			end
