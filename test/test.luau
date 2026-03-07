@@ -85,13 +85,7 @@ local function stringCompare(expected: string, obtained: string)
 		hasFailed = true
 	end
 
-	-- Q: if the character isn't print-able what do we do?
-	-- A: Chose to print byte as well.
-	-- Q: What if it is a batch of characters?
-	-- A: Vertical reading exists.
-	-- We don't account for unicode, would be silly
-	-- this is VERY slow, we could match?
-	for i = 0, math.min(expectedSize, obtaintedSize) - 1 do
+	for i = 0, math.min(expectedSize, obtaintedSize) do
 		local expectedChar = expected:sub(i, i)
 		local expectedByte = expectedChar:byte()
 		local obtainedChar = obtained:sub(i, i)
