@@ -112,7 +112,7 @@ local function stringCompare(expected: string, obtained: string)
 end
 
 local function tableCompare(expected: { [any]: any }, obtained: { [any]: any })
-	local cyclicStorage = { [expected] = true }
+	local cyclicStorage = { [expected] = true, [obtained] = expected }
 	local hasFailed = false
 	local traceback = debug.traceback("", 3)
 
