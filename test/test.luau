@@ -1,52 +1,27 @@
 --!strict
 --!optimize 2
 
-local meta = {
-	add = function(self, val)
-		table.insert(self, val)
-		return self
-	end,
-}
-meta.__index = meta
+--[[
+	Test API
 
--- tossed together since it doesn't really matter
--- how do we handle cyclic? and how do we identify different cyclics?
-local function stringify(value: any, parTree: any?)
-	local typeValue = type(value)
+	newBuffer(...: number | string): buffer
+	sizedBuffer(size: number, ...: number | string): buffer
+	run(cond: boolean, message: string)
+	-- We can use type system to do precursor check
+	compare<T>(expected: T, obtained: T): boolean
+	-- Deprecated and to be removed
+	serial<T>(expected: T, obtained: T): boolean
 
-	local strValue = tostring(value)
+	-- Maybe later
+	expectedComparable(expected: any): Comparable
+		:compareObtained(obtained: any): boolean
+	-- Maybe later for batch
+	expectBatch<T>(...: T...): ExpectBatch<T...>
+		:obtainedBatch(...: T...): boolean
 
-	if typeValue == "string" then
-		return `"{value}"`
-	end
+]]
 
-	if typeValue ~= "buffer" and typeValue ~= "table" then
-		return strValue
-	end
-
-	if typeValue == "buffer" then
-		return `buffer"{buffer.tostring(value)}"`
-	end
-
-	parTree = parTree or setmetatable({}, meta)
-	for i, v in parTree do
-		if v == value then
-			return `*CYCLIC#{i}*`
-		end
-	end
-
-	parTree:add(value)
-	-- must be table...
-	local strTab = { "{ " }
-	for key, prop in value do
-		table.insert(
-			strTab,
-			`[{stringify(key, parTree)}] = {stringify(prop, parTree)},`
-		)
-	end
-	table.insert(strTab, "} ")
-	return table.concat(strTab, "")
-end
+local test = {}
 
 local function getSize(tab: { number | string })
 	local size = 0
@@ -61,81 +36,181 @@ local function getSize(tab: { number | string })
 	return size
 end
 
-local function writeBuffer(value: unknown, buf: buffer, pos: number)
-	if type(value) == "string" then
-		buffer.writestring(buf, pos, value)
-		return pos + #value
+function test.run(cond: boolean, message: string)
+	if cond then
+		return
 	end
-	assert(type(value) == "number")
-	buffer.writeu8(buf, pos, value)
-	return pos + 1
+	print(`{message} {debug.traceback("", 2)}`)
 end
 
-local test = {
-	run = function(cond: boolean, msg: string)
-		if cond then
-			return
+function test.sizedBuffer(size: number, ...: number | string)
+	local args = { ... }
+	local buf = buffer.create(size)
+	local pos = 0
+	for _, value in args do
+		if type(value) == "string" then
+			buffer.writestring(buf, pos, value)
+			pos += #value
+			continue
 		end
-		print(`{msg} {debug.traceback("", 2)}`)
-	end,
-	newBuffer = function(...: number | string)
-		local args = { ... }
-		local buf = buffer.create(getSize(args))
-		local pos = 0
-		for _, value in args do
-			pos = writeBuffer(value, buf, pos)
-		end
-		return buf
-	end,
-	sizedBuffer = function(size: number, ...: number | string)
-		local args = { ... }
-		local buf = buffer.create(size)
-		local pos = 0
-		for _, value in args do
-			pos = writeBuffer(value, buf, pos)
-		end
-		return buf
-	end,
-	serial = function(new: buffer, ori: buffer)
-		local testFail = false
+		assert(type(value) == "number")
+		buffer.writeu8(buf, pos, value)
+		pos += 1
+	end
+	return buf
+end
 
-		local oriSize = buffer.len(ori)
-		local newSize = buffer.len(new)
+function test.newBuffer(...: number | string)
+	local size = getSize({ ... })
+	return test.sizedBuffer(size, ...)
+end
 
-		if oriSize ~= newSize then
-			print(`Expected size {oriSize} (got {newSize})`)
-			testFail = true
+local function tosimplestring(value: any)
+	local typeValue = type(value)
+	return if typeValue == "string"
+		then `"{value}"`
+		elseif typeValue == "buffer" then `b"{buffer.tostring(value)}"`
+		else tostring(value)
+end
+
+local function stringCompare(expected: string, obtained: string)
+	local hasFailed = false
+	local traceback = debug.traceback("", 3)
+
+	local expectedSize = #expected
+	local obtaintedSize = #obtained
+
+	if expectedSize ~= obtaintedSize then
+		print(`Expected size {expectedSize} (got {obtaintedSize})`)
+		hasFailed = true
+	end
+
+	-- Q: if the character isn't print-able what do we do?
+	-- A: Chose to print byte as well.
+	-- Q: What if it is a batch of characters?
+	-- A: Vertical reading exists.
+	-- We don't account for unicode, would be silly
+	-- this is VERY slow, we could match?
+	for i = 0, math.min(expectedSize, obtaintedSize) - 1 do
+		local expectedChar = expected:sub(i, i)
+		local expectedByte = expectedChar:byte()
+		local obtainedChar = obtained:sub(i, i)
+		local obtainedByte = obtainedChar:byte()
+
+		if expectedByte ~= obtainedByte then
+			print(
+				`Expected {expectedChar} ({expectedByte}) at position {i} (got {obtainedChar} ({obtainedByte}))`
+			)
+			hasFailed = true
 		end
-		for i = 0, math.min(oriSize, newSize) - 1 do
-			local oriByte = buffer.readu8(ori, i)
-			local newByte = buffer.readu8(new, i)
-			if oriByte ~= newByte then
-				print(`Expected {oriByte} at position {i} (got {newByte})`)
-				testFail = true
+	end
+
+	if hasFailed then
+		print(traceback:sub(2, -1))
+	end
+	return hasFailed
+end
+
+local function tableCompare(expected: { [any]: any }, obtained: { [any]: any })
+	local cyclicStorage = { [expected] = true }
+	local hasFailed = false
+	local traceback = debug.traceback("", 3)
+
+	local function comparer(expected: { [any]: any }, obtained: { [any]: any })
+		local keyStorage = {}
+
+		for key, value in expected do
+			keyStorage[key] = true
+
+			if cyclicStorage[value] then
+				continue
+			end
+
+			local obtainedValueAtKey = obtained[key]
+			if obtainedValueAtKey == nil then
+				print(
+					`Expected [{tosimplestring(key)}] = {tosimplestring(value)} (got nil)`
+				)
+				hasFailed = true
+				continue
+			end
+
+			-- we need to also account for keys when they are tables
+			if type(key) == "table" then
+				-- Q: Do we add it to cyclicStorage?
+				-- A: Yes, we do not want to recheck it.
+				cyclicStorage[key] = true
+				-- Q: Table keys (or userdata) cannot be remade using the same ref
+				--  what do we do?
+				-- A: We can check all table keys in obtained.  But recursion.. ugh
+				--comparer(key, obtained)
+			end
+			if type(value) == "table" and type(obtainedValueAtKey) == "table" then
+				cyclicStorage[value] = true
+				-- Q: do we also add obtainedValueAtKey?
+				-- A: Yes, if it gets past the first check we know it is wrong
+				--  when obtainedValueAtKey is a backreference.
+				comparer(value, obtainedValueAtKey)
+				continue
+			end
+
+			if not test.compare(value, obtainedValueAtKey) then
+				hasFailed = true
 			end
 		end
 
-		if testFail then
-			print(debug.traceback("", 2):sub(2, -1))
+		-- Now we need to see if obtained has more?
+		for key, value in obtained do
+			if not keyStorage[key] then
+				print(
+					`Expected [{tosimplestring(key)}] = nil (got {tosimplestring(
+						value
+					)})`
+				)
+				hasFailed = true
+			end
 		end
-	end,
-	compare = function(ori: any, new: any)
-		if ori == new then
-			return
-		end
+	end
 
-		local strOri = stringify(ori)
-		local strNew = stringify(new)
+	comparer(expected, obtained)
 
-		if strOri == strNew then
-			return
-		end
+	if hasFailed then
+		print(traceback:sub(2, -1))
+	end
+	return hasFailed
+end
 
-		strOri = if strOri:len() > 100 then strOri:sub(1, 98) .. ".." else strOri
-		strNew = if strNew:len() > 100 then strNew:sub(1, 98) .. ".." else strNew
+function test.compare<T>(expected: T, obtained: T)
+	if
+		expected == obtained
+		or tosimplestring(expected) == tosimplestring(obtained)
+	then
+		return true
+	end
 
-		print(`Expected {strOri} (got {strNew}) {debug.traceback("", 2)}`)
-	end,
-}
+	local traceback = debug.traceback("", 2)
+
+	local expectedType = type(expected)
+	local obtainedType = type(obtained)
+	if expectedType ~= obtainedType then
+		print(`Expected type {expectedType} (got {obtainedType}) {traceback}`)
+		return false
+	end
+
+	if expectedType == "string" then
+		-- match obtained against expected?
+		return stringCompare(expected, obtained)
+	elseif expectedType == "buffer" then
+		return stringCompare(buffer.tostring(expected), buffer.tostring(obtained))
+	elseif expectedType == "table" then
+		return tableCompare(expected, obtained)
+	else
+		print(`Expected {expected} (got {obtained}) {traceback}`)
+		return false
+	end
+end
+
+-- Deprecated for removal: Use `test.compare`
+test.serial = test.compare
 
 return test
