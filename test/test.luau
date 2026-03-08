@@ -19,6 +19,9 @@
 	expectBatch<T>(...: T...): ExpectBatch<T...>
 		:obtainedBatch(...: T...): boolean
 
+	-- Filler?
+	We could pass in a value and expected buffer
+	inspect(expected: buffer, value: any)
 ]]
 
 local test = {}
@@ -206,5 +209,70 @@ end
 
 -- Deprecated for removal: Use `test.compare`
 test.serial = test.compare
+
+local mainSerial = require("@BufferSerializer").serialize
+-- Checks serial and deserial, returns the buffer
+function test.inspect(value: any): buffer
+	local traceback = debug.traceback("", 2)
+	local hasFailed = false
+	local serial = (require(`@BufferSerializer/{type(value)}`) :: any).serialize
+	local deserial = (require(`@BufferSerializer/{type(value)}`) :: any).deserialize
+
+	-- we need to see how large it will be
+	local mainBuffer = mainSerial(value)
+	local size = buffer.len(mainBuffer)
+
+	local expectedPos = size + 1
+	local expectedSize = size + 2
+
+	local wrappedBuffer = test.sizedBuffer(expectedSize, 100)
+	buffer.writeu8(wrappedBuffer, expectedPos, 200)
+
+	local obtainedBuffer, obtainedPos, obtainedSize =
+		serial(value, wrappedBuffer, 1, size + 2)
+
+	-- We must ensure byte 1 is 100 and final byte is 200
+	if buffer.readu8(obtainedBuffer, 0) ~= 100 then
+		print(`Expected 100 at pos 0 (got {buffer.readu8(obtainedBuffer, 0)})`)
+		hasFailed = true
+	end
+	if buffer.readu8(obtainedBuffer, expectedPos) ~= 200 then
+		print(
+			`Expected 200 at pos {expectedPos} (got {buffer.readu8(
+				obtainedBuffer,
+				expectedPos
+			)})`
+		)
+		hasFailed = true
+	end
+	if expectedPos ~= obtainedPos then
+		print(`Expected position {expectedPos} (got {obtainedPos})`)
+		hasFailed = true
+	end
+	if expectedSize ~= obtainedSize then
+		print(`Expected size {expectedSize} (got {obtainedSize})`)
+		hasFailed = true
+	end
+
+	-- if it has failed do we just nogo?
+	local obtainedValue, obtainedDPos = deserial(obtainedBuffer, 1)
+	test.compare(value, obtainedValue) -- already prints stuff
+	if expectedPos ~= obtainedDPos then
+		print(
+			`Expected deserialization position {expectedPos} (got {obtainedDPos})`
+		)
+		hasFailed = true
+	end
+
+	if hasFailed then
+		print(traceback:sub(2, -1))
+	end
+
+	local unwrappedBuffer = test.sizedBuffer(size)
+	buffer.copy(unwrappedBuffer, 0, obtainedBuffer, 1, size)
+	return unwrappedBuffer
+end
+
+test.compare(test.newBuffer(8), test.inspect(""))
 
 return test

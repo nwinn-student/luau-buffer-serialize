@@ -14,6 +14,8 @@ local empty_usertable = newproxy()
 local usertable = newproxy()
 
 -- Check that userdata.luau works properly
+-- doesnt work that well here
+test.compare(test.newBuffer(NIL), test.inspect(proxy))
 local serialize = require("../src").serialize
 local deserialize = require("../src").deserialize
 
