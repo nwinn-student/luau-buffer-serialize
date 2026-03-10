@@ -12,6 +12,9 @@ end
 
 local BufferSerializer = {}
 
+local link = require("@self/link")
+local linkType = link.type
+
 local serialModules = table.freeze({
 	["nil"] = require("@self/nil").serialize,
 	boolean = require("@self/boolean").serialize,
