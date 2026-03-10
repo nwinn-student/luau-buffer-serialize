@@ -2,14 +2,12 @@
 --!strict
 local inflate = require("./inflate")
 
-local EMPTY = 9
-local BYTE = 10
-local CHAR = 11
-local THREE_BYTE = 12
-local INT = 13
-
-local READ = {}
-local WRITE = {} -- 1 to 1343
+local EMPTY = 8
+local BYTE = 9
+local CHAR = 10
+local THREE_BYTE = 11
+local INT = 12
+local STRING_15 = 27
 
 @native
 local function strSerializer(
@@ -19,44 +17,29 @@ local function strSerializer(
 	size: number
 )
 	if value == "" then
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
+		buf, size = inflate(buf, pos + 1, size)
 		buffer.writeu8(buf, pos, EMPTY)
 		return buf, pos + 1, size
 	end
 
-	local cachedConstant: number? = WRITE[value]
-	if cachedConstant then
-		local newSize = if cachedConstant <= 64 then 1 else 2
-
-		if pos + newSize > size then
-			buf, size = inflate(buf, pos + newSize, size)
-		end
-
-		if newSize == 1 then
-			buffer.writeu8(buf, pos, cachedConstant + 18)
-		else
-			local constVal = cachedConstant - 64
-			buffer.writeu8(buf, pos, 83 + (constVal // 256))
-			buffer.writeu8(buf, pos + 1, constVal)
-		end
-
-		return buf, pos + newSize, size
-	end
-
 	local len = #value
 
-	local newSize = if len < 256
-		then 2
+	local newSize = if len < 16
+		then 1
+		elseif len < 256 then 2
 		elseif len < 65_536 then 3
 		elseif len < 16_777_216 then 4
 		else 5
 
-	if pos + len + newSize > size then
-		buf, size = inflate(buf, pos + len + newSize, size)
+	buf, size = inflate(buf, pos + len + newSize, size)
+
+	if len < 16 then
+		buffer.writeu8(buf, pos, INT + len)
+		buffer.writestring(buf, pos + 1, value :: string, len)
+		return buf, pos + 1 + len, size
 	end
-	buffer.writeu8(buf, pos, 8 + newSize)
+
+	buffer.writeu8(buf, pos, 7 + newSize)
 
 	if len < 256 then
 		buffer.writeu8(buf, pos + 1, len)
@@ -72,23 +55,27 @@ local function strSerializer(
 	return buf, pos + newSize + len, size
 end
 
+--[[
+	Produces a string from the buffer starting at the given position.
+
+	@param buf buffer containing the string
+	@param pos the starting position of the string
+
+	@error Failed to parse string
+	@error buffer access out of bounds
+
+	@return the string and the end string position + 1
+]]
 @native
-local function strDeserializer(buf: buffer, pos: number): (string?, number)
+local function strDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == EMPTY then
 		return "", pos + 1
 	end
 
-	if id > 18 then
-		local cachedId = if id > 82
-			then (id - 83) * 256 + 64 + buffer.readu8(buf, pos + 1)
-			else id - 18
-
-		local cachedConstant: string? = READ[cachedId]
-		if cachedConstant then
-			return cachedConstant, pos + (if cachedId > 64 then 2 else 1)
-		end
+	if id > INT and id <= STRING_15 then
+		return buffer.readstring(buf, pos + 1, id - INT), pos + id - INT + 1
 	end
 
 	local lenSize = id - EMPTY
@@ -104,40 +91,15 @@ local function strDeserializer(buf: buffer, pos: number): (string?, number)
 	elseif id == INT then
 		len = buffer.readu32(buf, pos + 1)
 	else
-		-- DATA CORRUPTED (for now)
-		return nil, pos + 1 -- for future version
+		error(`Failed to parse string using byte: {id} at position {pos}`)
 	end
 
 	return buffer.readstring(buf, pos + lenSize + 1, len), pos + len + 1 + lenSize
 end
 
 local String = {
-	Read = READ,
-	Write = WRITE,
-
 	serialize = strSerializer,
 	deserialize = strDeserializer,
 }
 
---[[
-	Clears and replaces the read table
-
-	@ Mainly used to reduce memory usage
-]]
-function String.resetRead()
-	table.clear(READ)
-	READ = {}
-	String.Read = READ
-end
---[[
-	Clears and replaces the write table
-	
-	@ Mainly used to reduce memory usage
-]]
-function String.resetWrite()
-	table.clear(WRITE)
-	WRITE = {}
-	String.Write = WRITE
-end
-
-return String
+return table.freeze(String)

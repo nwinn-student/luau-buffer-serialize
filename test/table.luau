@@ -1,0 +1,45 @@
+--!strict
+-- Runs tests for ../src/table
+
+local test = require("./test")
+
+local ZERO = 97
+local ONE = 98
+
+local EMPTY = 194
+local TABLE = 195
+local EXIST = 196
+local ARRAY = 197
+local DICT = 198
+local ARRAYEND = 199
+local TABLEEND = 200
+
+local recurse = {}
+recurse[1] = recurse
+
+-- Check that table.luau works properly
+test.compare(test.newBuffer(EMPTY), test.inspect({}))
+test.compare(
+	test.newBuffer(TABLE, ONE, ARRAYEND, ZERO, ONE, TABLEEND),
+	test.inspect({ [0] = 1, 1 })
+)
+test.compare(test.newBuffer(ARRAY, ONE, TABLEEND), test.inspect({ 1 }))
+test.compare(test.newBuffer(DICT, ZERO, ONE, TABLEEND), test.inspect({ [0] = 1 }))
+test.compare(
+	test.newBuffer(ARRAY, 15, "bbb", EXIST, 1, 0, TABLEEND),
+	test.inspect({ "bbb", "bbb" })
+)
+test.compare(test.newBuffer(ARRAY, EXIST, 0, 0, TABLEEND), test.inspect(recurse))
+
+-- error check
+local tabDeserialize = require("../src/table").deserialize
+test.compare(false, pcall(tabDeserialize, test.newBuffer(0), 0)) -- failure to parse table
+test.compare(
+	false,
+	pcall(tabDeserialize, test.newBuffer(ARRAY, 15, 98, 98, 98, EXIST, 0, 1), 0)
+) -- failure to parse existing
+test.compare(false, pcall(tabDeserialize, test.newBuffer(DICT, 1, 0), 0)) -- failure to parse nil in dict
+test.compare(false, pcall(tabDeserialize, test.newBuffer(DICT, 1, 232), 0)) -- failure to parse future
+test.compare(false, pcall(tabDeserialize, test.newBuffer(DICT, 1, 255), 0)) -- failure to parse extension
+
+return {}

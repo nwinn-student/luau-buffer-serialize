@@ -1,6 +1,10 @@
 --!optimize 2
 --!strict
 local inflate = require("./inflate")
+local link = require("./link")
+local linkType = link.type
+local isLink = link.islink
+local isDuo = link.isduo
 
 type Serialize = (
 	data: any,
@@ -15,23 +19,39 @@ type Switch<VAR, F> = {
 	[VAR]: F,
 }
 
-local serialSwitch: Switch<string, Serialize> = {
+local serialSwitch: Switch<string, Serialize> = table.freeze({
 	boolean = require("./boolean").serialize,
 	buffer = require("./buffer").serialize,
 	string = require("./string").serialize,
 	number = require("./number").serialize,
 	vector = require("./vector").serialize,
 	userdata = require("./userdata").serialize,
-}
+}) :: Switch<string, Serialize>
 
-local deserialSwitch: Switch<number, Deserialize> = {
-	require("./boolean").deserialize,
-	require("./buffer").deserialize,
-	require("./string").deserialize,
-	require("./number").deserialize,
-	require("./vector").deserialize,
-	require("./userdata").deserialize,
-}
+local deserialSwitch: Switch<string, Deserialize> =
+	table.freeze({
+		["nil"] = function(buf: buffer, pos: number)
+			local valId = buffer.readu8(buf, pos)
+
+			-- Dictionary sections cannot store nil
+			if valId == 0 then
+				error(`Failed to parse nil in a dictionary at position {pos}`)
+			end
+
+			local var = if valId < 240 then "future" else "extension"
+			error(`Failed to parse {var} using byte: {valId} at position {pos}`)
+		end,
+		boolean = require("./boolean").deserialize,
+		buffer = require("./buffer").deserialize,
+		string = require("./string").deserialize,
+		number = require("./number").deserialize,
+		vector = require("./vector").deserialize,
+		table = function(buf: buffer, pos: number)
+			local valId = buffer.readu8(buf, pos)
+			error(`Failed to parse table using byte: {valId} at position {pos}`)
+		end,
+		userdata = require("./userdata").deserialize,
+	}) :: Switch<string, Deserialize>
 
 local EMPTY = 194
 local TABLE = 195
@@ -41,7 +61,6 @@ local DICT = 198
 local ARRAY_END = 199
 local TABLE_END = 200
 
-@native
 function tabSerializer(
 	value: { [any]: any },
 	buf: buffer,
@@ -55,9 +74,9 @@ function tabSerializer(
 			break
 		end
 		if isEmpty then
-			buf, size = buffer.create(1), 1
-			buffer.writeu8(buf, 0, EMPTY)
-			return buf, 1, 1
+			buf, size = inflate(buf, pos + 1, size)
+			buffer.writeu8(buf, pos, EMPTY)
+			return buf, pos + 1, size
 		end
 	end
 
@@ -67,9 +86,11 @@ function tabSerializer(
 	local roundRobinLength = 0
 	local roundRobinIndex = 61440
 
-	local serialTable: (data: { [any]: any })->()
-	
-	buf, size = buffer.create(64), 64
+	local serialTable: (data: { [any]: any }) -> ()
+
+	if size == 0 then
+		buf, size = buffer.create(64), 64
+	end
 
 	@native
 	local function existingCache(data: any)
@@ -113,9 +134,7 @@ function tabSerializer(
 					break
 				end
 				if isEmpty then
-					if pos + 1 > size then
-						buf, size = inflate(buf, pos + 1, size)
-					end
+					buf, size = inflate(buf, pos + 1, size)
 					buffer.writeu8(buf, pos, EMPTY)
 					pos += 1
 					return
@@ -130,7 +149,7 @@ function tabSerializer(
 
 		local oldPos = pos
 		buf, pos, size = serialSwitch[typeName](data, buf, pos, size)
-		
+
 		if pos - oldPos > 2 and data == data then
 			existingCache(data)
 		end
@@ -139,9 +158,7 @@ function tabSerializer(
 	@native
 	function serialTable(data: { [any]: any })
 		local isDict = #data == 0
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
+		buf, size = inflate(buf, pos + 1, size)
 
 		pos += 1
 
@@ -156,9 +173,7 @@ function tabSerializer(
 
 				local cached = existing[element]
 				if cached then
-					if pos + 3 > size then
-						buf, size = inflate(buf, pos + 3, size)
-					end
+					buf, size = inflate(buf, pos + 3, size)
 					buffer.writeu8(buf, pos, EQ_EXISTING)
 					buffer.writeu16(buf, pos + 1, cached)
 					pos += 3
@@ -168,10 +183,6 @@ function tabSerializer(
 				local typeElement = type(element)
 
 				if typeElement == "function" or typeElement == "thread" then
-					if pos + 1 > size then
-						buf, size = inflate(buf, pos + 1, size)
-					end
-					buffer.writeu8(buf, pos, 0)
 					pos += 1
 					continue
 				end
@@ -181,9 +192,7 @@ function tabSerializer(
 			end
 			if not endArray and not isDict then
 				endArray = true
-				if pos + 1 > size then
-					buf, size = inflate(buf, pos + 1, size)
-				end
+				buf, size = inflate(buf, pos + 1, size)
 				buffer.writeu8(buf, pos, ARRAY_END)
 				pos += 1
 			end
@@ -201,9 +210,7 @@ function tabSerializer(
 
 			local cached = existing[key]
 			if cached then
-				if pos + 3 > size then
-					buf, size = inflate(buf, pos + 3, size)
-				end
+				buf, size = inflate(buf, pos + 3, size)
 				buffer.writeu8(buf, pos, EQ_EXISTING)
 				buffer.writeu16(buf, pos + 1, cached)
 				pos += 3
@@ -214,9 +221,7 @@ function tabSerializer(
 
 			cached = existing[element]
 			if cached then
-				if pos + 3 > size then
-					buf, size = inflate(buf, pos + 3, size)
-				end
+				buf, size = inflate(buf, pos + 3, size)
 				-- writebits is not faster
 				buffer.writeu8(buf, pos, EQ_EXISTING)
 				buffer.writeu16(buf, pos + 1, cached)
@@ -233,9 +238,7 @@ function tabSerializer(
 		else
 			buffer.writeu8(buf, oldPos - 1, if not endArray then ARRAY else TABLE)
 		end
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
+		buf, size = inflate(buf, pos + 1, size)
 		buffer.writeu8(buf, pos, TABLE_END)
 		pos += 1
 	end
@@ -250,19 +253,49 @@ function tabSerializer(
 	return buf, pos, size
 end
 
-@native
-function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
+--[[
+	Produces a table from the buffer starting at the given position
+	 and ending once a matching terminator is found.
+
+	@param buf buffer containing the table
+	@param pos the starting position of the table
+
+	@error Failed to parse buffer
+	@error Failed to parse string
+	@error Failed to parse number
+	@error Failed to parse built-in vector constant
+	@error Failed to parse vector
+	@error Failed to parse table
+	@error Failed to parse existing value
+	@error Failed to parse nil in a dictionary
+	@error Failed to parse future
+	@error Failed to parse extension
+	@error buffer access out of bounds
+
+	@return the table and the termination position + 1 of the table
+]]
+function tabDeserializer(buf: buffer, pos: number)
 	local returnedTab = {}
 
-	if buffer.readu8(buf, pos) == EMPTY then
-		return returnedTab, 1
+	do
+		local id = buffer.readu8(buf, pos)
+		if id == EMPTY then
+			return returnedTab, pos + 1
+		end
+
+		if id ~= ARRAY and id ~= TABLE and id ~= DICT then
+			error(
+				`Failed to parse table using byte: {id} at position {pos} (expected {ARRAY}, {TABLE}, or {DICT})`
+			)
+		end
 	end
 
 	local existingIndex = 1
-	local existing: { [number]: any } = { [0] = returnedTab }
+	local existing: { any } = { [0] = returnedTab }
 	local roundRobinIndex = 61_440
+	local paired = {}
 
-	local deserialTable: (data: { [any]: any }) -> { [any]: any }?
+	local deserialTable: (data: { [any]: any }) -> { [any]: any }
 
 	@native
 	local function existingCache(data: any)
@@ -281,12 +314,11 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 	end
 
 	@native
-	local function deserialCache(valId: number): any
+	local function deserialCache(valId: number): unknown
 		if valId == EMPTY then
 			pos += 1
 			return {}
 		elseif valId == TABLE or valId == ARRAY or valId == DICT then
-			-- TODO: Maybe add cyclic checker here?
 			local value = {}
 			existingCache(value)
 			return deserialTable(value)
@@ -294,25 +326,30 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 
 		local value: any = nil
 		local oldPos = pos
-		local case = if valId <= 2
-			then 1 -- boolean
-			elseif valId <= 8 then 2 -- buffer
-			elseif valId <= 87 then 3 -- string
-			elseif valId <= 135 then 4 -- number
-			elseif valId <= 193 then 5 -- vector
-			elseif valId <= 201 then 0 -- table (none currently that can get here)
-			elseif valId <= 223 then 6 -- userdata
-			else 0 -- for future
+		local case = linkType(valId)
 
-		if case ~= 0 then
-			value, pos = deserialSwitch[case](buf, pos)
-		else
-			pos += 1
+		if isLink(valId, case) then
+			local isTwo = isDuo(valId, case)
+
+			local pairedValue = paired[valId]
+			if pairedValue then
+				pos += if isTwo then 2 else 1
+				return pairedValue
+			end
+
+			-- read id, then skip to value
+			if isTwo then
+				local id = buffer.readu16(buf, pos)
+				value, pos = deserialSwitch[case](buf, pos + 2)
+				paired[id] = value
+				return value
+			end
+			value, pos = deserialSwitch[case](buf, pos + 1)
+			paired[valId] = value
+			return value
 		end
 
-		if value == nil then
-			return nil -- data corrupted
-		end
+		value, pos = deserialSwitch[case](buf, pos)
 
 		if pos - 2 > oldPos then
 			existingCache(value)
@@ -321,16 +358,12 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 	end
 
 	@native
-	function deserialTable(data: { [any]: any }): { [any]: any }?
+	function deserialTable(data: { [any]: any }): { [any]: any }
 		local id = buffer.readu8(buf, pos)
 
 		pos += 1
 
 		local hasArray = id == ARRAY or id == TABLE
-
-		if not hasArray and id ~= DICT then
-			return nil -- data corruption
-		end
 
 		if hasArray then
 			local index = 0
@@ -356,19 +389,20 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 
 				-- check if existing
 				if valId == EQ_EXISTING then
-					value = existing[buffer.readu16(buf, pos + 1)]
+					local existingId = buffer.readu16(buf, pos + 1)
+					value = existing[existingId]
 					pos += 3
 					if value == nil then
-						return nil
+						error(
+							`Failed to parse existing value using byte: {existingId} at position {pos}`
+						)
 					end
 					data[index] = value
 					continue
 				end
 
 				value = deserialCache(valId)
-				if value == nil then
-					return nil
-				end
+
 				data[index] = value
 			end
 		end
@@ -384,27 +418,30 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 
 			-- check if existing
 			if valId == EQ_EXISTING then
-				key = existing[buffer.readu16(buf, pos + 1)]
+				local existingId = buffer.readu16(buf, pos + 1)
+				key = existing[existingId]
 				if key == nil then
-					return nil
+					error(
+						`Failed to parse existing value using byte: {existingId} at position {pos}`
+					)
 				end
 				pos += 3
 			end
 
 			if not key then
 				key = deserialCache(valId)
-				if key == nil then
-					return nil
-				end
 			end
 
 			valId = buffer.readu8(buf, pos)
 
 			-- check if existing
 			if valId == EQ_EXISTING then
-				value = existing[buffer.readu16(buf, pos + 1)]
+				local existingId = buffer.readu16(buf, pos + 1)
+				value = existing[existingId]
 				if value == nil then
-					return nil
+					error(
+						`Failed to parse existing value using byte: {existingId} at position {pos}`
+					)
 				end
 				pos += 3
 				data[key] = value
@@ -412,9 +449,6 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 			end
 
 			value = deserialCache(valId)
-			if value == nil then
-				return nil
-			end
 
 			data[key] = value
 		end
@@ -424,10 +458,10 @@ function tabDeserializer(buf: buffer, pos: number): ({ [any]: any }?, number)
 
 	table.clear(existing)
 
-	return data, pos + 1
+	return data, pos
 end
 
-return {
+return table.freeze({
 	serialize = tabSerializer,
 	deserialize = tabDeserializer,
-}
+})
