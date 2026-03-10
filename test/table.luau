@@ -31,31 +31,6 @@ test.compare(
 )
 test.compare(test.newBuffer(ARRAY, EXIST, 0, 0, TABLEEND), test.inspect(recurse))
 
-local serialize = require("../src").serialize
-local deserialize = require("../src").deserialize
-
--- pairs
-local pair = require("../src").pair
-local calcId = require("../src/link").calculateId
-
-pair(5, "aaa")
-
-local aaaId = calcId(5, "string")
-
-local Sir_Paired = serialize({ "aaa" })
-local Sir_DuoPaired = serialize({ "aaa", "aaa" })
-
--- serialization
-test.serial(Sir_Paired, test.newBuffer(ARRAY, aaaId, 15, "aaa", TABLEEND))
-test.serial(
-	Sir_DuoPaired,
-	test.newBuffer(ARRAY, aaaId, 15, "aaa", aaaId, TABLEEND)
-)
-
--- deserialization
-test.compare({ "aaa" }, deserialize(Sir_Paired))
-test.compare({ "aaa", "aaa" }, deserialize(Sir_DuoPaired))
-
 -- error check
 local tabDeserialize = require("../src/table").deserialize
 test.compare(false, pcall(tabDeserialize, test.newBuffer(0), 0)) -- failure to parse table

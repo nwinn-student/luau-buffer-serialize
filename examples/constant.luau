@@ -6,11 +6,8 @@ type Fruit = {
 	species: string,
 }
 
--- the keys will take 1 byte each
+-- the keys will take 3 bytes each
 -- after the first store
-bufferSerial.pair(1, "seed_count")
-bufferSerial.pair(2, "is_ripe")
-bufferSerial.pair(3, "species")
 
 local function GenerateFruit()
 	local seed_count = math.random(10, 25)

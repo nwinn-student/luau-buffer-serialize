@@ -6,6 +6,9 @@
 > [!CAUTION]
 > Userdata support will be moved from the internal API into the external API.
 
+> [!CAUTION]
+> Pairs has been removed.  No data migration concerns.
+
 ## Purpose
 
 BufferSerializer is a binary format for complex data structures
@@ -26,8 +29,6 @@ BufferSerializer supports most of the built-in Luau types, excluding `function`
   - Users can add support for (de)serializing userdata using the internal API.
 - Cyclic tables
   - See [limitations](./docs/risks.md#limitations) for more information.
-- Pairs
-  - Pays an upfront cost for future duplicates of the paired value to be cheaper.
 
 ### Usage Cases
 A user needs to prepare data for storing in a database, they will use
@@ -65,7 +66,7 @@ print(`Initial Data: {data}, Final Data: {input}`)
 For more information on the setup and datasets used, see
  [performance](./docs/performance.md).
 
-Only BufferSerializer, paired-BufferSerializer, and the top 3 measured
+Only BufferSerializer and the top 3 measured
  formats for each category will be shown, using the (???)[] dataset.
 
 #### Serialization
@@ -73,13 +74,11 @@ Only BufferSerializer, paired-BufferSerializer, and the top 3 measured
 | Name             | Speed | Memory | Output | Compressed |
 |------------------|-------|--------|--------|------------|
 | BufferSerializer |       |        |        |            |
-| Paired-BuffSer   |       |        |        |            |
 
 #### Deserialization
 
 | Name             | Speed | Memory |
 |------------------|-------|--------|
 | BufferSerializer |       |        |
-| Paired-BuffSer   |       |        |
 
 -->
