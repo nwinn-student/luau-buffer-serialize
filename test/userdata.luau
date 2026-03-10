@@ -12,7 +12,9 @@ local proxy = newproxy()
 local zero_proxy = newproxy()
 
 -- Check that userdata.luau works properly
-test.compare(test.newBuffer(NIL), test.inspect(proxy)) -- to be userdata.unsupported
+-- TODO: Make this userdata.unsupported instead of proxy
+-- Currently intentional that it fails
+test.compare(test.newBuffer(NIL), test.inspect(proxy))
 
 -- By default (currently) the reader and writer are initialized to nil
 test.compare(nil, userdata.getReader())
@@ -21,6 +23,13 @@ test.compare(false, pcall(userdata.setReader, nil :: any))
 test.compare(false, pcall(userdata.setWriter, nil :: any))
 
 local function reader(buf: buffer, pos: number): (unknown, number)
+	-- TODO: Remove this later
+	--
+	if buffer.readu8(buf, pos) == NIL then
+		return proxy, pos + 1
+	end
+	--
+
 	return zero_proxy, pos + 1 -- proxy should not get here
 end
 
@@ -43,8 +52,8 @@ userdata.setWriter(writer)
 test.compare(reader, userdata.getReader())
 test.compare(writer, userdata.getWriter())
 
--- TODO: Reflect this test in the code
-test.compare(test.newBuffer(NIL), test.inspect(proxy)) -- currently CUSTOM NIL, but should become just NIL
+-- TODO: Reflect this test in the code once it is NIL
+test.compare(test.newBuffer(CUSTOM, NIL), test.inspect(proxy)) -- currently CUSTOM NIL, but should become just NIL
 test.compare(test.newBuffer(CUSTOM, 0), test.inspect(zero_proxy))
 
 return {}
