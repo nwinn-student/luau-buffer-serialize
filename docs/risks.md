@@ -20,7 +20,7 @@ An attacker could modify the number attached to the `equal_existing`
  the attacker could cause an error or freeze to occur when handling the
  deserialized form.
 
-The `pairs` bytes rely on the first value, and all identifiers
+The **legacy** `pairs` bytes rely on the first value, and all identifiers
  technically point to this value and pull it in.  Should the value
  be modified, deserialization will pass.  As with `equal_existing`,
  the attacker could cause errors or freezes to occur.
