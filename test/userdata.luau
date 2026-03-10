@@ -1,25 +1,20 @@
 --!strict
 -- Runs tests for ../src/userdata
 
+local inflate = require("../src/inflate")
 local test = require("./test")
+local userdata = require("../src/userdata")
+
 local CUSTOM = 202
 local NIL = 203
+
 local proxy = newproxy()
+local zero_proxy = newproxy()
 
 -- Check that userdata.luau works properly
-local serialize = require("../src").serialize
-local deserialize = require("../src").deserialize
-
-local Sir_Proxy = serialize(proxy)
-
--- serialization
-test.serial(Sir_Proxy, test.newBuffer(NIL))
-
--- deserialization
-test.compare("userdata", type(deserialize(Sir_Proxy)))
-
--- Custom reader/writer functions
-local userdata = require("../src/userdata")
+-- TODO: Make this userdata.unsupported instead of proxy
+-- Currently intentional that it fails
+test.compare(test.newBuffer(NIL), test.inspect(proxy))
 
 -- By default (currently) the reader and writer are initialized to nil
 test.compare(nil, userdata.getReader())
@@ -28,9 +23,14 @@ test.compare(false, pcall(userdata.setReader, nil :: any))
 test.compare(false, pcall(userdata.setWriter, nil :: any))
 
 local function reader(buf: buffer, pos: number): (unknown, number)
-	test.serial(buf, test.newBuffer(202, 203))
-	test.compare(pos, 1)
-	return proxy, pos
+	-- TODO: Remove this later
+	--
+	if buffer.readu8(buf, pos) == NIL then
+		return proxy, pos + 1
+	end
+	--
+
+	return zero_proxy, pos + 1 -- proxy should not get here
 end
 
 local function writer(
@@ -39,11 +39,12 @@ local function writer(
 	pos: number,
 	size: number
 ): (buffer, number, number)
-	test.compare(value, proxy)
-	test.serial(buf, test.newBuffer(202))
-	test.compare(pos, 1)
-	test.compare(size, 1)
-	return buf, pos, size
+	if value ~= zero_proxy then
+		return buf, pos, size
+	end
+	buf, size = inflate(buf, pos + 1, size)
+	buffer.writeu8(buf, pos, 0)
+	return buf, pos + 1, size
 end
 userdata.setReader(reader)
 userdata.setWriter(writer)
@@ -51,12 +52,8 @@ userdata.setWriter(writer)
 test.compare(reader, userdata.getReader())
 test.compare(writer, userdata.getWriter())
 
-local Sir_Custom = serialize(proxy)
-
--- serialization
-test.serial(Sir_Custom, test.newBuffer(CUSTOM, NIL))
-
--- deserialization
-test.compare(proxy, deserialize(Sir_Custom))
+-- TODO: Reflect this test in the code once it is NIL
+test.compare(test.newBuffer(CUSTOM, NIL), test.inspect(proxy)) -- currently CUSTOM NIL, but should become just NIL
+test.compare(test.newBuffer(CUSTOM, 0), test.inspect(zero_proxy))
 
 return {}

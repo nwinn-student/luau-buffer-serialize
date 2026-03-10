@@ -17,9 +17,7 @@ local function strSerializer(
 	size: number
 )
 	if value == "" then
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
+		buf, size = inflate(buf, pos + 1, size)
 		buffer.writeu8(buf, pos, EMPTY)
 		return buf, pos + 1, size
 	end
@@ -33,9 +31,7 @@ local function strSerializer(
 		elseif len < 16_777_216 then 4
 		else 5
 
-	if pos + len + newSize > size then
-		buf, size = inflate(buf, pos + len + newSize, size)
-	end
+	buf, size = inflate(buf, pos + len + newSize, size)
 
 	if len < 16 then
 		buffer.writeu8(buf, pos, INT + len)

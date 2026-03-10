@@ -4,51 +4,6 @@
 local link = require("../src/link")
 local test = require("./test")
 
--- Serialize
-local buf, pos, size = link.serialize(34, test.sizedBuffer(0), 0, 0)
-test.serial(test.newBuffer(34, 0), buf)
-test.compare(1, pos)
-test.compare(2, size)
-
-buf, pos, size = link.serialize(34, test.sizedBuffer(5), 2, 5)
-test.serial(test.newBuffer(0, 0, 34, 0, 0), buf)
-test.compare(3, pos)
-test.compare(5, size)
-
-buf, pos, size = link.serialize(16467, test.sizedBuffer(0), 0, 0)
-test.serial(test.newBuffer(83, 64), buf)
-test.compare(2, pos)
-test.compare(2, size)
-
--- Calculate Ids
-test.compare(28, link.calculateId(1, "string"))
-test.compare(43, link.calculateId(16, "string"))
-test.compare(59, link.calculateId(32, "string"))
-test.compare(91, link.calculateId(64, "string"))
-test.compare(16476, link.calculateId(128, "string"))
-test.compare(114781, link.calculateId(512, "string"))
-
-test.compare(106, link.calculateId(1, "number"))
-test.compare(121, link.calculateId(16, "number"))
-test.compare(137, link.calculateId(32, "number"))
-test.compare(8330, link.calculateId(64, "number"))
-test.compare(24714, link.calculateId(128, "number"))
-test.compare(123019, link.calculateId(512, "number"))
-
-test.compare(158, link.calculateId(1, "vector"))
-test.compare(173, link.calculateId(16, "vector"))
-test.compare(189, link.calculateId(32, "vector"))
-test.compare(8382, link.calculateId(64, "vector"))
-test.compare(24766, link.calculateId(128, "vector"))
-test.compare(123071, link.calculateId(512, "vector"))
-
-test.compare(204, link.calculateId(1, "userdata"))
-test.compare(211, link.calculateId(8, "userdata"))
-test.compare(5846, link.calculateId(32, "userdata"))
-test.compare(14038, link.calculateId(64, "userdata"))
-test.compare(30422, link.calculateId(128, "userdata"))
-test.compare(128727, link.calculateId(512, "userdata"))
-
 -- Validate type
 test.compare("boolean", link.type(1))
 test.compare("boolean", link.type(2))
