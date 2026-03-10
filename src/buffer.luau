@@ -15,9 +15,7 @@ return table.freeze({
 		local len = buffer.len(value)
 
 		if len == 0 then
-			if pos + 1 > size then
-				buf, size = inflate(buf, pos + 1, size)
-			end
+			buf, size = inflate(buf, pos + 1, size)
 			buffer.writeu8(buf, pos, EMPTY)
 			return buf, pos + 1, size
 		end
@@ -28,9 +26,7 @@ return table.freeze({
 			elseif len < 16_777_216 then 4
 			else 5
 
-		if pos + len + newSize > size then
-			buf, size = inflate(buf, pos + len + newSize, size)
-		end
+		buf, size = inflate(buf, pos + len + newSize, size)
 		buffer.writeu8(buf, pos, 2 + newSize)
 
 		if len < 256 then

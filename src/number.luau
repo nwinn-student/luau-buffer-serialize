@@ -36,9 +36,7 @@ local function numSerializer(
 	size: number
 )
 	if value == 0 or value == 1 or value ~= value then
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
+		buf, size = inflate(buf, pos + 1, size)
 
 		buffer.writeu8(
 			buf,
@@ -52,9 +50,7 @@ local function numSerializer(
 	-- Floating points
 	if value % 1 ~= 0 or value > MAX_INT or value < MIN_INT then
 		if MAX_FLOAT < value or value < -MAX_FLOAT then
-			if pos + 9 > size then
-				buf, size = inflate(buf, pos + 9, size)
-			end
+			buf, size = inflate(buf, pos + 9, size)
 			buffer.writeu8(buf, pos, DOUBLE)
 			buffer.writef64(buf, pos + 1, value)
 			return buf, pos + 9, size
@@ -63,17 +59,13 @@ local function numSerializer(
 		-- Ensures that the output WILL be the same as the input
 		-- even if it results in a slower path
 		if (vecX * value).x == value then
-			if pos + 5 > size then
-				buf, size = inflate(buf, pos + 5, size)
-			end
+			buf, size = inflate(buf, pos + 5, size)
 			buffer.writeu8(buf, pos, FLOAT)
 			buffer.writef32(buf, pos + 1, value)
 			return buf, pos + 5, size
 		end
 
-		if pos + 9 > size then
-			buf, size = inflate(buf, pos + 9, size)
-		end
+		buf, size = inflate(buf, pos + 9, size)
 		buffer.writeu8(buf, pos, DOUBLE)
 		buffer.writef64(buf, pos + 1, value)
 		return buf, pos + 9, size
@@ -85,9 +77,7 @@ local function numSerializer(
 		elseif MAX_THREE >= value and value >= MIN_THREE then 4
 		else 5
 
-	if pos + newSize > size then
-		buf, size = inflate(buf, pos + newSize, size)
-	end
+	buf, size = inflate(buf, pos + newSize, size)
 	buffer.writeu8(buf, pos, ZERO + newSize)
 
 	if newSize == 2 then

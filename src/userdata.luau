@@ -45,9 +45,7 @@ local Writer: Writer?
 
 local function userSerializer(value: any, buf: buffer, pos: number, size: number)
 	if Writer then
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
+		buf, size = inflate(buf, pos + 1, size)
 		buffer.writeu8(buf, pos, CUSTOM)
 
 		local tempPos = pos + 1
@@ -58,9 +56,7 @@ local function userSerializer(value: any, buf: buffer, pos: number, size: number
 			return buf, pos, size
 		end
 	end
-	if pos + 1 > size then
-		buf, size = inflate(buf, pos + 1, size)
-	end
+	buf, size = inflate(buf, pos + 1, size)
 	buffer.writeu8(buf, pos, NIL)
 	return buf, pos + 1, size
 end

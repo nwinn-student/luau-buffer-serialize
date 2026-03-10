@@ -72,9 +72,7 @@ local function vecSerializer(
 )
 	local builtin: number? = builtinSerialConst[value]
 	if builtin then
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
+		buf, size = inflate(buf, pos + 1, size)
 		buffer.writeu8(buf, pos, builtin)
 		return buf, pos + 1, size
 	end
@@ -105,9 +103,7 @@ local function vecSerializer(
 			or isYZAxis
 		then
 			-- 3+ bytes
-			if pos + 3 > size then
-				buf, size = inflate(buf, pos + 3, size)
-			end
+			buf, size = inflate(buf, pos + 3, size)
 			buffer.writeu8(buf, pos, SCALAR_NUMBER)
 
 			local var = if isOneValue
@@ -154,9 +150,7 @@ local function vecSerializer(
 
 	-- 4+ bytes (NOT intelligent, as a const byte will be more expensive)
 	if isNumber then
-		if pos + 4 > size then
-			buf, size = inflate(buf, pos + 4, size)
-		end
+		buf, size = inflate(buf, pos + 4, size)
 		buffer.writeu8(buf, pos, NUMBER)
 		buf, pos, size = numSerializer(valueX, buf, pos + 1, size)
 		buf, pos, size = numSerializer(valueY, buf, pos, size)
@@ -165,9 +159,7 @@ local function vecSerializer(
 
 	local newSize = 3 * ((typeX :: number) - YZ_AXIS) + 1
 	-- 4, 7, 10, 13
-	if pos + newSize > size then
-		buf, size = inflate(buf, pos + newSize, size)
-	end
+	buf, size = inflate(buf, pos + newSize, size)
 	buffer.writeu8(buf, pos, typeX :: number)
 
 	if typeX == BYTE then
