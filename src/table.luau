@@ -187,7 +187,9 @@ function tabSerializer(
 				end
 				cached = constants[element]
 				if cached then
-					buf, pos, size = linkSer(cached, buf, pos, size)
+					buf, size = inflate(buf, pos + 2, size)
+					buffer.writeu16(buf, pos, cached)
+					pos += (cached > 255 and 2 or 1)
 					continue
 				end
 
@@ -230,7 +232,9 @@ function tabSerializer(
 
 			local constCached = constants[key]
 			if constCached and not cached then
-				buf, pos, size = linkSer(constCached, buf, pos, size)
+				buf, size = inflate(buf, pos + 2, size)
+				buffer.writeu16(buf, pos, constCached)
+				pos += (constCached > 255 and 2 or 1)
 			elseif not cached then
 				-- store key
 				serialCache(key, typeKey)
@@ -247,7 +251,9 @@ function tabSerializer(
 			end
 			cached = constants[element]
 			if cached then
-				buf, pos, size = linkSer(cached, buf, pos, size)
+				buf, size = inflate(buf, pos + 2, size)
+				buffer.writeu16(buf, pos, cached)
+				pos += (cached > 255 and 2 or 1)
 				continue
 			end
 
