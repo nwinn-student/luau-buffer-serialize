@@ -74,9 +74,9 @@ function tabSerializer(
 			break
 		end
 		if isEmpty then
-			buf, size = buffer.create(1), 1
-			buffer.writeu8(buf, 0, EMPTY)
-			return buf, 1, 1
+			buf, size = inflate(buf, pos + 1, size)
+			buffer.writeu8(buf, pos, EMPTY)
+			return buf, pos + 1, size
 		end
 	end
 
@@ -90,7 +90,9 @@ function tabSerializer(
 
 	local serialTable: (data: { [any]: any }) -> ()
 
-	buf, size = buffer.create(64), 64
+	if size == 0 then
+		buf, size = buffer.create(64), 64
+	end
 
 	@native
 	local function existingCache(data: any)
@@ -134,9 +136,7 @@ function tabSerializer(
 					break
 				end
 				if isEmpty then
-					if pos + 1 > size then
-						buf, size = inflate(buf, pos + 1, size)
-					end
+					buf, size = inflate(buf, pos + 1, size)
 					buffer.writeu8(buf, pos, EMPTY)
 					pos += 1
 					return
@@ -164,9 +164,7 @@ function tabSerializer(
 	@native
 	function serialTable(data: { [any]: any })
 		local isDict = #data == 0
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
+		buf, size = inflate(buf, pos + 1, size)
 
 		pos += 1
 
@@ -181,9 +179,7 @@ function tabSerializer(
 
 				local cached = existing[element]
 				if cached then
-					if pos + 3 > size then
-						buf, size = inflate(buf, pos + 3, size)
-					end
+					buf, size = inflate(buf, pos + 3, size)
 					buffer.writeu8(buf, pos, EQ_EXISTING)
 					buffer.writeu16(buf, pos + 1, cached)
 					pos += 3
@@ -208,9 +204,7 @@ function tabSerializer(
 			end
 			if not endArray and not isDict then
 				endArray = true
-				if pos + 1 > size then
-					buf, size = inflate(buf, pos + 1, size)
-				end
+				buf, size = inflate(buf, pos + 1, size)
 				buffer.writeu8(buf, pos, ARRAY_END)
 				pos += 1
 			end
@@ -228,9 +222,7 @@ function tabSerializer(
 
 			local cached = existing[key]
 			if cached then
-				if pos + 3 > size then
-					buf, size = inflate(buf, pos + 3, size)
-				end
+				buf, size = inflate(buf, pos + 3, size)
 				buffer.writeu8(buf, pos, EQ_EXISTING)
 				buffer.writeu16(buf, pos + 1, cached)
 				pos += 3
@@ -246,9 +238,7 @@ function tabSerializer(
 
 			cached = existing[element]
 			if cached then
-				if pos + 3 > size then
-					buf, size = inflate(buf, pos + 3, size)
-				end
+				buf, size = inflate(buf, pos + 3, size)
 				-- writebits is not faster
 				buffer.writeu8(buf, pos, EQ_EXISTING)
 				buffer.writeu16(buf, pos + 1, cached)
@@ -270,9 +260,7 @@ function tabSerializer(
 		else
 			buffer.writeu8(buf, oldPos - 1, if not endArray then ARRAY else TABLE)
 		end
-		if pos + 1 > size then
-			buf, size = inflate(buf, pos + 1, size)
-		end
+		buf, size = inflate(buf, pos + 1, size)
 		buffer.writeu8(buf, pos, TABLE_END)
 		pos += 1
 	end
@@ -315,7 +303,7 @@ function tabDeserializer(buf: buffer, pos: number)
 	do
 		local id = buffer.readu8(buf, pos)
 		if id == EMPTY then
-			return returnedTab, 1
+			return returnedTab, pos + 1
 		end
 
 		if id ~= ARRAY and id ~= TABLE and id ~= DICT then
@@ -493,7 +481,7 @@ function tabDeserializer(buf: buffer, pos: number)
 
 	table.clear(existing)
 
-	return data, pos + 1
+	return data, pos
 end
 
 return table.freeze({
