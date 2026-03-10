@@ -90,20 +90,17 @@ type SerialFormat = CategoryData & Metadata<{ size: number }>
 
 type VersionData = {
 	serialize: {
-		[string]: SerialFormat & Metadata<{ pair: SerialFormat }>,
+		[string]: SerialFormat
 	},
 	deserialize: {
-		[string]: CategoryData & Metadata<{ pair: BenchFormat }>,
+		[string]: CategoryData
 	},
 	size: {
 		[string]: CategoryData & Metadata<{
 			size: number,
-			pair_size: number,
 			compression: {
 				gzip: number,
 				lz4: number,
-				pair_gzip: number,
-				pair_lz4: number,
 			},
 		}>,
 	},
@@ -113,10 +110,6 @@ local compare_info = {
 	serialize = {},
 	deserialize = {},
 	size = {},
-	pair = {
-		serialize = {},
-		deserialize = {},
-	},
 }
 
 local function sum(tab: { [any]: number })
@@ -182,139 +175,15 @@ local function size_compare(version: string?, version_data: VersionData)
 	compare_info.size[version] = {}
 
 	for dataset, results in version_data.size do
+		-- NOTE: There is no longer a need to wrap BufferSerializer
+		--  in a table, we can just store uncompressed, gzip, and lz4
 		compare_info.size[version][dataset] = {
 			BufferSerializer = {
 				uncompressed = results.metadata.size,
 				gzip = results.metadata.compression.gzip,
 				lz4 = results.metadata.compression.lz4,
 			},
-			["BufferSerializer (paired)"] = {
-				uncompressed = results.metadata.pair_size,
-				gzip = results.metadata.compression.pair_gzip,
-				lz4 = results.metadata.compression.pair_lz4,
-			},
 		}
-	end
-end
-
--- pair is N% better
-local function pair_compare(version: string?, version_data: VersionData)
-	if not version then
-		version = "CURRENT"
-	end
-
-	local count_categories = {}
-	local result_categories = {
-		time = {},
-		space = {},
-		size = {},
-	}
-
-	-- setup count
-	for dataset, results in version_data.serialize do
-		local category = results.metadata.taxonomy
-		count_categories[category] = (count_categories[category] or 0) + 1
-
-		for _, value in result_categories do
-			value[category] = 0
-		end
-	end
-
-	for dataset, results in version_data.serialize do
-		local category = results.metadata.taxonomy
-
-		populate_changes(
-			result_categories,
-			category,
-			results,
-			results.metadata.pair
-		)
-	end
-
-	do
-		local sum_count_categories = sum(count_categories)
-
-		result_categories.time.ALL = sum(result_categories.time)
-			/ sum_count_categories
-		result_categories.space.ALL = sum(result_categories.space)
-			/ sum_count_categories
-		result_categories.size.ALL = sum(result_categories.size)
-			/ sum_count_categories
-	end
-
-	compare_info.pair.serialize[version] = {
-		time = process_results("time", result_categories.time.ALL),
-		space = process_results("space", result_categories.space.ALL),
-		size = process_results("size", result_categories.size.ALL),
-
-		per_category = {},
-	}
-
-	-- process per-category
-	for category, count in count_categories do
-		local per_category = compare_info.pair.serialize[version].per_category
-
-		local category_table = {}
-		per_category[category] = category_table
-
-		category_table.time =
-			process_results("time", result_categories.time[category] / count)
-		category_table.space =
-			process_results("space", result_categories.space[category] / count)
-		category_table.size =
-			process_results("size", result_categories.size[category] / count)
-	end
-
-	-- setup count
-	for dataset, results in version_data.serialize do
-		local category = results.metadata.taxonomy
-		count_categories[category] = (count_categories[category] or 0) + 1
-
-		for _, value in result_categories do
-			value[category] = 0
-		end
-	end
-
-	for dataset, results in version_data.deserialize do
-		local category = results.metadata.taxonomy
-
-		populate_changes(
-			result_categories,
-			category,
-			results,
-			results.metadata.pair
-		)
-	end
-
-	do
-		local sum_count_categories = sum(count_categories)
-
-		result_categories.time.ALL = sum(result_categories.time)
-			/ sum_count_categories
-		result_categories.space.ALL = sum(result_categories.space)
-			/ sum_count_categories
-		result_categories.size.ALL = sum(result_categories.size)
-			/ sum_count_categories
-	end
-
-	compare_info.pair.deserialize[version] = {
-		time = process_results("time", result_categories.time.ALL),
-		space = process_results("space", result_categories.space.ALL),
-
-		per_category = {},
-	}
-
-	-- process per-category
-	for category, count in count_categories do
-		local per_category = compare_info.pair.deserialize[version].per_category
-
-		local category_table = {}
-		per_category[category] = category_table
-
-		category_table.time =
-			process_results("time", result_categories.time[category] / count)
-		category_table.space =
-			process_results("space", result_categories.space[category] / count)
 	end
 end
 
@@ -326,11 +195,6 @@ local function version_compare(version: string, version_data: VersionData)
 		space = {},
 		size = {},
 	}
-	local pair_categories = {
-		time = {},
-		space = {},
-		size = {},
-	}
 
 	-- setup count
 	for dataset, results in current_data.serialize do
@@ -338,9 +202,6 @@ local function version_compare(version: string, version_data: VersionData)
 		count_categories[category] = (count_categories[category] or 0) + 1
 
 		for _, value in result_categories do
-			value[category] = 0
-		end
-		for _, value in pair_categories do
 			value[category] = 0
 		end
 	end
@@ -351,12 +212,6 @@ local function version_compare(version: string, version_data: VersionData)
 		local category = results.metadata.taxonomy
 
 		populate_changes(result_categories, category, version_results, results)
-		populate_changes(
-			pair_categories,
-			category,
-			version_results.metadata.pair,
-			results.metadata.pair
-		)
 	end
 
 	do
@@ -368,23 +223,12 @@ local function version_compare(version: string, version_data: VersionData)
 			/ sum_count_categories
 		result_categories.size.ALL = sum(result_categories.size)
 			/ sum_count_categories
-
-		pair_categories.time.ALL = sum(pair_categories.time)
-			/ sum_count_categories
-		pair_categories.space.ALL = sum(pair_categories.space)
-			/ sum_count_categories
-		pair_categories.size.ALL = sum(pair_categories.size)
-			/ sum_count_categories
 	end
 
 	compare_info.serialize[version] = {
 		time = process_results("time", result_categories.time.ALL),
 		space = process_results("space", result_categories.space.ALL),
 		size = process_results("size", result_categories.size.ALL),
-
-		pair_time = process_results("pair time", pair_categories.time.ALL),
-		pair_space = process_results("pair space", pair_categories.space.ALL),
-		pair_size = process_results("pair size", pair_categories.size.ALL),
 
 		per_category = {},
 	}
@@ -402,13 +246,6 @@ local function version_compare(version: string, version_data: VersionData)
 			process_results("space", result_categories.space[category] / count)
 		category_table.size =
 			process_results("size", result_categories.size[category] / count)
-
-		category_table.pair_time =
-			process_results("pair time", pair_categories.time[category] / count)
-		category_table.pair_space =
-			process_results("pair space", pair_categories.space[category] / count)
-		category_table.pair_size =
-			process_results("pair size", pair_categories.size[category] / count)
 	end
 
 	table.clear(count_categories) -- could differ
@@ -421,9 +258,6 @@ local function version_compare(version: string, version_data: VersionData)
 		for _, value in result_categories do
 			value[category] = 0
 		end
-		for _, value in pair_categories do
-			value[category] = 0
-		end
 	end
 
 	for dataset, results in current_data.deserialize do
@@ -432,12 +266,6 @@ local function version_compare(version: string, version_data: VersionData)
 		local category = results.metadata.taxonomy
 
 		populate_changes(result_categories, category, version_results, results)
-		populate_changes(
-			pair_categories,
-			category,
-			version_results.metadata.pair,
-			results.metadata.pair
-		)
 	end
 
 	do
@@ -447,19 +275,11 @@ local function version_compare(version: string, version_data: VersionData)
 			/ sum_count_categories
 		result_categories.space.ALL = sum(result_categories.space)
 			/ sum_count_categories
-
-		pair_categories.time.ALL = sum(pair_categories.time)
-			/ sum_count_categories
-		pair_categories.space.ALL = sum(pair_categories.space)
-			/ sum_count_categories
 	end
 
 	compare_info.deserialize[version] = {
 		time = process_results("time", result_categories.time.ALL),
 		space = process_results("space", result_categories.space.ALL),
-
-		pair_time = process_results("pair time", pair_categories.time.ALL),
-		pair_space = process_results("pair space", pair_categories.space.ALL),
 
 		per_category = {},
 	}
@@ -475,11 +295,6 @@ local function version_compare(version: string, version_data: VersionData)
 			process_results("time", result_categories.time[category] / count)
 		category_table.space =
 			process_results("space", result_categories.space[category] / count)
-
-		category_table.pair_time =
-			process_results("pair time", pair_categories.time[category] / count)
-		category_table.pair_space =
-			process_results("pair space", pair_categories.space[category] / count)
 	end
 
 	-- now we need to do size stuff..
@@ -487,20 +302,17 @@ local function version_compare(version: string, version_data: VersionData)
 end
 
 size_compare(nil, current_data)
-pair_compare(nil, current_data)
 
 -- Attempt to compare each version to the current
 if options.all_versions then
 	for version, version_data in data do
 		version_compare(version, version_data)
-		pair_compare(version, version_data)
 	end
 end
 for _, version in options.versions do
 	local version_data = data[version]
 
 	version_compare(version, version_data)
-	pair_compare(version, version_data)
 end
 
 print(serde.encode("json", compare_info, true)) -- !!!!PIPE IT INTO A FILE!!!!
