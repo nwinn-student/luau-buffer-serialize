@@ -14,7 +14,10 @@
 
 	-- Looks at the (de)serialization of `value` to ensure correctness
 	-- Returns the deserialized buffer.
-	inspect(value: any)
+	-- TODO: Consider adding an options parameter that allows
+	--  for the disabling of deserialization comparison and possibly
+	--  other aspects.
+	test.inspect<T>(value: T): (buffer, T)
 ]]
 
 local test = {}
@@ -205,7 +208,7 @@ test.serial = test.compare
 
 local mainSerial = require("@BufferSerializer").serialize
 -- Checks serial and deserial, returns the buffer
-function test.inspect(value: any): buffer
+function test.inspect<T>(value: T): (buffer, T)
 	local traceback = debug.traceback("", 2)
 	local hasFailed = false
 	local serial = (require(`@BufferSerializer/{type(value)}`) :: any).serialize
@@ -263,7 +266,7 @@ function test.inspect(value: any): buffer
 
 	local unwrappedBuffer = test.sizedBuffer(size)
 	buffer.copy(unwrappedBuffer, 0, obtainedBuffer, 1, size)
-	return unwrappedBuffer
+	return unwrappedBuffer, obtainedValue
 end
 
 return test
