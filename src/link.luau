@@ -105,9 +105,7 @@ end
 ]]
 @native
 function link.serialize(id: number, buf: buffer, pos: number, size: number)
-	if pos + 2 > size then
-		buf, size = inflate(buf, pos + 2, size)
-	end
+	buf, size = inflate(buf, pos + 2, size)
 	buffer.writeu16(buf, pos, id)
 	return buf, pos + (id > 255 and 2 or 1), size, id :: any
 end
