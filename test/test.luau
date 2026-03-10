@@ -9,19 +9,9 @@
 	run(cond: boolean, message: string)
 	-- We can use type system to do precursor check
 	compare<T>(expected: T, obtained: T): boolean
-	-- Deprecated and to be removed
-	serial<T>(expected: T, obtained: T): boolean
-
-	-- Maybe later
-	expectedComparable(expected: any): Comparable
-		:compareObtained(obtained: any): boolean
-	-- Maybe later for batch
-	expectBatch<T>(...: T...): ExpectBatch<T...>
-		:obtainedBatch(...: T...): boolean
-
-	-- Filler?
-	We could pass in a value and expected buffer
-	inspect(expected: buffer, value: any)
+	-- Looks at the (de)serialization of `value` to ensure correctness
+	-- Returns the deserialized buffer.
+	inspect(value: any)
 ]]
 
 local test = {}
@@ -37,35 +27,6 @@ local function getSize(tab: { number | string })
 		size += 1
 	end
 	return size
-end
-
-function test.run(cond: boolean, message: string)
-	if cond then
-		return
-	end
-	print(`{message} {debug.traceback("", 2)}`)
-end
-
-function test.sizedBuffer(size: number, ...: number | string)
-	local args = { ... }
-	local buf = buffer.create(size)
-	local pos = 0
-	for _, value in args do
-		if type(value) == "string" then
-			buffer.writestring(buf, pos, value)
-			pos += #value
-			continue
-		end
-		assert(type(value) == "number")
-		buffer.writeu8(buf, pos, value)
-		pos += 1
-	end
-	return buf
-end
-
-function test.newBuffer(...: number | string)
-	local size = getSize({ ... })
-	return test.sizedBuffer(size, ...)
 end
 
 local function tosimplestring(value: any)
@@ -177,6 +138,35 @@ local function tableCompare(expected: { [any]: any }, obtained: { [any]: any })
 	return hasFailed
 end
 
+function test.run(cond: boolean, message: string)
+	if cond then
+		return
+	end
+	print(`{message} {debug.traceback("", 2)}`)
+end
+
+function test.sizedBuffer(size: number, ...: number | string)
+	local args = { ... }
+	local buf = buffer.create(size)
+	local pos = 0
+	for _, value in args do
+		if type(value) == "string" then
+			buffer.writestring(buf, pos, value)
+			pos += #value
+			continue
+		end
+		assert(type(value) == "number")
+		buffer.writeu8(buf, pos, value)
+		pos += 1
+	end
+	return buf
+end
+
+function test.newBuffer(...: number | string)
+	local size = getSize({ ... })
+	return test.sizedBuffer(size, ...)
+end
+
 function test.compare<T>(expected: T, obtained: T)
 	if
 		expected == obtained
@@ -206,9 +196,6 @@ function test.compare<T>(expected: T, obtained: T)
 		return false
 	end
 end
-
--- Deprecated for removal: Use `test.compare`
-test.serial = test.compare
 
 local mainSerial = require("@BufferSerializer").serialize
 -- Checks serial and deserial, returns the buffer
@@ -272,7 +259,5 @@ function test.inspect(value: any): buffer
 	buffer.copy(unwrappedBuffer, 0, obtainedBuffer, 1, size)
 	return unwrappedBuffer
 end
-
-test.compare(test.newBuffer(8), test.inspect(""))
 
 return test
