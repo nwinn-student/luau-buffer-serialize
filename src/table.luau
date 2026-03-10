@@ -86,8 +86,6 @@ function tabSerializer(
 	local roundRobinLength = 0
 	local roundRobinIndex = 61440
 
-	local constants: { [any]: number } = {}
-
 	local serialTable: (data: { [any]: any }) -> ()
 
 	if size == 0 then
@@ -152,11 +150,7 @@ function tabSerializer(
 		local oldPos = pos
 		buf, pos, size = serialSwitch[typeName](data, buf, pos, size)
 
-		if pos - oldPos == 1 then
-			constants[data] = buffer.readu8(buf, oldPos)
-		elseif pos - oldPos == 2 then
-			constants[data] = buffer.readu16(buf, oldPos)
-		elseif data == data then
+		if pos - oldPos > 2 and data == data then
 			existingCache(data)
 		end
 	end
@@ -185,18 +179,10 @@ function tabSerializer(
 					pos += 3
 					continue
 				end
-				cached = constants[element]
-				if cached then
-					buf, size = inflate(buf, pos + 2, size)
-					buffer.writeu16(buf, pos, cached)
-					pos += (cached > 255 and 2 or 1)
-					continue
-				end
 
 				local typeElement = type(element)
 
 				if typeElement == "function" or typeElement == "thread" then
-					constants[element] = 0 -- NIL
 					pos += 1
 					continue
 				end
@@ -228,14 +214,7 @@ function tabSerializer(
 				buffer.writeu8(buf, pos, EQ_EXISTING)
 				buffer.writeu16(buf, pos + 1, cached)
 				pos += 3
-			end
-
-			local constCached = constants[key]
-			if constCached and not cached then
-				buf, size = inflate(buf, pos + 2, size)
-				buffer.writeu16(buf, pos, constCached)
-				pos += (constCached > 255 and 2 or 1)
-			elseif not cached then
+			else
 				-- store key
 				serialCache(key, typeKey)
 			end
@@ -247,13 +226,6 @@ function tabSerializer(
 				buffer.writeu8(buf, pos, EQ_EXISTING)
 				buffer.writeu16(buf, pos + 1, cached)
 				pos += 3
-				continue
-			end
-			cached = constants[element]
-			if cached then
-				buf, size = inflate(buf, pos + 2, size)
-				buffer.writeu16(buf, pos, cached)
-				pos += (cached > 255 and 2 or 1)
 				continue
 			end
 
@@ -277,7 +249,6 @@ function tabSerializer(
 	if roundRobinLength > 0 then
 		table.clear(roundRobinCache)
 	end
-	table.clear(constants)
 
 	return buf, pos, size
 end
