@@ -9,6 +9,9 @@
 	run(cond: boolean, message: string)
 	-- We can use type system to do precursor check
 	compare<T>(expected: T, obtained: T): boolean
+	-- Deprecated and to be removed
+	serial<T>(expected: T, obtained: T): boolean
+
 	-- Looks at the (de)serialization of `value` to ensure correctness
 	-- Returns the deserialized buffer.
 	inspect(value: any)
@@ -196,6 +199,9 @@ function test.compare<T>(expected: T, obtained: T)
 		return false
 	end
 end
+
+-- Deprecated for removal: Use `test.compare`
+test.serial = test.compare
 
 local mainSerial = require("@BufferSerializer").serialize
 -- Checks serial and deserial, returns the buffer
