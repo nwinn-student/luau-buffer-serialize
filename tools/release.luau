@@ -178,11 +178,8 @@ if compare_results then
 	compare_string ..= "**Serialize**\n"
 	local ordered = {
 		"time",
-		"pair_time",
 		"space",
-		"pair_space",
 		"size",
-		"pair_size",
 	}
 	table.sort(ordered, function(a0, a1): boolean
 		return a0 > a1
