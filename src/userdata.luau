@@ -18,9 +18,7 @@ local supports = {
 }
 
 local function writeNil(buf: buffer, pos: number, size: number)
-	if pos + 1 > size then
-		buf, size = inflate(buf, pos + 1, size)
-	end
+	buf, size = inflate(buf, pos + 1, size)
 	buffer.writeu8(buf, pos, NIL)
 	return buf, pos + 1, size
 end
@@ -56,9 +54,7 @@ local function userSerializer(value: any, buf: buffer, pos: number, size: number
 		return writeNil(buf, pos, size)
 	end
 
-	if pos + 3 > size then
-		buf, size = inflate(buf, pos + 3, size)
-	end
+	buf, size = inflate(buf, pos + 3, size)
 	buffer.writeu8(buf, pos, CUSTOM)
 	buffer.writeu8(buf, pos + 1, tag)
 
