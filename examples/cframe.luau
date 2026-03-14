@@ -5,17 +5,17 @@ local vectorSerial = require("@BufferSerializer/vector")
 local CFRAME = 5 -- assuming you want to have other userdata supported
 
 --[[
+	Note: The below example at any point in time may fail to
+	 function due to external reliance.
 
-There are multiple approaches of varying accuracy depending on how cheap 
-CFrames must be.  The below approach is incredibly accurate, however for 
-perfect accuracy numbers must be used in place of CFrame:ToEulerAnglesXYZ.
+	There are multiple approaches of varying accuracy depending on how cheap
+	 CFrames must be.  The below approach is incredibly accurate, however for
+	 perfect accuracy numbers must be used in place of CFrame:ToEulerAnglesXYZ.
 
-Should solely the position or solely the orientation be important, only 
-serialize those sections.  Should a section's accuracy not be as important, 
-the values can be pre-processed to ensure a cheaper result.
-
+	Should solely the position or solely the orientation be important, only
+	 serialize those sections.  Should a section's accuracy not be as important,
+	 the values can be pre-processed to ensure a cheaper result.
 ]]
---
 
 local function cframeWriter(value: CFrame, buf: buffer, pos: number, size: number)
 	local typeV = typeof(value)

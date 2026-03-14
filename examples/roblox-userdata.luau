@@ -2,6 +2,9 @@
 local bufferSerial = require("@self/BufferSerializer")
 
 --[[
+	Note: The below example at any point in time may fail to
+	 function due to external reliance.
+
 	Specification for userdata:
 	 [0] = BrickColor (2 + number bytes (3-5))
 	 [1] = Color3 (2 + R / G / B bytes (5))
@@ -22,7 +25,6 @@ local bufferSerial = require("@self/BufferSerializer")
 	 [16] = ColorSequenceKeypoint (2 + (R / G / B) + number (6-?))
 	 -- add more as needed
 ]]
---
 
 local inflate = require("@BufferSerializer/inflate")
 local numberSerial = require("@BufferSerializer/number")
