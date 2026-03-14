@@ -265,6 +265,8 @@ end
 	@error Failed to parse number
 	@error Failed to parse built-in vector constant
 	@error Failed to parse vector
+	@error Failed to parse userdata
+	@error Failed to parse custom userdata
 	@error Failed to parse table
 	@error Failed to parse existing value
 	@error Failed to parse nil in a dictionary

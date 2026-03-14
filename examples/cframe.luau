@@ -1,7 +1,6 @@
-local bufferSerial = require("./BufferSerializer")
-local userdataSerial = require("./BufferSerializer/userdata")
-local vectorSerial = require("./BufferSerializer/vector")
-local inflate = require("./BufferSerializer/inflate")
+local bufferSerial = require("@BufferSerializer")
+local vectorSerial = require("@BufferSerializer/vector")
+local inflate = require("@BufferSerializer/inflate")
 
 local CFRAME = 5 -- assuming you want to have other userdata supported
 
@@ -43,8 +42,10 @@ local function cframeReader(buf: buffer, pos: number): (any, number)
 	return nil, pos
 end
 
-userdataSerial.setReader(cframeReader)
-userdataSerial.setWriter(cframeWriter)
+bufferSerial.supportUserdata {
+	serialize = cframeWriter,
+	deserialize = cframeReader,
+}
 
 local data = CFrame.new()
 

@@ -3,62 +3,59 @@
 local inflate = require("./inflate")
 
 local CUSTOM = 202
-local NIL = 203
+local UNSUPPORTED = 203
 
---[[
-	The deserializer function for custom userdata.
+export type Support = {
+	serialize: (
+		udata: any,
+		buf: buffer,
+		pos: number,
+		size: number
+	) -> (buffer, number, number)?,
+	deserialize: (buf: buffer, pos: number) -> (any?, number)?,
+}
 
-	@param buf the buffer containing the serialized data
-	@param pos the current position within the buffer
+local UNSUPPORTED_USERDATA = newproxy()
 
-	@return value the userdata value serialized
-	@return pos the new position within the buffer
-]]
-export type Reader = (buf: buffer, pos: number) -> (unknown, number)
+local supports = {
+	serializers = {},
+	deserializers = {},
+}
 
---[[
-	The serializer function for custom userdata.
-
-	- If the position is unchanged when exiting the function, then
-	 the userdata will be considered **unsupported**.
-	  - Unsupported userdata is stored as a NIL userdata, which is
-	   deserialized as a newproxy() and **not** a constant.
-
-	@param value the userdata to serialize
-	@param buf the buffer containing the serialized data
-	@param pos the current position within the buffer
-	@param size the size of the buffer
-
-	@return buffer the buffer containing the serialized data
-	@return pos the new position within the buffer
-	@return size the new size of the buffer
-]]
-export type Writer = (
-	value: unknown,
-	buf: buffer,
-	pos: number,
-	size: number
-) -> (buffer, number, number)
-
-local Reader: Reader?
-local Writer: Writer?
+local function writeUnsupported(buf: buffer, pos: number, size: number)
+	buf, size = inflate(buf, pos + 1, size)
+	buffer.writeu8(buf, pos, UNSUPPORTED)
+	return buf, pos + 1, size
+end
 
 local function userSerializer(value: any, buf: buffer, pos: number, size: number)
-	if Writer then
-		buf, size = inflate(buf, pos + 1, size)
-		buffer.writeu8(buf, pos, CUSTOM)
+	if #supports.serializers == 0 or value == UNSUPPORTED_USERDATA then
+		return writeUnsupported(buf, pos, size)
+	end
 
-		local tempPos = pos + 1
+	local end_buf: buffer, end_pos: number, end_size: number
+	local isSupported: boolean = false
 
-		buf, pos, size = Writer(value, buf, pos + 1, size)
+	buf, size = inflate(buf, pos + 1, size)
+	buffer.writeu8(buf, pos, CUSTOM)
 
-		if tempPos ~= pos then
-			return buf, pos, size
+	-- this is faster than functions that call functions (since we would need to wrap each)
+	for _, serializer in supports.serializers do
+		local temp_buf, temp_pos, temp_size =
+			serializer(value, buf, pos + 1, size)
+		if temp_pos ~= pos + 1 then
+			isSupported = true
+			end_buf, end_pos, end_size = temp_buf, temp_pos, temp_size
+			break
 		end
 	end
-	buf, size = inflate(buf, pos + 1, size)
-	buffer.writeu8(buf, pos, NIL)
-	return buf, pos + 1, size
+
+	-- we assume no modifications to the buffer!!
+	if not isSupported then
+		return writeUnsupported(buf, pos, size)
+	end
+
+	return end_buf, end_pos, end_size
 end
 
 --[[
@@ -67,100 +64,113 @@ end
 	@param buf buffer containing the userdata
 	@param pos the starting position of the userdata
 
+	@error Failed to parse userdata
+	@error Failed to parse custom userdata
 	@error buffer access out of bounds
 
 	@return the userdata and the end of the userdata position + 1
 ]]
 local function userDeserializer(buf: buffer, pos: number)
+	-- Possible optim: We actually get the id multiple times for table, can we pass the id?
 	local id = buffer.readu8(buf, pos)
 
-	if Reader and id == CUSTOM then
-		local obj
-		obj, pos = Reader(buf, pos + 1)
-		if obj == nil then
-			-- We cannot return nil or it will corrupt
-			return newproxy(), pos + 1
-		end
-		return obj, pos
+	if id == UNSUPPORTED then
+		return UNSUPPORTED_USERDATA, pos + 1
 	end
-	-- We cannot return nil or it will corrupt
-	return newproxy(), pos + 1
+
+	if id ~= CUSTOM then
+		error(`Failed to parse userdata using byte: {id} at position {pos}`)
+	end
+
+	local data = nil
+
+	for _, deserializer in supports.deserializers do
+		local temp_data, temp_pos
+		temp_data, temp_pos = deserializer(buf, pos + 1)
+		if temp_data ~= nil then
+			data = temp_data
+			pos = temp_pos
+			break
+		end
+	end
+
+	-- no returning values that cause tables to error
+	if data == nil or data ~= data then
+		local nextId = buffer.readu8(buf, pos + 1)
+		error(
+			`Failed to parse custom userdata using byte: {nextId} at position {pos + 1}`
+		)
+	end
+
+	return data, pos
 end
 
 --[[
-	Returns the current custom userdata deserializer.
+	Adds support for a userdata or group of userdata to be
+	 (de)serialized.
 
-	Commonly used to cache the prior reader function when overwriting the
-	 reader.  The prior reader is typically called whenever an unsupported
-	 userdata is being handled.
+	@param record the container holding the (de)serialize functions
 
-	@return Reader the assigned custom userdata deserializer
+	@error expected table
+	@error only "serialize" or "deserialize" can be within record
+	@error record.(de)serialize must be a function
 ]]
-local function getReader()
-	return Reader
+function addSupport(record: Support)
+	assert(type(record) == "table", `expected table (got {type(record)})`)
+
+	for name, value in record :: { [string]: any } do
+		assert(
+			name == "serialize" or name == "deserialize",
+			`only "serialize" or "deserialize" can be within record`
+		)
+		assert(
+			type(value) == "function",
+			`record.{name} must be a function (got {type(value)})`
+		)
+	end
+
+	if record.serialize then
+		table.insert(supports.serializers, 1, record.serialize)
+	end
+	if record.deserialize then
+		table.insert(supports.deserializers, 1, record.deserialize)
+	end
 end
+
 --[[
-	Sets the custom userdata deserializer.
+	Removes (de)serialization support for some userdata
 
-	The reader function will be called whenever a custom userdata byte is
-	 encountered in the serialized data.  It is common to check the first byte
-	 to see if the userdata tag or type is supported, if it is not, the arguments
-	 should be passed to older readers to handle.
-
-	Note: The NIL userdata byte will not trigger the function call.
-
-	@param Reader the new custom userdata deserializer
-
-	@error Invalid type: When the reader is not a function
+	@param keepNLatest how many supported functions to keep
 ]]
-local function setReader(reader: Reader)
+function clearSupport(keepNLatest: number?)
+	if keepNLatest == nil then
+		table.clear(supports.serializers)
+		table.clear(supports.deserializers)
+		return
+	end
 	assert(
-		type(reader) == "function",
-		`Invalid type {type(reader)} (must be function)`
+		type(keepNLatest) == "number",
+		`expected number (got {type(keepNLatest)})`
 	)
-	Reader = reader
-end
 
---[[
-	Returns the current custom userdata serializer.
+	local maxLength = math.max(#supports.serializers, #supports.deserializers)
 
-	Commonly used to cache the prior writer function when overwriting the
-	 writer.  The prior writer is typically called whenever an unsupported
-	 userdata is being handled.
-
-	@return Writer the assigned custom userdata serializer
-]]
-local function getWriter()
-	return Writer
-end
---[[
-	Sets the custom userdata serializer.
-
-	The writer function will always be called when serializing different
-	 userdata.
-
-	Note: By the returned position equaling the initial position, the
-	 NIL userdata byte will be set instead of the custom userdata byte.
-
-	@param Writer the new custom userdata serializer
-
-	@error Invalid type: When the writer is not a function
-]]
-local function setWriter(writer: Writer)
-	assert(
-		type(writer) == "function",
-		`Invalid type {type(writer)} (must be function)`
-	)
-	Writer = writer
+	for i = maxLength, 1, -1 do
+		if i >= keepNLatest then
+			break
+		end
+		table.remove(supports.serializers, i)
+		table.remove(supports.deserializers, i)
+	end
 end
 
 local Userdata = {
 	serialize = userSerializer,
 	deserialize = userDeserializer,
-	setReader = setReader,
-	setWriter = setWriter,
-	getReader = getReader,
-	getWriter = getWriter,
+	addSupport = addSupport,
+	clearSupport = clearSupport,
+
+	unsupported = UNSUPPORTED_USERDATA,
 }
 
 return table.freeze(Userdata)

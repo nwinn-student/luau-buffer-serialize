@@ -2,6 +2,8 @@
 
 - [serialize](#serialize)
 - [deserialize](#deserialize)
+- [supportUserdata](#supportuserdata)
+- [isSupported](#issupported)
 
 
 ## Serialize
@@ -69,3 +71,76 @@ local originData = BufferSerializer.deserialize(serialData)
 
 **Returns**
 - the original value
+
+## SupportUserdata
+
+**Type**
+
+```luau
+type Support = {
+	serialize: (
+		value: any,
+		buf: buffer,
+		pos: number,
+		size: number
+	) -> (buffer, number, number)?,
+	deserialize: (buf: buffer, pos: number) -> (any, number)?,
+}
+type supportUserdata = (record: Support) -> ()
+```
+
+Adds support for a userdata or group of userdata to be
+(de)serialized.
+
+**Example**
+```luau
+local BufferSerializer = require("./path/to/BufferSerializer")
+local inflate = require("./path/to/BufferSerializer/inflate")
+
+local sample_userdata = newproxy()
+
+BufferSerializer.supportUserdata({
+	serialize = function(value: any, buf: buffer, pos: number, size: number)
+		if value ~= sample_userdata then
+			return
+		end
+		buf, size = inflate(buf, pos + 1, size)
+		buffer.writeu8(buf, pos, 0)
+		return buf, pos + 1, size
+	end,
+	deserialize = function(buf: buffer, pos: number)
+		local id = buffer.readu8(buf, pos)
+		if id == 0 then
+			return sample_userdata, pos + 1
+		end
+	end,
+})
+
+local serialData = BufferSerializer.serialize(sample_userdata)
+```
+
+**Parameters**
+- record - the container holding the (de)serialize functions
+
+**Errors**
+- expected table
+- only "serialize" or "deserialize" can be within record
+- record.(de)serialize must be a function
+
+## IsSupported
+
+**Type**
+
+`(ud: any) -> boolean`
+
+Returns whether the userdata is capable of being serialized and deserialized.
+
+- Meaning the userdata does not deserialize into the unsupported userdata constant
+
+**Parameters**
+- ud - the userdata to check
+
+**Errors**
+- Failed to parse userdata
+- Failed to parse custom userdata
+- buffer access out of bounds
