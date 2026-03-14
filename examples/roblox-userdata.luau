@@ -21,13 +21,14 @@ local bufferSerial = require("@self/BufferSerializer")
 	 [15] = NumberSequenceKeypoint (2 + number + number + number (5-?))
 	 [16] = ColorSequenceKeypoint (2 + (R / G / B) + number (6-?))
 	 -- add more as needed
-]]--
+]]
+--
 
+local inflate = require("@BufferSerializer/inflate")
 local numberSerial = require("@BufferSerializer/number")
 local stringSerial = require("@BufferSerializer/string")
-local vectorSerial = require("@BufferSerializer/vector")
 local tableSerial = require("@BufferSerializer/table")
-local inflate = require("@BufferSerializer/inflate")
+local vectorSerial = require("@BufferSerializer/vector")
 
 -- the only dependancy, Instances are not as simple to support
 -- Location: https://github.com/Gem-API/Rose
@@ -61,26 +62,26 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 	elseif userType == "Color3" then
 		buf, size = inflate(buf, pos + 4, size)
 		buffer.writeu8(buf, pos, COLOR3)
-		buffer.writebits(buf, (pos + 1)*8, 24,
-			tonumber(value:ToHex(), 16))
+		buffer.writebits(buf, (pos + 1) * 8, 24, tonumber(value:ToHex(), 16))
 		pos += 4
 	elseif userType == "EnumItem" then
 		buf, size = inflate(buf, pos + 3, size)
 		buffer.writeu8(buf, pos, ENUMITEM)
 		buf, pos, size = numberSerial.serialize(
 			table.find(Enum:GetEnums(), value.EnumType),
-			buf, pos + 1, size
+			buf,
+			pos + 1,
+			size
 		)
 		buf, pos, size = numberSerial.serialize(value.Value, buf, pos, size)
 	elseif userType == "CFrame" then
 		buf, size = inflate(buf, pos + 3, size)
 		buffer.writeu8(buf, pos, CFRAME)
-		buf, pos, size = vectorSerial.serialize(value.Position, buf, pos + 1, size)
+		buf, pos, size =
+			vectorSerial.serialize(value.Position, buf, pos + 1, size)
 		local x, y, z = (value :: CFrame):ToEulerAnglesXYZ()
-		buf, pos, size = vectorSerial.serialize(
-			vector.create(x, y, z),
-			buf, pos, size
-		)
+		buf, pos, size =
+			vectorSerial.serialize(vector.create(x, y, z), buf, pos, size)
 	elseif userType == "Ray" then
 		buf, size = inflate(buf, pos + 3, size)
 		buffer.writeu8(buf, pos, RAY)
@@ -89,13 +90,16 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 	elseif userType == "Instance" then
 		buf, size = inflate(buf, pos + 16, size)
 		buffer.writeu8(buf, pos, INSTANCE)
-		buf, pos, size = tableSerial.serialize(rose.serialize(value), buf, pos + 1, size)
+		buf, pos, size =
+			tableSerial.serialize(rose.serialize(value), buf, pos + 1, size)
 	elseif userType == "Enum" then
 		buf, size = inflate(buf, pos + 2, size)
 		buffer.writeu8(buf, pos, ENUM)
 		buf, pos, size = numberSerial.serialize(
 			table.find(Enum:GetEnums(), value),
-			buf, pos + 1, size
+			buf,
+			pos + 1,
+			size
 		)
 	elseif userType == "UDim" then
 		buf, size = inflate(buf, pos + 3, size)
@@ -117,7 +121,8 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 	elseif userType == "NumberSequence" then
 		buf, size = inflate(buf, pos + 7, size)
 		buffer.writeu8(buf, pos, NUMBER_SEQUENCE)
-		buf, pos, size = tableSerial.serialize(value.Keypoints, buf, pos + 1, size)
+		buf, pos, size =
+			tableSerial.serialize(value.Keypoints, buf, pos + 1, size)
 	elseif userType == "NumberSequenceKeypoint" then
 		buf, size = inflate(buf, pos + 4, size)
 		buffer.writeu8(buf, pos, NUMBER_SEQUENCE_KEYPOINT)
@@ -127,12 +132,17 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 	elseif userType == "ColorSequence" then
 		buf, size = inflate(buf, pos + 9, size)
 		buffer.writeu8(buf, pos, COLOR_SEQUENCE)
-		buf, pos, size = tableSerial.serialize(value.Keypoints, buf, pos + 1, size)
+		buf, pos, size =
+			tableSerial.serialize(value.Keypoints, buf, pos + 1, size)
 	elseif userType == "ColorSequenceKeypoint" then
 		buf, size = inflate(buf, pos + 5, size)
 		buffer.writeu8(buf, pos, COLOR_SEQUENCE_KEYPOINT)
-		buffer.writebits(buf, (pos + 1)*8, 24,
-			tonumber(value.Value:ToHex(), 16))
+		buffer.writebits(
+			buf,
+			(pos + 1) * 8,
+			24,
+			tonumber(value.Value:ToHex(), 16)
+		)
 		buf, pos, size = numberSerial.serialize(value.Time, buf, pos + 4, size)
 	elseif userType == "NumberRange" then
 		buf, size = inflate(buf, pos + 3, size)
@@ -150,7 +160,8 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 		buf, size = inflate(buf, pos + 4, size)
 		buffer.writeu8(buf, pos, FONT)
 		buf, pos, size = stringSerial.serialize(value.Family, buf, pos + 1, size)
-		buf, pos, size = numberSerial.serialize(value.Weight.Value, buf, pos, size)
+		buf, pos, size =
+			numberSerial.serialize(value.Weight.Value, buf, pos, size)
 		buf, pos, size = numberSerial.serialize(value.Style.Value, buf, pos, size)
 	end
 	return buf, pos, size
@@ -165,9 +176,8 @@ local function userdataReader(buf: buffer, pos: number)
 	if id == BRICKCOLOR then
 		local valNum
 		valNum, pos = numberSerial.deserialize(buf, pos + 1)
-		if valNum then
-			obj = BrickColor.new(valNum)
-		end
+
+		obj = BrickColor.new(valNum)
 	elseif id == COLOR3 then
 		obj = Color3.fromRGB(
 			buffer.readu8(buf, pos + 3),
@@ -179,43 +189,31 @@ local function userdataReader(buf: buffer, pos: number)
 		local enumVal, valNum
 		enumVal, pos = numberSerial.deserialize(buf, pos + 1)
 		valNum, pos = numberSerial.deserialize(buf, pos)
-		if enumVal and valNum then
-			obj = Enum:GetEnums()[enumVal]
-			if obj then
-				obj = obj:FromValue(valNum)
-			end
-		end
+
+		obj = Enum:GetEnums()[enumVal]:FromValue(valNum)
 	elseif id == CFRAME then
 		local posVector, eulerVector
 		posVector, pos = vectorSerial.deserialize(buf, pos + 1)
 		eulerVector, pos = vectorSerial.deserialize(buf, pos)
-		if posVector and eulerVector then
-			obj = CFrame.fromEulerAngles(
-				eulerVector.x,
-				eulerVector.y,
-				eulerVector.z
-			) + posVector
-		end
+
+		obj = CFrame.fromEulerAngles(eulerVector.x, eulerVector.y, eulerVector.z)
+			+ posVector
 	elseif id == RAY then
 		local orgVal, dirVal
 		orgVal, pos = vectorSerial.deserialize(buf, pos + 1)
 		dirVal, pos = vectorSerial.deserialize(buf, pos)
-		if orgVal and dirVal then
-			obj = Ray.new(orgVal, dirVal)
-		end
+
+		obj = Ray.new(orgVal, dirVal)
 	elseif id == INSTANCE then
 		local roseVal
 		roseVal, pos = tableSerial.deserialize(buf, pos + 1)
-		if roseVal then
-		-- the parent is LightService or nil!
-			obj = rose.deserialize(roseVal)
-		end
+		-- the parent is nil!
+		obj = rose.deserialize(roseVal)
 	elseif id == ENUM then
 		local enumVal
 		enumVal, pos = numberSerial.deserialize(buf, pos + 1)
-		if enumVal then
-			obj = Enum:GetEnums()[enumVal]
-		end
+
+		obj = Enum:GetEnums()[enumVal]
 	elseif id == UDIM then
 		local scale, offset
 		scale, pos = numberSerial.deserialize(buf, pos + 1)
@@ -283,7 +281,11 @@ local function userdataReader(buf: buffer, pos: number)
 		weightId, pos = numberSerial.deserialize(buf, pos)
 		styleId, pos = numberSerial.deserialize(buf, pos)
 
-		obj = Font.new(family, Enum.FontWeight:FromValue(weightId), Enum.FontStyle:FromValue(styleId))
+		obj = Font.new(
+			family,
+			Enum.FontWeight:FromValue(weightId),
+			Enum.FontStyle:FromValue(styleId)
+		)
 	end
 
 	return obj, pos
