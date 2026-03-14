@@ -11,7 +11,7 @@ type Serialize = (
 	buf: buffer,
 	pos: number,
 	size: number
-) -> (buffer, number, number, any?) -- last return is userdata specific
+) -> (buffer, number, number)
 
 type Deserialize = (buf: buffer, pos: number) -> (any, number)
 
@@ -148,15 +148,7 @@ function tabSerializer(
 		end
 
 		local oldPos = pos
-		local store
-		buf, pos, size, store = serialSwitch[typeName](data, buf, pos, size)
-
-		-- Userdata specific
-		if store ~= nil then
-			existingCache(data)
-			serialCache(store, type(store))
-			return
-		end
+		buf, pos, size = serialSwitch[typeName](data, buf, pos, size)
 
 		if pos - oldPos > 2 and data == data then
 			existingCache(data)
@@ -273,6 +265,8 @@ end
 	@error Failed to parse number
 	@error Failed to parse built-in vector constant
 	@error Failed to parse vector
+	@error Failed to parse userdata
+	@error Failed to parse custom userdata
 	@error Failed to parse table
 	@error Failed to parse existing value
 	@error Failed to parse nil in a dictionary
@@ -322,10 +316,7 @@ function tabDeserializer(buf: buffer, pos: number)
 	end
 
 	@native
-	local function deserialCache(valId: number, tpos: number?): unknown
-		-- what is this for?
-		pos = tpos or pos -- ????
-
+	local function deserialCache(valId: number): unknown
 		if valId == EMPTY then
 			pos += 1
 			return {}

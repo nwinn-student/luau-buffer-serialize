@@ -16,6 +16,4 @@ require("@self/userdata")
 
 require("@self/link")
 
--- TODO: Add tests for BS.<??>
-
 return {}

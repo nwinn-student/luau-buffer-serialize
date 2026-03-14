@@ -1,5 +1,5 @@
 --!optimize 2
-local bufferSerial = require("./BufferSerializer")
+local bufferSerial = require("@BufferSerializer")
 
 --[[
 	Specification for userdata:
@@ -13,15 +13,15 @@ local bufferSerial = require("./BufferSerializer")
 		-- add more as needed
 ]]--
 
-local userdataSerial = require("./BufferSerializer/userdata")
-local numberSerial = require("./BufferSerializer/number")
-local vectorSerial = require("./BufferSerializer/vector")
-local tableSerial = require("./BufferSerializer/table")
-local inflate = require("./BufferSerializer/inflate")
+local userdataSerial = require("@BufferSerializer/userdata")
+local numberSerial = require("@BufferSerializer/number")
+local vectorSerial = require("@BufferSerializer/vector")
+local tableSerial = require("@BufferSerializer/table")
+local inflate = require("@BufferSerializer/inflate")
 
 -- the only dependancy, Instances are not as simple to support
 -- Location: https://github.com/Gem-API/Rose
-local rose = require("./rose")
+local rose = require("./rose") :: any
 
 local BRICKCOLOR = 0
 local COLOR3 = 1
@@ -35,23 +35,17 @@ local ENUM = 6
 local function userdataWriter(value: any, buf: buffer, pos: number, size: number)
 	local userType = typeof(value)
 	if userType == "BrickColor" then
-		if pos + 2 > size then
-			buf, size = inflate(buf, pos + 2, size)
-		end
+		buf, size = inflate(buf, pos + 2, size)
 		buffer.writeu8(buf, pos, BRICKCOLOR)
 		buf, pos, size = numberSerial.serialize(value.Number, buf, pos + 1, size)
 	elseif userType == "Color3" then
-		if pos + 4 > size then
-			buf, size = inflate(buf, pos + 4, size)
-		end
+		buf, size = inflate(buf, pos + 4, size)
 		buffer.writeu8(buf, pos, COLOR3)
 		buffer.writebits(buf, (pos + 1)*8, 24, 
 			tonumber(value:ToHex(), 16))
 		pos += 4
 	elseif userType == "EnumItem" then
-		if pos + 3 > size then
-			buf, size = inflate(buf, pos + 3, size)
-		end
+		buf, size = inflate(buf, pos + 3, size)
 		buffer.writeu8(buf, pos, ENUMITEM)
 		buf, pos, size = numberSerial.serialize(
 			table.find(Enum:GetEnums(), value.EnumType),
@@ -59,9 +53,7 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 		)
 		buf, pos, size = numberSerial.serialize(value.Value, buf, pos, size)
 	elseif userType == "CFrame" then
-		if pos + 3 > size then
-			buf, size = inflate(buf, pos + 3, size)
-		end
+		buf, size = inflate(buf, pos + 3, size)
 		buffer.writeu8(buf, pos, CFRAME)
 		buf, pos, size = vectorSerial.serialize(value.Position, buf, pos + 1, size)
 		buf, pos, size = vectorSerial.serialize(
@@ -69,22 +61,16 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 			buf, pos, size
 		)
 	elseif userType == "Ray" then
-		if pos + 3 > size then
-			buf, size = inflate(buf, pos + 3, size)
-		end
+		buf, size = inflate(buf, pos + 3, size)
 		buffer.writeu8(buf, pos, RAY)
 		buf, pos, size = vectorSerial.serialize(value.Origin, buf, pos + 1, size)
 		buf, pos, size = vectorSerial.serialize(value.Direction, buf, pos, size)
 	elseif userType == "Instance" then
-		if pos + 16 > size then -- uncertain
-			buf, size = inflate(buf, pos + 16, size)
-		end
+		buf, size = inflate(buf, pos + 16, size)
 		buffer.writeu8(buf, pos, INSTANCE)
 		buf, pos, size = tableSerial.serialize(rose.serialize(value), buf, pos + 1, size)
 	elseif userType == "Enum" then
-		if pos + 2 > size then
-			buf, size = inflate(buf, pos + 2, size)
-		end
+		buf, size = inflate(buf, pos + 2, size)
 		buffer.writeu8(buf, pos, ENUM)
 		buf, pos, size = numberSerial.serialize(
 			table.find(Enum:GetEnums(), value),
@@ -159,8 +145,10 @@ local function userdataReader(buf: buffer, pos: number)
 	return obj, pos
 end
 
-userdataSerial.setReader(userdataReader)
-userdataSerial.setWriter(userdataWriter)
+bufferSerial.supportUserdata {
+	serialize = userdataWriter,
+	deserialize = userdataReader,
+}
 
 local testData = {
 	Clothing = { -- ID, Color

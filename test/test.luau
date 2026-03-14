@@ -9,16 +9,18 @@
 	run(cond: boolean, message: string)
 	-- We can use type system to do precursor check
 	compare<T>(expected: T, obtained: T): boolean
-	-- Deprecated and to be removed
-	serial<T>(expected: T, obtained: T): boolean
 
 	-- Looks at the (de)serialization of `value` to ensure correctness
 	-- Returns the deserialized buffer.
 	-- TODO: Consider adding an options parameter that allows
 	--  for the disabling of deserialization comparison and possibly
 	--  other aspects.
-	test.inspect<T>(value: T): (buffer, T)
+	test.inspect<T>(value: T, options: InspectOptions?): (buffer, T)
 ]]
+
+export type InspectOptions = {
+	disableValueComparison: boolean?,
+}
 
 local test = {}
 
@@ -203,14 +205,16 @@ function test.compare<T>(expected: T, obtained: T)
 	end
 end
 
--- Deprecated for removal: Use `test.compare`
-test.serial = test.compare
-
 local mainSerial = require("@BufferSerializer").serialize
 -- Checks serial and deserial, returns the buffer
-function test.inspect<T>(value: T): (buffer, T)
+function test.inspect<T>(value: T, options: InspectOptions?): (buffer, T)
 	local traceback = debug.traceback("", 2)
 	local hasFailed = false
+	local disableValueComparison = if options
+			and options.disableValueComparison
+		then true
+		else false
+
 	local serial = (require(`@BufferSerializer/{type(value)}`) :: any).serialize
 	local deserial = (require(`@BufferSerializer/{type(value)}`) :: any).deserialize
 
@@ -252,7 +256,9 @@ function test.inspect<T>(value: T): (buffer, T)
 
 	-- if it has failed do we just nogo?
 	local obtainedValue, obtainedDPos = deserial(obtainedBuffer, 1)
-	test.compare(value, obtainedValue) -- already prints stuff
+	if not disableValueComparison then
+		test.compare(value, obtainedValue) -- already prints stuff
+	end
 	if expectedPos ~= obtainedDPos then
 		print(
 			`Expected deserialization position {expectedPos} (got {obtainedDPos})`

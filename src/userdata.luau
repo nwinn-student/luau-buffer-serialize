@@ -3,62 +3,59 @@
 local inflate = require("./inflate")
 
 local CUSTOM = 202
-local NIL = 203
+local UNSUPPORTED = 203
 
 export type Support = {
-	tag: (udata: any) -> number?,
-	serialize: (udata: any, tag: number) -> any?,
-	deserialize: (data: any, tag: number) -> any?,
+	serialize: (
+		udata: any,
+		buf: buffer,
+		pos: number,
+		size: number
+	) -> (buffer, number, number)?,
+	deserialize: (buf: buffer, pos: number) -> (any?, number)?,
 }
 
+local UNSUPPORTED_USERDATA = newproxy()
+
 local supports = {
-	tags = {},
 	serializers = {},
 	deserializers = {},
 }
 
-local function writeNil(buf: buffer, pos: number, size: number)
+local function writeUnsupported(buf: buffer, pos: number, size: number)
 	buf, size = inflate(buf, pos + 1, size)
-	buffer.writeu8(buf, pos, NIL)
+	buffer.writeu8(buf, pos, UNSUPPORTED)
 	return buf, pos + 1, size
 end
 
 local function userSerializer(value: any, buf: buffer, pos: number, size: number)
-	if #supports.tags == 0 then
-		return writeNil(buf, pos, size)
+	if #supports.serializers == 0 or value == UNSUPPORTED_USERDATA then
+		return writeUnsupported(buf, pos, size)
 	end
 
-	local tag: number? = nil
-	local store: any? = nil
-	for _, tagger in supports.tags do
-		local temp_tag = tagger(value)
-		if temp_tag then
-			tag = temp_tag
-			break
-		end
-	end
+	local end_buf: buffer, end_pos: number, end_size: number
+	local isSupported: boolean = false
 
-	if type(tag) ~= "number" then
-		return writeNil(buf, pos, size)
-	end
-
-	for _, serializer in supports.serializers do
-		local temp_store = serializer(value, tag)
-		if temp_store ~= nil then
-			store = temp_store
-			break
-		end
-	end
-
-	if store == nil then
-		return writeNil(buf, pos, size)
-	end
-
-	buf, size = inflate(buf, pos + 3, size)
+	buf, size = inflate(buf, pos + 1, size)
 	buffer.writeu8(buf, pos, CUSTOM)
-	buffer.writeu8(buf, pos + 1, tag)
 
-	return buf, pos + 2, size, nil, store
+	-- this is faster than functions that call functions (since we would need to wrap each)
+	for _, serializer in supports.serializers do
+		local temp_buf, temp_pos, temp_size =
+			serializer(value, buf, pos + 1, size)
+		if temp_pos ~= pos + 1 then
+			isSupported = true
+			end_buf, end_pos, end_size = temp_buf, temp_pos, temp_size
+			break
+		end
+	end
+
+	-- we assume no modifications to the buffer!!
+	if not isSupported then
+		return writeUnsupported(buf, pos, size)
+	end
+
+	return end_buf, end_pos, end_size
 end
 
 --[[
@@ -67,60 +64,64 @@ end
 	@param buf buffer containing the userdata
 	@param pos the starting position of the userdata
 
+	@error Failed to parse userdata
+	@error Failed to parse custom userdata
 	@error buffer access out of bounds
 
 	@return the userdata and the end of the userdata position + 1
 ]]
 local function userDeserializer(buf: buffer, pos: number)
+	-- Possible optim: We actually get the id multiple times for table, can we pass the id?
 	local id = buffer.readu8(buf, pos)
 
-	if id == NIL then
-		return newproxy(), pos + 1
+	if id == UNSUPPORTED then
+		return UNSUPPORTED_USERDATA, pos + 1
 	end
 
 	if id ~= CUSTOM then
-		error("... not custom")
+		error(`Failed to parse userdata using byte: {id} at position {pos}`)
 	end
 
-	local tag = buffer.readu8(buf, pos + 1)
-	local data_id = buffer.readu8(buf, pos + 2)
 	local data = nil
-	-- if upfunc is deserialize then we can just (buf, pos + 2)
-	-- else we need to do (ud, pos + 2)
-	-- but what if external function calls this?  doesn't it kinda defeat the purpose?
-	-- but debug is not the solution at ALL
-	-- since it relies on known fns calling
-	-- so it needs to be passed the data.. but... it cannot...
-	-- just try,,,
-	local upfunc, upname = debug.info(2, "fn")
-	if upname == "deserialize" then
-		data = upfunc(buf, pos + 2)
-	else
-		data = upfunc(data_id, pos + 2)
-	end
 
 	for _, deserializer in supports.deserializers do
-		local temp_data = deserializer(data, tag)
+		local temp_data, temp_pos
+		temp_data, temp_pos = deserializer(buf, pos + 1)
 		if temp_data ~= nil then
 			data = temp_data
+			pos = temp_pos
 			break
 		end
 	end
 
-	if data == nil then
-		error("user does not support a serialized userdata")
+	-- no returning values that cause tables to error
+	if data == nil or data ~= data then
+		local nextId = buffer.readu8(buf, pos + 1)
+		error(
+			`Failed to parse custom userdata using byte: {nextId} at position {pos + 1}`
+		)
 	end
 
-	return data, pos + 3
+	return data, pos
 end
 
+--[[
+	Adds support for a userdata or group of userdata to be
+	 (de)serialized.
+
+	@param record the container holding the (de)serialize functions
+
+	@error expected table
+	@error only "serialize" or "deserialize" can be within record
+	@error record.(de)serialize must be a function
+]]
 function addSupport(record: Support)
 	assert(type(record) == "table", `expected table (got {type(record)})`)
 
 	for name, value in record :: { [string]: any } do
 		assert(
-			name == "tag" or name == "serialize" or name == "deserialize",
-			`only "tag", "serialize", or "deserialize" can be within record`
+			name == "serialize" or name == "deserialize",
+			`only "serialize" or "deserialize" can be within record`
 		)
 		assert(
 			type(value) == "function",
@@ -128,16 +129,21 @@ function addSupport(record: Support)
 		)
 	end
 
-	table.insert(supports.tags, 1, record.tag)
-	table.insert(supports.serializers, 1, record.serialize)
-	table.insert(supports.deserializers, 1, record.deserialize)
+	if record.serialize then
+		table.insert(supports.serializers, 1, record.serialize)
+	end
+	if record.deserialize then
+		table.insert(supports.deserializers, 1, record.deserialize)
+	end
 end
 
--- TODO: Question what happens supports are cleared in-transit
--- Continues as normal.
+--[[
+	Removes (de)serialization support for some userdata
+
+	@param keepNLatest how many supported functions to keep
+]]
 function clearSupport(keepNLatest: number?)
 	if keepNLatest == nil then
-		table.clear(supports.tags)
 		table.clear(supports.serializers)
 		table.clear(supports.deserializers)
 		return
@@ -147,11 +153,12 @@ function clearSupport(keepNLatest: number?)
 		`expected number (got {type(keepNLatest)})`
 	)
 
-	for i = #supports.tags, 1, -1 do
+	local maxLength = math.max(#supports.serializers, #supports.deserializers)
+
+	for i = maxLength, 1, -1 do
 		if i >= keepNLatest then
-			return
+			break
 		end
-		table.remove(supports.tags, i)
 		table.remove(supports.serializers, i)
 		table.remove(supports.deserializers, i)
 	end
@@ -162,6 +169,8 @@ local Userdata = {
 	deserialize = userDeserializer,
 	addSupport = addSupport,
 	clearSupport = clearSupport,
+
+	unsupported = UNSUPPORTED_USERDATA,
 }
 
 return table.freeze(Userdata)
