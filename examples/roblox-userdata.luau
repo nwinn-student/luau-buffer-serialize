@@ -13,7 +13,6 @@ local bufferSerial = require("@BufferSerializer")
 		-- add more as needed
 ]]--
 
-local userdataSerial = require("@BufferSerializer/userdata")
 local numberSerial = require("@BufferSerializer/number")
 local vectorSerial = require("@BufferSerializer/vector")
 local tableSerial = require("@BufferSerializer/table")

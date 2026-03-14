@@ -1,5 +1,4 @@
 local bufferSerial = require("@BufferSerializer")
-local userdataSerial = require("@BufferSerializer/userdata")
 local vectorSerial = require("@BufferSerializer/vector")
 local inflate = require("@BufferSerializer/inflate")
 
