@@ -1,10 +1,11 @@
-# BufferSerializer
+ BufferSerializer
 
 [![Luau Version](https://img.shields.io/badge/Luau-0.670+-blue.svg)](https://github.com/luau-lang/luau/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL_3.0-yellow.svg)](https://opensource.org/licenses/GPL-3.0)
 
 > [!CAUTION]
-> Userdata support will be moved from the internal API into the external API.
+> Userdata support has been moved from the internal API into the external API.
+> The internal portion has changed, so breakage will occur for relevant cases.
 
 > [!CAUTION]
 > Pairs has been removed.  No data migration concerns.
@@ -26,7 +27,8 @@ BufferSerializer supports most of the built-in Luau types, excluding `function`
 
 #### Additional Features
 - Custom Userdata
-  - Users can add support for (de)serializing userdata using the internal API.
+  - Look in [examples](./examples) to see common practice for supporting userdata
+    (de)serialization.
 - Cyclic tables
   - See [limitations](./docs/risks.md#limitations) for more information.
 
