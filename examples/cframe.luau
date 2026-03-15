@@ -55,4 +55,4 @@ local serData = bufferSerial.serialize(data)
 
 -- ...
 
-local deserData = bufferSerial.deserialize(serData)
+local _deserData = bufferSerial.deserialize(serData)
