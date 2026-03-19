@@ -1,5 +1,4 @@
 local bufferSerial = require("@BufferSerializer")
-local inflate = require("@BufferSerializer/inflate")
 local vectorSerial = require("@BufferSerializer/vector")
 
 local CFRAME = 5 -- assuming you want to have other userdata supported
@@ -20,7 +19,6 @@ local CFRAME = 5 -- assuming you want to have other userdata supported
 local function cframeWriter(value: CFrame, buf: buffer, pos: number, size: number)
 	local typeV = typeof(value)
 	if typeV == "CFrame" then
-		buf, size = inflate(buf, pos + 1, size)
 		buffer.writeu8(buf, pos, CFRAME)
 		buf, pos, size =
 			vectorSerial.serialize(value.Position, buf, pos + 1, size)

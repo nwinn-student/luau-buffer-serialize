@@ -1,9 +1,9 @@
-**Table of Contents**
+**API Reference**
 
-- [serialize](#serialize)
-- [deserialize](#deserialize)
-- [supportUserdata](#supportuserdata)
-- [isSupported](#issupported)
+- [serialize](#serialize): Serializes the provided value into a buffer
+- [deserialize](#deserialize): Produces the value originally serialized
+- [supportUserdata](#supportuserdata): Allows for custom userdata (de)serialized
+- [isSupported](#issupported): Whether the userdata is capable of being (de)serialized
 
 
 ## Serialize
@@ -77,42 +77,63 @@ local originData = BufferSerializer.deserialize(serialData)
 **Type**
 
 ```luau
-type Support = {
-	serialize: (
-		value: any,
-		buf: buffer,
-		pos: number,
-		size: number
-	) -> (buffer, number, number)?,
-	deserialize: (buf: buffer, pos: number) -> (any, number)?,
+type UserdataSupport = {
+    serialize = (
+        value: any,
+        buf: buffer,
+        pos: number,
+        size: number
+    ) -> (buffer, number, number),
+    deserialize = (buf: buffer, pos: number) -> (any, number),
 }
-type supportUserdata = (record: Support) -> ()
+
+type supportUserdata = (record: UserdataSupport) -> ()
 ```
 
 Adds support for a userdata or group of userdata to be
 (de)serialized.
 
+- The provided functions will be called on a last to first supported basis.
+- Duplicate support functions will be shifted to the front.
+
+**Recommendations:**
+- Focus on reducing the number of supported functions created.
+- Group userdata supported by the same environment/runtime together.
+- Consider that later supported functions may attempt to handle the
+ supported userdata, which may be undesirable since they are called **first**.
+  - If undesirable, privatize `BufferSerializer` and provide a public wrapper that 
+   replaces `bs.supportUserdata` with:
+  ```luau
+  local function supportUserdata(record: bs.UserdataSupport): ()
+    bs.supportUserdata(record)
+    -- main_record is defined earlier and **must** run first
+    bs.supportUserdata(main_record)
+  end
+  ```
+- Provide and read documentation surrounding the supported userdata.
+  - Conflicting bytecode or opcodes will either corrupt data or cause errors.
+
 **Example**
 ```luau
-local BufferSerializer = require("./path/to/BufferSerializer")
-local inflate = require("./path/to/BufferSerializer/inflate")
+local BufferSerializer = require("@BufferSerializer")
 
 local sample_userdata = newproxy()
+local sample_id = 0
 
 BufferSerializer.supportUserdata({
 	serialize = function(value: any, buf: buffer, pos: number, size: number)
 		if value ~= sample_userdata then
-			return
+			return buf, pos, size
 		end
-		buf, size = inflate(buf, pos + 1, size)
-		buffer.writeu8(buf, pos, 0)
+		buffer.writeu8(buf, pos, sample_id)
 		return buf, pos + 1, size
 	end,
 	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
-		if id == 0 then
+		if id == sample_id then
 			return sample_userdata, pos + 1
 		end
+		return nil, pos
 	end,
 })
 
@@ -123,9 +144,10 @@ local serialData = BufferSerializer.serialize(sample_userdata)
 - record - the container holding the (de)serialize functions
 
 **Errors**
-- expected table
-- only "serialize" or "deserialize" can be within record
-- record.(de)serialize must be a function
+- Invalid type: When record is not a table
+- Incomplete record: When record is missing (de)serialize
+- Invalid property: When the property isn't (de)serialize
+- Invalid property type: When (de)serialize isn't a function
 
 ## IsSupported
 
@@ -135,7 +157,10 @@ local serialData = BufferSerializer.serialize(sample_userdata)
 
 Returns whether the userdata is capable of being serialized and deserialized.
 
-- Meaning the userdata does not deserialize into the unsupported userdata constant
+- Meaning the userdata does not deserialize into the unsupported userdata constant.
+
+**Recommendations:**
+- Ensure the userdata deserializes into the desired form.
 
 **Parameters**
 - ud - the userdata to check

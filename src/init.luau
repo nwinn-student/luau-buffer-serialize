@@ -10,6 +10,7 @@ local function trim(data: buffer, pos: number, size: number)
 	return newBuf
 end
 
+-- TODO: Add documentation
 local BufferSerializer = {}
 
 local link = require("@self/link")
@@ -36,14 +37,15 @@ local deserialModules = table.freeze({
 	table = require("@self/table").deserialize,
 	userdata = require("@self/userdata").deserialize,
 })
+local EMPTY_BUFFER = buffer.create(0)
 
 type Serialize = (
 	value: any,
-	buf: buffer?,
+	buf: buffer,
 	pos: number,
 	size: number
 ) -> (buffer, number, number)
-type Deserialize = (value: buffer, pos: number) -> (any, number)
+type Deserialize = (buf: buffer, pos: number) -> (any, number)
 
 --[[
 	Serializes the provided value into a buffer.
@@ -72,7 +74,7 @@ function BufferSerializer.serialize(value: any): buffer
 
 	local serial: Serialize = (serialModules :: any)[typeValue]
 
-	local buf, pos, size = serial(value, nil, 0, 0)
+	local buf, pos, size = serial(value, EMPTY_BUFFER, 0, 0)
 
 	return trim(buf, pos, size)
 end
@@ -131,17 +133,95 @@ function BufferSerializer.deserialize(value: buffer, pos: number?): any
 	return (deserial(value, pos or 0))
 end
 
-export type UserdataSupport = userdata.Support
+--[[
+	A dictionary for `BufferSerializer.supportUserdata`, with the following available values:
+	- `serialize` - A function for serializing userdata
+	- `deserialize` - A function for deserializing userdata
+]]
+export type UserdataSupport = {
+	--[[
+		Inserts the serialized form of the value into the provided buffer
+		 starting at the given position.
+
+		@param value - the userdata to serialize
+		@param buf - the current buffer to store the serialized form in
+		@param pos - the current position
+		@param size - the current size of the buffer
+
+		@return the buffer containing the serialized form
+		@return the starting position for the next item, (1 + position last modified)
+		@return the size of the buffer
+	]]
+	serialize: Serialize,
+	--[[
+		Produces a userdata from the buffer starting at the given position.
+
+		@param buf buffer containing the userdata
+		@param pos the starting position of the userdata
+
+		@error buffer access out of bounds
+
+		@return the userdata and the end userdata position + 1
+	]]
+	deserialize: Deserialize,
+}
 
 --[[
 	Adds support for a userdata or group of userdata to be
 	 (de)serialized.
 
+	- The provided functions will be called on a last to first supported basis.
+	- Duplicate support functions will be shifted to the front.
+
+	**Recommendations:**
+	- Focus on reducing the number of supported functions created.
+	- Group userdata supported by the same environment/runtime together.
+	- Consider that later supported functions may attempt to handle the
+	 supported userdata, which may be undesirable since they are called **first**.
+	  - If undesirable, privatize `BufferSerializer` and provide a public wrapper that
+	   replaces `bs.supportUserdata` with:
+	  ```luau
+	  local function supportUserdata(record): ()
+		bs.supportUserdata(record)
+		bs.supportUserdata(main_record) -- record that must run first
+	  end
+	  ```
+	- Provide and read documentation surrounding the supported userdata.
+	  - Conflicting bytecode or opcodes will either corrupt data or cause errors.
+
+	**Example**
+	```luau
+	local BufferSerializer = require("@BufferSerializer")
+
+	local sample_userdata = newproxy()
+	local sample_id = 0
+
+	BufferSerializer.supportUserdata({
+		serialize = function(value: any, buf: buffer, pos: number, size: number)
+			if value ~= sample_userdata then
+				return buf, pos, size
+			end
+			buffer.writeu8(buf, pos, sample_id)
+			return buf, pos + 1, size
+		end,
+		deserialize = function(buf: buffer, pos: number)
+			local id = buffer.readu8(buf, pos)
+			if id == sample_id then
+				return sample_userdata, pos + 1
+			end
+			return nil, pos
+		end,
+	})
+
+	local serialData = BufferSerializer.serialize(sample_userdata)
+	```
+
 	@param record the container holding the (de)serialize functions
 
-	@error expected table
-	@error only "serialize" or "deserialize" can be within record
-	@error record.(de)serialize must be a function
+	@error Invalid type: When record is not a table
+	@error Incomplete record: When record is missing (de)serialize
+	@error Invalid property: When the property isn't (de)serialize
+	@error Invalid property type: When (de)serialize isn't a function
 ]]
 function BufferSerializer.supportUserdata(record: UserdataSupport)
 	userdata.addSupport(record)
@@ -151,6 +231,9 @@ end
 	Returns whether the userdata is capable of being serialized and deserialized.
 
 	- Meaning the userdata does not deserialize into the unsupported userdata constant
+
+	**Recommendations:**
+	- Ensure the userdata deserializes into the desired form.
 
 	@param ud the userdata to check
 

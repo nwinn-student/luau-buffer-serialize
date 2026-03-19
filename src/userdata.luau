@@ -5,14 +5,14 @@ local inflate = require("./inflate")
 local CUSTOM = 202
 local UNSUPPORTED = 203
 
-export type Support = {
+type Support = {
 	serialize: (
 		udata: any,
 		buf: buffer,
 		pos: number,
 		size: number
-	) -> (buffer, number, number)?,
-	deserialize: (buf: buffer, pos: number) -> (any?, number)?,
+	) -> (buffer, number, number),
+	deserialize: (buf: buffer, pos: number) -> (any?, number),
 }
 
 local UNSUPPORTED_USERDATA = newproxy()
@@ -36,7 +36,7 @@ local function userSerializer(value: any, buf: buffer, pos: number, size: number
 	local end_buf: buffer, end_pos: number, end_size: number
 	local isSupported: boolean = false
 
-	buf, size = inflate(buf, pos + 1, size)
+	buf, size = inflate(buf, pos + 2, size)
 	buffer.writeu8(buf, pos, CUSTOM)
 
 	-- this is faster than functions that call functions (since we would need to wrap each)
@@ -109,31 +109,90 @@ end
 	Adds support for a userdata or group of userdata to be
 	 (de)serialized.
 
+	- The provided functions will be called on a last to first supported basis.
+	- Duplicate support functions will be shifted to the front.
+
+	**Recommendations:**
+	- Focus on reducing the number of supported functions created.
+	- Group userdata supported by the same environment/runtime together.
+	- Consider that later supported functions may attempt to handle the
+	 supported userdata, which may be undesirable since they are called **first**.
+	  - If undesirable, privatize `BufferSerializer` and provide a public wrapper that
+	   replaces `bs.supportUserdata` with:
+	  ```luau
+	  local function supportUserdata(record): ()
+		bs.supportUserdata(record)
+		bs.supportUserdata(main_record) -- record that must run first
+	  end
+	  ```
+	- Provide and read documentation surrounding the supported userdata.
+	  - Conflicting bytecode or opcodes will either corrupt data or cause errors.
+
+	**Example**
+	```luau
+	local BufferSerializer = require("@BufferSerializer")
+
+	local sample_userdata = newproxy()
+	local sample_id = 0
+
+	BufferSerializer.supportUserdata({
+		serialize = function(value: any, buf: buffer, pos: number, size: number)
+			if value ~= sample_userdata then
+				return buf, pos, size
+			end
+			buffer.writeu8(buf, pos, sample_id)
+			return buf, pos + 1, size
+		end,
+		deserialize = function(buf: buffer, pos: number)
+			local id = buffer.readu8(buf, pos)
+			if id == sample_id then
+				return sample_userdata, pos + 1
+			end
+			return nil, pos
+		end,
+	})
+
+	local serialData = BufferSerializer.serialize(sample_userdata)
+	```
+
 	@param record the container holding the (de)serialize functions
 
-	@error expected table
-	@error only "serialize" or "deserialize" can be within record
-	@error record.(de)serialize must be a function
+	@error Invalid type: When record is not a table
+	@error Incomplete record: When record is missing (de)serialize
+	@error Invalid property: When the property isn't (de)serialize
+	@error Invalid property type: When (de)serialize isn't a function
 ]]
 function addSupport(record: Support)
-	assert(type(record) == "table", `expected table (got {type(record)})`)
+	assert(
+		type(record) == "table",
+		`Invalid type: expected table (got {type(record)})`
+	)
+	assert(record.serialize, `Incomplete record: missing property serialize`)
+	assert(record.deserialize, `Incomplete record: missing property deserialize`)
 
 	for name, value in record :: { [string]: any } do
 		assert(
 			name == "serialize" or name == "deserialize",
-			`only "serialize" or "deserialize" can be within record`
+			`Invalid property: {name} is not "serialize" or "deserialize"`
 		)
 		assert(
 			type(value) == "function",
-			`record.{name} must be a function (got {type(value)})`
+			`Invalid property type: expected function for {name} (got {type(value)})`
 		)
 	end
 
-	if record.serialize then
-		table.insert(supports.serializers, 1, record.serialize)
+	local old_serial_pos = table.find(supports.serializers, record.serialize)
+	local old_deserial_pos =
+		table.find(supports.deserializers, record.deserialize)
+
+	table.insert(supports.serializers, 1, record.serialize)
+	table.insert(supports.deserializers, 1, record.deserialize)
+
+	if old_serial_pos then
+		table.remove(supports.serializers, old_serial_pos + 1)
 	end
-	if record.deserialize then
-		table.insert(supports.deserializers, 1, record.deserialize)
+	if old_deserial_pos then
+		table.remove(supports.deserializers, old_deserial_pos + 1)
 	end
 end
 
