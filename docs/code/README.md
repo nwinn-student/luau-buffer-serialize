@@ -97,7 +97,6 @@ Adds support for a userdata or group of userdata to be
 - Duplicate support functions will be shifted to the front.
 
 **Recommendations:**
-- Focus on reducing the number of supported functions created.
 - Group userdata supported by the same environment/runtime together.
 - Consider that later supported functions may attempt to handle the
  supported userdata, which may be undesirable since they are called **first**.
@@ -112,6 +111,7 @@ Adds support for a userdata or group of userdata to be
   ```
 - Provide and read documentation surrounding the supported userdata.
   - Conflicting bytecode or opcodes will either corrupt data or cause errors.
+  - Removing or modifying support can also corrupt data or cause errors.
 
 **Example**
 ```luau

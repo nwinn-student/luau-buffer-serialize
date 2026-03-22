@@ -196,38 +196,10 @@ function addSupport(record: Support)
 	end
 end
 
---[[
-	Removes (de)serialization support for some userdata
-
-	@param keepNLatest how many supported functions to keep
-]]
-function clearSupport(keepNLatest: number?)
-	if keepNLatest == nil then
-		table.clear(supports.serializers)
-		table.clear(supports.deserializers)
-		return
-	end
-	assert(
-		type(keepNLatest) == "number",
-		`expected number (got {type(keepNLatest)})`
-	)
-
-	local maxLength = math.max(#supports.serializers, #supports.deserializers)
-
-	for i = maxLength, 1, -1 do
-		if i >= keepNLatest then
-			break
-		end
-		table.remove(supports.serializers, i)
-		table.remove(supports.deserializers, i)
-	end
-end
-
 local Userdata = {
 	serialize = userSerializer,
 	deserialize = userDeserializer,
 	addSupport = addSupport,
-	clearSupport = clearSupport,
 
 	unsupported = UNSUPPORTED_USERDATA,
 }

@@ -48,6 +48,4 @@ test.compare(userdata.unsupported, obtainedValue)
 
 test.compare(test.newBuffer(CUSTOM, 0), test.inspect(zero_proxy))
 
-userdata.clearSupport()
-
 return {}
