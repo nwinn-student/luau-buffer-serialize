@@ -107,7 +107,7 @@ Vectors have multiple modes: scalar multiple, multi-set (byte, char, tryte), and
 | 200     | 1        | `table`    | Table terminator                            |
 | 201     | 1        | `table`    | **Unknown**                                 |
 | 202     | 1 + size | `userdata` | Custom userdata                             |
-| 203     | 1        | `userdata` | The value `newproxy()`                      |
+| 203     | 1        | `userdata` | A constant value for unsupported userdata   |
 | 204-213 | 1        | `userdata` | [Legacy] The id for a paired userdata value |
 | 214-215 | 2        | `userdata` | [Legacy] The id for a paired userdata value |
 | 216-239 | 0        | `future`   | Reserved for new types or expansions        |

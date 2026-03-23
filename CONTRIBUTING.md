@@ -22,11 +22,12 @@ If you find any part of the documentation unclear, please let us know.
 1. Fork the repository and create a branch from `main`.
 2. Write clear, concise code.
 3. Run [Stylua](https://github.com/JohnnyMorganz/StyLua) for formatting
- and luau-analyze to catch common issues.
+ and luau-analyze (or `luau-lsp analyze`) to catch common issues.
    1. Stylua can be run with `stylua .` in the root directory of the
  repository, using `cd path/to/repo`, assuming Stylua is installed.
-   2. Luau-analyze can be run with `luau-analyze .` in the root
+   2. Luau-analyze can be run with `luau-analyze --fflags=LuauSolverV2=true .` in the root
  directory of the repository, assuming luau-analyze is installed.
+   3. Luau-lsp can be run with `luau-lsp analyze --flag LuauSolverV2=true --definitions ~/luau-lsp/globalTypes.d.luau --base-luaurc .luaurc .` but it requires Roblox definitions due to the provided examples.
 4. Submit a pull request with a clear description.
 
 ## Reporting Issues

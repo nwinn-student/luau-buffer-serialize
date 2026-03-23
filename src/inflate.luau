@@ -17,7 +17,8 @@ end
 
 --[[
 	Inflates the buffer size to be at least the new position.
-	@ Uses a doubling approach to inflate.
+
+	- Uses a doubling approach to inflate.
 ]]
 local function inflate(data: buffer, minSize: number, oldSize: number)
 	if minSize > oldSize then
