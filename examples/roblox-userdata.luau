@@ -54,6 +54,8 @@ local FONT = 14
 local NUMBER_SEQUENCE_KEYPOINT = 15
 local COLOR_SEQUENCE_KEYPOINT = 16
 
+local EnumList = Enum:GetEnums()
+
 @native
 local function userdataWriter(value: any, buf: buffer, pos: number, size: number)
 	local userType = typeof(value)
@@ -70,7 +72,7 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 	elseif userType == "EnumItem" then
 		buffer.writeu8(buf, pos, ENUMITEM)
 		buf, pos, size = numberSerial.serialize(
-			table.find(Enum:GetEnums(), value.EnumType),
+			table.find(EnumList, value.EnumType),
 			buf,
 			pos + 1,
 			size
@@ -94,7 +96,7 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 	elseif userType == "Enum" then
 		buffer.writeu8(buf, pos, ENUM)
 		buf, pos, size = numberSerial.serialize(
-			table.find(Enum:GetEnums(), value),
+			table.find(EnumList, value),
 			buf,
 			pos + 1,
 			size
@@ -179,7 +181,7 @@ local function userdataReader(buf: buffer, pos: number)
 		enumVal, pos = numberSerial.deserialize(buf, pos + 1)
 		valNum, pos = numberSerial.deserialize(buf, pos)
 
-		obj = Enum:GetEnums()[enumVal]:FromValue(valNum)
+		obj = EnumList[enumVal]:FromValue(valNum)
 	elseif id == CFRAME then
 		local posVector, eulerVector
 		posVector, pos = vectorSerial.deserialize(buf, pos + 1)
@@ -202,7 +204,7 @@ local function userdataReader(buf: buffer, pos: number)
 		local enumVal
 		enumVal, pos = numberSerial.deserialize(buf, pos + 1)
 
-		obj = Enum:GetEnums()[enumVal]
+		obj = EnumList[enumVal]
 	elseif id == UDIM then
 		local scale, offset
 		scale, pos = numberSerial.deserialize(buf, pos + 1)
