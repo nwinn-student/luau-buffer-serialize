@@ -37,7 +37,6 @@ local deserialModules = table.freeze({
 	table = require("@self/table").deserialize,
 	userdata = require("@self/userdata").deserialize,
 })
-local EMPTY_BUFFER = buffer.create(0)
 
 type Serialize = (
 	value: any,
@@ -74,7 +73,7 @@ function BufferSerializer.serialize(value: any): buffer
 
 	local serial: Serialize = (serialModules :: any)[typeValue]
 
-	local buf, pos, size = serial(value, EMPTY_BUFFER, 0, 0)
+	local buf, pos, size = serial(value, nil :: any, 0, 0)
 
 	return trim(buf, pos, size)
 end
@@ -115,13 +114,8 @@ end
 
 	@return the original value
 ]]
-function BufferSerializer.deserialize(value: buffer, pos: number?): any
-	assert(
-		pos == nil or type(pos) == "number",
-		`expected pos to be number (got {type(pos)})`
-	)
-
-	local pointer = buffer.readu8(value, pos or 0)
+function BufferSerializer.deserialize(value: buffer): any
+	local pointer = buffer.readu8(value, 0)
 	if pointer == 0 then
 		return nil
 	end
@@ -130,7 +124,7 @@ function BufferSerializer.deserialize(value: buffer, pos: number?): any
 
 	local deserial: Deserialize = (deserialModules :: any)[pointer]
 
-	return (deserial(value, pos or 0))
+	return (deserial(value, 0))
 end
 
 --[[
