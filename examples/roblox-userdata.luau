@@ -1,5 +1,5 @@
 --!optimize 2
-local bufferSerial = require("@self/BufferSerializer")
+local bufferSerial = require("@BufferSerializer")
 
 --[[
 	Note: The below example at any point in time may fail to
