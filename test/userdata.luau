@@ -1,7 +1,6 @@
 --!strict
 -- Runs tests for ../src/userdata
 
-local inflate = require("../src/inflate")
 local test = require("./test")
 local userdata = require("../src/userdata")
 
@@ -31,7 +30,6 @@ local function writer(
 	if value ~= zero_proxy then
 		return buf, pos, size
 	end
-	buf, size = inflate(buf, pos + 1, size)
 	buffer.writeu8(buf, pos, 0)
 	return buf, pos + 1, size
 end
