@@ -113,20 +113,21 @@ end
 	- Duplicate support functions will be shifted to the front.
 
 	**Recommendations:**
-	- Focus on reducing the number of supported functions created.
 	- Group userdata supported by the same environment/runtime together.
 	- Consider that later supported functions may attempt to handle the
 	 supported userdata, which may be undesirable since they are called **first**.
 	  - If undesirable, privatize `BufferSerializer` and provide a public wrapper that
 	   replaces `bs.supportUserdata` with:
 	  ```luau
-	  local function supportUserdata(record): ()
+	  local function supportUserdata(record: bs.UserdataSupport): ()
 		bs.supportUserdata(record)
-		bs.supportUserdata(main_record) -- record that must run first
+		-- main_record is defined earlier and **must** run first
+		bs.supportUserdata(main_record)
 	  end
 	  ```
 	- Provide and read documentation surrounding the supported userdata.
 	  - Conflicting bytecode or opcodes will either corrupt data or cause errors.
+	  - Removing or modifying support can also corrupt data or cause errors.
 
 	**Example**
 	```luau
