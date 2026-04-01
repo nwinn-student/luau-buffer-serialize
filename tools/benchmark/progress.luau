@@ -1,6 +1,6 @@
 local progress = {}
 
-local resetToStart = "\r\b\r\b\r\b\r"
+local resetToStart = "\x1B[3F"
 
 function progress.new(totalTasks: number)
 	local display = ""
