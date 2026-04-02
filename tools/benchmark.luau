@@ -14,6 +14,35 @@ local benchmark = {}
 
 	lune run tools/benchmark results
 ]]
+type Data = {
+	sample_size: number, -- number of kept runs
+
+	median: number,
+	iqr: number, -- q3 - q1
+	mad: number, -- median absolute deviation ( median(|x_i - median|) )
+	mild_outliers: number, -- q1 - 1.5 * iqr and q3 + 1.5 * iqr
+
+	min: number,
+	average: number,
+	max: number,
+	stdev: number,
+
+	-- ["(lower to upper)"] = count
+	hist: { [string]: number },
+}
+type BenchData = {
+	time: Format,
+	space: Format,
+	metadata: { [string]: any }?,
+}
+type Format = {
+	[string]: (Data | Format)?,
+}
+type CommandOptions = {
+	path: string,
+	skip: { string },
+	output: string,
+}
 
 local fs = require("@lune/fs")
 local path = require("./utils/path")
@@ -22,16 +51,37 @@ local progress = require("./utils/progress")
 local serde = require("@lune/serde")
 local t = require("./utils/t")
 
-local options = {
+local source: string = debug.info(1, "s")
+local relfile: string = path.relativeTo(source)
+local options: CommandOptions = {
 	path = "",
-	skip = {} :: { string },
+	skip = {},
 	output = "benchmark-results.json",
 }
+local validateFormat: (Data) -> (boolean, string) = t.strictInterface({
+	sample_size = t.number,
 
-function printHelp()
-	print(string.format(
-		[[
-Usage: %s <path>
+	median = t.number,
+	iqr = t.number,
+	mad = t.number,
+	mild_outliers = t.number,
+
+	min = t.number,
+	average = t.number,
+	max = t.number,
+	stdev = t.number,
+	-- (1 to 2), the pattern does not match perfectly
+	hist = t.map(t.match("^%(%g+( to )%g+%)$"), t.number),
+})
+local validateBenchData: (BenchData) -> (boolean, string) = t.strictInterface({
+	time = validateFormat,
+	space = validateFormat,
+	metadata = t.map(t.string, t.any),
+})
+
+function printHelp(): ()
+	print([[
+Usage: lune run tools/benchmark <path>
 
 Codegen is enabled by default, to disable set environment
  LUNE_LUAU_JIT to "0" or "false" or "off"
@@ -48,34 +98,14 @@ Runs all .lua(u) files, recursively, under the 'results' directory
 
 Same as above, but does not run the files/directories starting with 'foo' or 'bar'
   lune run tools/benchmark results --skip=foo,bar
-	]],
-		process.env._
-	))
+	]])
 end
 
-for _, input: string in process.args do
-	if input == "-h" or input == "--help" then
-		printHelp()
-		process.exit(0)
-	end
-	if input:sub(1, 7) == "--skip=" then
-		options.skip = input:sub(8):split(",")
-		continue
-	end
-	if input:sub(1, 9) == "--output=" then
-		options.output = input:sub(10)
-		continue
-	end
-	assert(fs.isDir(input), `{input} does not exist in the file system`)
-	options.path = input
-end
-
-assert(#options.path ~= 0, "path was not initialized")
-
-local source: string = debug.info(1, "s")
-local relfile: string = path.relativeTo(source) -- .. options.path
-
-local function processPath(file: string, data, fn)
+local function processPath(
+	file: string,
+	data: Format,
+	fn: (file: string) -> BenchData?
+): ()
 	if not fs.isDir(file) and not fs.isFile(file) then
 		return
 	end
@@ -87,7 +117,7 @@ local function processPath(file: string, data, fn)
 	end
 
 	local fileName: string = path.name(file)
-	local fileExt = path.getextension(file)
+	local fileExt: string = path.getextension(file)
 
 	if fileName == "init" and (fileExt == "luau" or fileExt == "lua") then
 		-- no clue how to interpret this so.. it isn't supported
@@ -112,19 +142,36 @@ local function processPath(file: string, data, fn)
 	end
 end
 
-local data = {}
+for _, input: string in process.args do
+	if input == "-h" or input == "--help" then
+		printHelp()
+		process.exit(0)
+	end
+	if input:sub(1, 7) == "--skip=" then
+		options.skip = input:sub(8):split(",")
+		continue
+	end
+	if input:sub(1, 9) == "--output=" then
+		options.output = input:sub(10)
+		continue
+	end
+	assert(fs.isDir(input), `{input} does not exist in the file system`)
+	options.path = input
+end
+
+assert(#options.path ~= 0, "path was not initialized")
+
+local data: Format = {}
 
 if fs.isFile(options.output) then
-	local success, output_data =
+	local success: boolean, output_data =
 		pcall(serde.decode, "json", fs.readFile(options.output))
 	assert(success, `{options.output} was not valid JSON`)
-	if success then
-		assert(
-			type(output_data) == "table",
-			`{options.output} did not contain a table`
-		)
-		data = output_data
-	end
+	assert(
+		type(output_data) == "table",
+		`{options.output} did not contain a table`
+	)
+	data = output_data
 end
 
 local count: number = 0
@@ -134,61 +181,21 @@ for _, name: string in fs.readDir(options.path) do
 	end)
 end
 
-local progressCounter = progress.new(count)
-
-type Format = {
-	sample_size: number, -- number of kept runs
-
-	median: number,
-	iqr: number, -- q3 - q1
-	mad: number, -- median absolute deviation ( median(|x_i - median|) )
-	mild_outliers: number, -- q1 - 1.5 * iqr and q3 + 1.5 * iqr
-
-	min: number,
-	average: number,
-	max: number,
-	stdev: number,
-
-	hist: { [string]: number },
-}
-type BenchData = {
-	time: Format,
-	space: Format,
-	metadata: { [string]: any }?,
-}
-local validateFormat = t.strictInterface({
-	sample_size = t.number,
-
-	median = t.number,
-	iqr = t.number,
-	mad = t.number,
-	mild_outliers = t.number,
-
-	min = t.number,
-	average = t.number,
-	max = t.number,
-	stdev = t.number,
-	-- (1 to 2), the pattern does not match perfectly
-	hist = t.map(t.match("^%(%g+( to )%g+%)$"), t.number),
-})
-local validateBenchData = t.strictInterface({
-	time = validateFormat,
-	space = validateFormat,
-	metadata = t.map(t.string, t.any),
-})
+local progressCounter: progress.Progress = progress.new(count)
 
 -- The relative to root to source to path
 -- Relative to root to source: (../../../usr/prog/bs/)
 -- Source to path: (results/)
-local pathsize = #relfile + #options.path + 1
+local pathsize: number = #relfile + #options.path + 1
 
 local function processData(file: string): BenchData
-	progressCounter:run(file:sub(1 + pathsize))
+	local fileName: string = file:sub(1 + pathsize)
+	progressCounter:run(fileName)
 
 	local data: BenchData = require(file)
 	assert(validateBenchData(data))
 
-	progressCounter:complete(file:sub(1 + pathsize))
+	progressCounter:complete(fileName)
 
 	return table.clone(data)
 end
