@@ -96,6 +96,7 @@ end
 
 assert(fs.isFile(options.fileName), `results not found ({options.fileName})`)
 
+-- TODO: Add proper error msgs for when serde.decode is not a table.
 local data: { [string]: VersionData } =
 	serde.decode("json", fs.readFile(options.fileName)).BufferSerializer
 
