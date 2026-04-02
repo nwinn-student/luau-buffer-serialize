@@ -74,7 +74,7 @@ if options.tag == "" then
 end
 
 if options.build then
-	local build_process: ExecResult = process.exec("lune", {
+	local build_process: process.ExecResult = process.exec("lune", {
 		"run",
 		"tools/build.luau",
 		`--name={options.prefix}{options.tag}`,
@@ -82,7 +82,7 @@ if options.build then
 	assert(build_process.ok, build_process.stderr)
 end
 
-local ghRelease: ExecResult = process.exec("gh", {
+local ghRelease: process.ExecResult = process.exec("gh", {
 	"release",
 	"create",
 	`v{options.tag}`,

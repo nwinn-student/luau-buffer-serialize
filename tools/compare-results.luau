@@ -7,68 +7,6 @@
 	lune run tools/compare-results.luau --versions=ALL > compare-results.json
 ]]
 
-local fs = require("@lune/fs")
-local process = require("@lune/process")
-local serde = require("@lune/serde")
-
-local options = {
-	versions = {},
-	all_versions = false,
-}
-
-function printHelp()
-	print(string.format(
-		[[
-Usage: %s [options] <name>
-
-Available options:
-  -h, --help: Display this usage message
-  --versions<tag[,tag]>: Compares the versions
-    ALL can be used to get all versions.
-	]],
-		process.env._
-	))
-end
-
-for _, input in process.args do
-	if input == "-h" or input == "--help" then
-		printHelp()
-		process.exit(0)
-	end
-	if input:sub(1, 11) == "--versions=" then
-		options.versions = input:sub(12):split(",")
-		for _, version in options.versions do
-			if version == "ALL" then
-				options.all_versions = true
-				table.clear(options.versions)
-				break
-			end
-		end
-		continue
-	end
-	options.name = input
-end
-
-assert(
-	fs.isFile(options.name or "benchmark-results.json"),
-	`results not found ({options.name or "benchmark-results.json"})`
-)
-
-local data: { [string]: VersionData } = serde.decode(
-	"json",
-	fs.readFile(options.name or "benchmark-results.json")
-).BufferSerializer
-
-local current_data: VersionData = {
-	serialize = data.serialize,
-	deserialize = data.deserialize,
-	size = data.size,
-}
-
-data.serialize = nil
-data.deserialize = nil
-data.size = nil
-
 type BenchData = {
 	average: number,
 	stdev: number,
@@ -90,10 +28,10 @@ type SerialFormat = CategoryData & Metadata<{ size: number }>
 
 type VersionData = {
 	serialize: {
-		[string]: SerialFormat
+		[string]: SerialFormat,
 	},
 	deserialize: {
-		[string]: CategoryData
+		[string]: CategoryData,
 	},
 	size: {
 		[string]: CategoryData & Metadata<{
@@ -105,6 +43,78 @@ type VersionData = {
 		}>,
 	},
 }
+
+local fs = require("@lune/fs")
+local process = require("@lune/process")
+local serde = require("@lune/serde")
+
+local options = {
+	versions = {} :: { string },
+	all_versions = false,
+	tag = "CURRENT",
+	fileName = "benchmark-results.json",
+}
+
+function printHelp()
+	print(string.format(
+		[[
+Usage: %s [options] <tag>
+
+Available options:
+  -h, --help: Display this usage message
+  --versions=<tag[,tag]>: Compares provided version against the versions
+    ALL can be used to get all versions.
+  --file=<fileName>: The file containing the benchmark results
+    Defaults to benchmark-results.json
+	]],
+		process.env._
+	))
+end
+
+for _, input in process.args do
+	if input == "-h" or input == "--help" then
+		printHelp()
+		process.exit(0)
+	end
+	if input:sub(1, 11) == "--versions=" then
+		options.versions = input:sub(12):split(",")
+		for _, version in options.versions do
+			if version == "ALL" then
+				options.all_versions = true
+				table.clear(options.versions)
+				break
+			end
+		end
+		continue
+	end
+	if input:sub(1, 7) == "--file=" then
+		options.fileName = input
+		continue
+	end
+	options.tag = input
+end
+
+assert(fs.isFile(options.fileName), `results not found ({options.fileName})`)
+
+local data: { [string]: VersionData } =
+	serde.decode("json", fs.readFile(options.fileName)).BufferSerializer
+
+local current_data: VersionData = {}
+if options.tag == "CURRENT" then
+	current_data.deserialize = data.deserialize
+	current_data.serialize = data.serialize
+	current_data.size = data.size
+else
+	current_data.deserialize = data[options.tag].deserialize
+	current_data.serialize = data[options.tag].serialize
+	current_data.size = data[options.tag].size
+
+	data[options.tag] = nil
+end
+
+data.serialize = nil
+data.deserialize = nil
+data.size = nil
 
 local compare_info = {
 	serialize = {},
@@ -301,16 +311,18 @@ local function version_compare(version: string, version_data: VersionData)
 	size_compare(version, version_data)
 end
 
-size_compare(nil, current_data)
+size_compare(options.tag, current_data)
 
 -- Attempt to compare each version to the current
 if options.all_versions then
-	for version, version_data in data do
+	for version: string, version_data: VersionData in data do
 		version_compare(version, version_data)
 	end
 end
-for _, version in options.versions do
-	local version_data = data[version]
+for _, version: string in options.versions do
+	local version_data: VersionData = data[version]
+
+	assert(version_data, `Invalid version "{version}"`)
 
 	version_compare(version, version_data)
 end
