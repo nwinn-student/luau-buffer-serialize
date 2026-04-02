@@ -15,7 +15,9 @@ return table.freeze({
 		local len = buffer.len(value)
 
 		if len == 0 then
-			buf, size = inflate(buf, pos + 1, size)
+			if pos + 1 > size then
+				buf, size = inflate(buf, pos + 1, size)
+			end
 			buffer.writeu8(buf, pos, EMPTY)
 			return buf, pos + 1, size
 		end
@@ -26,7 +28,9 @@ return table.freeze({
 			elseif len < 16_777_216 then 4
 			else 5
 
-		buf, size = inflate(buf, pos + len + newSize, size)
+		if pos + len + newSize > size then
+			buf, size = inflate(buf, pos + len + newSize, size)
+		end
 		buffer.writeu8(buf, pos, 2 + newSize)
 
 		if len < 256 then
@@ -42,18 +46,6 @@ return table.freeze({
 		buffer.copy(buf, pos + newSize, value)
 		return buf, pos + newSize + len, size
 	end,
-
-	--[[
-		Produces a buffer from the buffer starting at the given position.
-
-		@param buf buffer containing the buffer
-		@param pos the starting position of the buffer
-
-		@error Failed to parse buffer
-		@error buffer access out of bounds
-
-		@return the buffer and the end buffer position + 1
-	]]
 	deserialize = function(buf: buffer, pos: number)
 		local id = buffer.readu8(buf, pos)
 
@@ -78,8 +70,6 @@ return table.freeze({
 		elseif id == INT then
 			len = buffer.readu32(buf, pos)
 			pos += lenSize
-		else
-			error(`Failed to parse buffer using byte: {id} at position {pos}`)
 		end
 
 		local value = buffer.create(len)

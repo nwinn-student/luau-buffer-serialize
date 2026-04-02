@@ -5,20 +5,20 @@ local inflate = require("./inflate")
 local numSerializer = require("./number").serialize
 local numDeserializer = require("./number").deserialize
 
-local ZERO = 142
-local ONE = 143
-local X_AXIS = 144
-local Y_AXIS = 145
-local Z_AXIS = 146
-local XY_AXIS = 147
-local XZ_AXIS = 148
-local YZ_AXIS = 149
-local BYTE = 150
-local CHAR = 151
-local THREE_BYTE = 152
-local FLOAT = 153
-local NUMBER = 154
-local SCALAR_NUMBER = 155
+local ZERO = 136
+local ONE = 137
+local X_AXIS = 138
+local Y_AXIS = 139
+local Z_AXIS = 140
+local XY_AXIS = 141
+local XZ_AXIS = 142
+local YZ_AXIS = 143
+local BYTE = 144
+local CHAR = 145
+local THREE_BYTE = 146
+local FLOAT = 147
+local NUMBER = 148
+local SCALAR_NUMBER = 149
 
 local builtinSerialConst = table.freeze({
 	-- Used for serialization
@@ -72,7 +72,9 @@ local function vecSerializer(
 )
 	local builtin: number? = builtinSerialConst[value]
 	if builtin then
-		buf, size = inflate(buf, pos + 1, size)
+		if pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 		buffer.writeu8(buf, pos, builtin)
 		return buf, pos + 1, size
 	end
@@ -103,7 +105,9 @@ local function vecSerializer(
 			or isYZAxis
 		then
 			-- 3+ bytes
-			buf, size = inflate(buf, pos + 3, size)
+			if pos + 3 > size then
+				buf, size = inflate(buf, pos + 3, size)
+			end
 			buffer.writeu8(buf, pos, SCALAR_NUMBER)
 
 			local var = if isOneValue
@@ -140,37 +144,24 @@ local function vecSerializer(
 	if not isNumber then
 		typeZ = getType(valueZ)
 		isNumber = typeY ~= typeZ
-		if isNumber and (typeX == FLOAT or typeY == FLOAT or typeZ == FLOAT) then
-			-- fft = 15, ftt = 14, ffc = 14
-			-- so no floats and trytes
-			local hasTryte = typeX == THREE_BYTE
-				or typeY == THREE_BYTE
-				or typeZ == THREE_BYTE
-			local hasChar = typeX == CHAR or typeY == CHAR or typeZ == CHAR
-			local twoFloat = typeX == FLOAT and (typeX == typeY or typeX == typeZ)
-				or (typeY == FLOAT and typeY == typeZ)
-			local twoTryte = typeX == THREE_BYTE
-					and (typeX == typeY or typeX == typeZ)
-				or (typeY == THREE_BYTE and typeY == typeZ)
-			if (hasTryte and twoFloat) or (hasChar and twoFloat) or twoTryte then
-				typeX = FLOAT
-				isNumber = false
-			end
-		end
 	end
 
 	-- 4+ bytes (NOT intelligent, as a const byte will be more expensive)
 	if isNumber then
-		buf, size = inflate(buf, pos + 4, size)
+		if pos + 4 > size then
+			buf, size = inflate(buf, pos + 4, size)
+		end
 		buffer.writeu8(buf, pos, NUMBER)
 		buf, pos, size = numSerializer(valueX, buf, pos + 1, size)
 		buf, pos, size = numSerializer(valueY, buf, pos, size)
 		return numSerializer(valueZ, buf, pos, size)
 	end
 
-	local newSize = 3 * ((typeX :: number) - YZ_AXIS) + 1
+	local newSize = 3 * ((typeX :: number) - 143) + 1
 	-- 4, 7, 10, 13
-	buf, size = inflate(buf, pos + newSize, size)
+	if pos + newSize > size then
+		buf, size = inflate(buf, pos + newSize, size)
+	end
 	buffer.writeu8(buf, pos, typeX :: number)
 
 	if typeX == BYTE then
@@ -193,21 +184,8 @@ local function vecSerializer(
 	return buf, pos + newSize, size
 end
 
---[[
-	Produces a vector from the buffer starting at the given position.
-
-	@param buf buffer containing the vector
-	@param pos the starting position of the vector
-
-	@error Failed to parse number
-	@error Failed to parse built-in vector constant
-	@error Failed to parse vector
-	@error buffer access out of bounds
-
-	@return the vector and the end vector position + 1
-]]
 @native
-local function vecDeserializer(buf: buffer, pos: number)
+local function vecDeserializer(buf: buffer, pos: number): (vector?, number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then
@@ -229,18 +207,13 @@ local function vecDeserializer(buf: buffer, pos: number)
 	end
 
 	if id == SCALAR_NUMBER then
-		local constId = buffer.readu8(buf, pos + 1)
-		local vecVal = builtinDeserialConst[constId]
-		if not vecVal then
-			-- Must be ONE to YZ_AXIS
-			error(
-				`Failed to parse built-in vector constant using byte: {constId} at position {pos}`
-			)
-		end
-
+		local vecVal = builtinDeserialConst[buffer.readu8(buf, pos + 1)]
 		local numVal
 		numVal, pos = numDeserializer(buf, pos + 2)
-		return numVal * vecVal, pos
+		if vecVal and numVal then
+			return numVal * vecVal, pos
+		end
+		return nil, pos + 1 -- data corruption
 	elseif id == BYTE then
 		return vector.create(
 			buffer.readi8(buf, pos + 1),
@@ -279,9 +252,13 @@ local function vecDeserializer(buf: buffer, pos: number)
 		yVal, pos = numDeserializer(buf, pos)
 		zVal, pos = numDeserializer(buf, pos)
 
-		return vector.create(xVal, yVal, zVal), pos
+		if xVal and yVal and zVal then
+			return vector.create(xVal, yVal, zVal), pos
+		end
+		-- fill with 0's instead?
+		return nil, pos + 1 -- data corrupted
 	else
-		error(`Failed to parse vector using byte: {id} at position {pos}`)
+		return nil, pos + 1 -- data corrupted
 	end
 end
 

@@ -1,30 +1,29 @@
-local bufferSerial = require("@BufferSerializer")
-local vectorSerial = require("@BufferSerializer/vector")
+local bufferSerial = require("./BufferSerializer")
+local userdataSerial = require("./BufferSerializer/userdata")
+local vectorSerial = require("./BufferSerializer/vector")
+local inflate = require("./BufferSerializer/inflate")
 
 local CFRAME = 5 -- assuming you want to have other userdata supported
 
 --[[
-	Note: The below example at any point in time may fail to
-	 function due to external reliance.
 
-	There are multiple approaches of varying accuracy depending on how cheap
-	 CFrames must be.  The below approach is incredibly accurate, however for
-	 perfect accuracy numbers must be used in place of CFrame:ToEulerAnglesXYZ.
+There are multiple approaches of varying accuracy depending on how cheap 
+CFrames must be.  The below approach is incredibly accurate, however for 
+perfect accuracy numbers must be used in place of CFrame:ToEulerAnglesXYZ.
 
-	Should solely the position or solely the orientation be important, only
-	 serialize those sections.  Should a section's accuracy not be as important,
-	 the values can be pre-processed to ensure a cheaper result.
-]]
+Should solely the position or solely the orientation be important, only 
+serialize those sections.  Should a section's accuracy not be as important, 
+the values can be pre-processed to ensure a cheaper result.
+
+]]--
 
 local function cframeWriter(value: CFrame, buf: buffer, pos: number, size: number)
 	local typeV = typeof(value)
 	if typeV == "CFrame" then
+		buf, size = inflate(buf, pos + 1, size)
 		buffer.writeu8(buf, pos, CFRAME)
-		buf, pos, size =
-			vectorSerial.serialize(value.Position, buf, pos + 1, size)
-		local x, y, z = value:ToEulerAnglesXYZ()
-		buf, pos, size =
-			vectorSerial.serialize(vector.create(x, y, z), buf, pos, size)
+		buf, pos, size = vectorSerial.serialize(value.Position, buf, pos + 1, size)
+		buf, pos, size = vectorSerial.serialize(vector.create(value:ToEulerAnglesXYZ()), buf, pos, size)
 	end
 	return buf, pos, size
 end
@@ -35,17 +34,17 @@ local function cframeReader(buf: buffer, pos: number): (any, number)
 		local posVector, eulerVector
 		posVector, pos = vectorSerial.deserialize(buf, pos + 1)
 		eulerVector, pos = vectorSerial.deserialize(buf, pos)
-		return CFrame.fromEulerAngles(eulerVector.x, eulerVector.y, eulerVector.z)
-			+ posVector,
-			pos
+		return CFrame.fromEulerAngles(
+			eulerVector.x, 
+			eulerVector.y, 
+			eulerVector.z
+		) + posVector, pos
 	end
 	return nil, pos
 end
 
-bufferSerial.supportUserdata({
-	serialize = cframeWriter,
-	deserialize = cframeReader,
-})
+userdataSerial.setReader(cframeReader)
+userdataSerial.setWriter(cframeWriter)
 
 local data = CFrame.new()
 
@@ -53,4 +52,4 @@ local serData = bufferSerial.serialize(data)
 
 -- ...
 
-local _deserData = bufferSerial.deserialize(serData)
+local deserData = bufferSerial.deserialize(serData)
