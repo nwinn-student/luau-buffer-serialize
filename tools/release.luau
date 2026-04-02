@@ -20,9 +20,8 @@ local release = {}
 
 local fs = require("@lune/fs")
 local process = require("@lune/process")
-local args = process.args
 
-local function pathName(path: string)
+local function pathName(path: string): string
 	local pathSplit = string.split(path, "/")
 	return pathSplit[#pathSplit - 1]
 end
@@ -49,7 +48,7 @@ Available options:
 	))
 end
 
-for _, input in args do
+for _, input: string in process.args do
 	if input == "-h" or input == "--help" then
 		printHelp()
 		process.exit(0)
@@ -75,14 +74,15 @@ if options.tag == "" then
 end
 
 if options.build then
-	process.exec("lune", {
+	local build_process: process.ExecResult = process.exec("lune", {
 		"run",
 		"tools/build.luau",
 		`--name={options.prefix}{options.tag}`,
 	})
+	assert(build_process.ok, build_process.stderr)
 end
 
-local ghRelease = process.exec("gh", {
+local ghRelease: process.ExecResult = process.exec("gh", {
 	"release",
 	"create",
 	`v{options.tag}`,
@@ -90,13 +90,14 @@ local ghRelease = process.exec("gh", {
 	"--discussion-category",
 	"Announcements",
 	"--fail-on-no-commits",
+	"--title",
+	`Version {options.tag}`,
 	-- If lune fails, this will fail too
 	`{options.prefix}{options.tag}.rbxm`,
 })
-assert(ghRelease.ok, ghRelease.stderr)
-
-if options.delete then
+if options.delete and fs.isFile(`{options.prefix}{options.tag}.rbxm`) then
 	fs.removeFile(`{options.prefix}{options.tag}.rbxm`)
 end
+assert(ghRelease.ok, ghRelease.stderr)
 
 return release

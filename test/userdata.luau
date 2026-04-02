@@ -2,23 +2,35 @@
 -- Runs tests for ../src/userdata
 
 local test = require("./test")
-local userdata = require("../src/userdata")
-
 local CUSTOM = 202
-local UNSUPPORTED = 203
-
+local NIL = 203
 local proxy = newproxy()
-local zero_proxy = newproxy()
 
 -- Check that userdata.luau works properly
-test.compare(test.newBuffer(UNSUPPORTED), test.inspect(userdata.unsupported))
+local serialize = require("../src").serialize
+local deserialize = require("../src").deserialize
+
+local Sir_Proxy = serialize(proxy)
+
+-- serialization
+test.serial(Sir_Proxy, test.newBuffer(NIL))
+
+-- deserialization
+test.compare("userdata", type(deserialize(Sir_Proxy)))
+
+-- Custom reader/writer functions
+local userdata = require("../src/userdata")
+
+-- By default (currently) the reader and writer are initialized to nil
+test.compare(nil, userdata.getReader())
+test.compare(nil, userdata.getWriter())
+test.compare(false, pcall(userdata.setReader, nil :: any))
+test.compare(false, pcall(userdata.setWriter, nil :: any))
 
 local function reader(buf: buffer, pos: number): (unknown, number)
-	local id = buffer.readu8(buf, pos)
-	if id == 0 then
-		return zero_proxy, pos + 1
-	end
-	return nil, pos + 1
+	test.serial(buf, test.newBuffer(202, 203))
+	test.compare(pos, 1)
+	return proxy, pos
 end
 
 local function writer(
@@ -27,23 +39,24 @@ local function writer(
 	pos: number,
 	size: number
 ): (buffer, number, number)
-	if value ~= zero_proxy then
-		return buf, pos, size
-	end
-	buffer.writeu8(buf, pos, 0)
-	return buf, pos + 1, size
+	test.compare(value, proxy)
+	test.serial(buf, test.newBuffer(202))
+	test.compare(pos, 1)
+	test.compare(size, 1)
+	return buf, pos, size
 end
-userdata.addSupport({
-	serialize = writer,
-	deserialize = reader,
-})
+userdata.setReader(reader)
+userdata.setWriter(writer)
 
-local obtainedBuffer, obtainedValue = test.inspect(proxy, {
-	disableValueComparison = true,
-})
-test.compare(test.newBuffer(UNSUPPORTED), obtainedBuffer)
-test.compare(userdata.unsupported, obtainedValue)
+test.compare(reader, userdata.getReader())
+test.compare(writer, userdata.getWriter())
 
-test.compare(test.newBuffer(CUSTOM, 0), test.inspect(zero_proxy))
+local Sir_Custom = serialize(proxy)
+
+-- serialization
+test.serial(Sir_Custom, test.newBuffer(CUSTOM, NIL))
+
+-- deserialization
+test.compare(proxy, deserialize(Sir_Custom))
 
 return {}

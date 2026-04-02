@@ -2,15 +2,15 @@
 --!strict
 local inflate = require("./inflate")
 
-local ZERO = 97
-local ONE = 98
-local BYTE = 99
-local CHAR = 100
-local THREE_BYTE = 101
-local INT = 102
-local FLOAT = 103
-local DOUBLE = 104
-local NAN = 105
+local ZERO = 88
+local ONE = 89
+local BYTE = 90
+local CHAR = 91
+local THREE_BYTE = 92
+local INT = 93
+local FLOAT = 94
+local DOUBLE = 95
+local NAN = 96
 
 local MIN_BYTE = -2 ^ 7
 local MAX_BYTE = 2 ^ 7 - 1
@@ -36,7 +36,9 @@ local function numSerializer(
 	size: number
 )
 	if value == 0 or value == 1 or value ~= value then
-		buf, size = inflate(buf, pos + 1, size)
+		if pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
 
 		buffer.writeu8(
 			buf,
@@ -50,7 +52,9 @@ local function numSerializer(
 	-- Floating points
 	if value % 1 ~= 0 or value > MAX_INT or value < MIN_INT then
 		if MAX_FLOAT < value or value < -MAX_FLOAT then
-			buf, size = inflate(buf, pos + 9, size)
+			if pos + 9 > size then
+				buf, size = inflate(buf, pos + 9, size)
+			end
 			buffer.writeu8(buf, pos, DOUBLE)
 			buffer.writef64(buf, pos + 1, value)
 			return buf, pos + 9, size
@@ -59,13 +63,17 @@ local function numSerializer(
 		-- Ensures that the output WILL be the same as the input
 		-- even if it results in a slower path
 		if (vecX * value).x == value then
-			buf, size = inflate(buf, pos + 5, size)
+			if pos + 5 > size then
+				buf, size = inflate(buf, pos + 5, size)
+			end
 			buffer.writeu8(buf, pos, FLOAT)
 			buffer.writef32(buf, pos + 1, value)
 			return buf, pos + 5, size
 		end
 
-		buf, size = inflate(buf, pos + 9, size)
+		if pos + 9 > size then
+			buf, size = inflate(buf, pos + 9, size)
+		end
 		buffer.writeu8(buf, pos, DOUBLE)
 		buffer.writef64(buf, pos + 1, value)
 		return buf, pos + 9, size
@@ -77,7 +85,9 @@ local function numSerializer(
 		elseif MAX_THREE >= value and value >= MIN_THREE then 4
 		else 5
 
-	buf, size = inflate(buf, pos + newSize, size)
+	if pos + newSize > size then
+		buf, size = inflate(buf, pos + newSize, size)
+	end
 	buffer.writeu8(buf, pos, ZERO + newSize)
 
 	if newSize == 2 then
@@ -92,19 +102,8 @@ local function numSerializer(
 	return buf, pos + newSize, size
 end
 
---[[
-	Produces a number from the buffer starting at the given position.
-
-	@param buf buffer containing the number
-	@param pos the starting position of the number
-
-	@error Failed to parse number
-	@error buffer access out of bounds
-
-	@return the number and the end number position + 1
-]]
 @native
-local function numDeserializer(buf: buffer, pos: number)
+local function numDeserializer(buf: buffer, pos: number): (number?, number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == ZERO then
@@ -132,7 +131,7 @@ local function numDeserializer(buf: buffer, pos: number)
 	elseif id == DOUBLE then
 		return buffer.readf64(buf, pos + 1), pos + 9
 	else
-		error(`Failed to parse number using byte: {id} at position {pos}`)
+		return nil, pos + 1 -- data corruption
 	end
 end
 

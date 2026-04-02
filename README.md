@@ -4,11 +4,11 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL_3.0-yellow.svg)](https://opensource.org/licenses/GPL-3.0)
 
 > [!CAUTION]
-> Userdata support has been moved from the internal API into the external API.
-> The internal portion has changed, so breakage will occur for relevant cases.
+> Unstable data format, see [migration path](./docs/tips.md#migration).
 
 > [!CAUTION]
-> Pairs has been removed.  No data migration concerns.
+> External API is stable, except for the planned addition of errors in a later
+>  version.
 
 ## Purpose
 
@@ -27,10 +27,11 @@ BufferSerializer supports most of the built-in Luau types, excluding `function`
 
 #### Additional Features
 - Custom Userdata
-  - Look in [examples](./examples) to see common practice for supporting userdata
-    (de)serialization.
+  - Users can add support for (de)serializing userdata using the internal API.
 - Cyclic tables
   - See [limitations](./docs/risks.md#limitations) for more information.
+- Pairs
+  - Pays an upfront cost for future duplicates of the paired value to be cheaper.
 
 ### Usage Cases
 A user needs to prepare data for storing in a database, they will use
@@ -68,7 +69,7 @@ print(`Initial Data: {data}, Final Data: {input}`)
 For more information on the setup and datasets used, see
  [performance](./docs/performance.md).
 
-Only BufferSerializer and the top 3 measured
+Only BufferSerializer, paired-BufferSerializer, and the top 3 measured
  formats for each category will be shown, using the (???)[] dataset.
 
 #### Serialization
@@ -76,11 +77,13 @@ Only BufferSerializer and the top 3 measured
 | Name             | Speed | Memory | Output | Compressed |
 |------------------|-------|--------|--------|------------|
 | BufferSerializer |       |        |        |            |
+| Paired-BuffSer   |       |        |        |            |
 
 #### Deserialization
 
 | Name             | Speed | Memory |
 |------------------|-------|--------|
 | BufferSerializer |       |        |
+| Paired-BuffSer   |       |        |
 
 -->

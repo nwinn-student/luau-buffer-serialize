@@ -9,7 +9,10 @@ local inflate = require("./inflate")
 ]]
 return table.freeze({
 	serialize = function(value: nil, buf: buffer, pos: number, size: number)
-		buf, size = inflate(buf, pos + 1, size)
+		if pos + 1 > size then
+			buf, size = inflate(buf, pos + 1, size)
+		end
+
 		buffer.writeu8(buf, pos, 0)
 		return buf, pos + 1, size
 	end,
