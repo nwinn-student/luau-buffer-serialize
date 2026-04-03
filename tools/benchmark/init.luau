@@ -80,7 +80,7 @@ local validateBenchData: (BenchData) -> (boolean, string) = t.strictInterface({
 
 function printHelp(): ()
 	print([[
-Usage: lune run tools/benchmark <path>
+Usage: lune run tools/benchmark [options] <path>
 
 Codegen is enabled by default, to disable set environment
  LUNE_LUAU_JIT to "0" or "false" or "off"
