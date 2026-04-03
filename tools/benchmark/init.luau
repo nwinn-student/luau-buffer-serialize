@@ -11,7 +11,6 @@ local benchmark = {}
 
 	To run:
 	cd to/repo/path
-
 	lune run tools/benchmark results
 ]]
 type Data = {
@@ -45,11 +44,11 @@ type CommandOptions = {
 }
 
 local fs = require("@lune/fs")
-local path = require("./utils/path")
+local path = require("@self/path")
 local process = require("@lune/process")
-local progress = require("./utils/progress")
+local progress = require("@self/progress")
 local serde = require("@lune/serde")
-local t = require("./utils/t")
+local t = require("@self/t")
 
 local source: string = debug.info(1, "s")
 local relfile: string = path.relativeTo(source)
@@ -86,6 +85,9 @@ Usage: lune run tools/benchmark <path>
 Codegen is enabled by default, to disable set environment
  LUNE_LUAU_JIT to "0" or "false" or "off"
 
+Argument:
+  path: The location of the files to benchmark
+
 Available options:
   -h, --help: Display this usage message
   --skip=<path[,path]>: Excludes the given paths that match from running
@@ -93,6 +95,11 @@ Available options:
     Defaults to benchmark-results.json
 
 Examples:
+|- results
+|-- foo.luau
+|-- bar.luau
+|-- baz.luau
+
 Runs all .lua(u) files, recursively, under the 'results' directory
   lune run tools/benchmark results
 
@@ -125,7 +132,7 @@ local function processPath(
 	end
 
 	if fs.isFile(file) and (fileExt == "luau" or fileExt == "lua") then
-		local results = fn(relfile .. path.removeextension(file))
+		local results: BenchData? = fn(relfile .. path.removeextension(file))
 
 		if results then
 			data[fileName] = results
