@@ -75,7 +75,7 @@ local validateFormat: (Data) -> (boolean, string) = t.strictInterface({
 local validateBenchData: (BenchData) -> (boolean, string) = t.strictInterface({
 	time = validateFormat,
 	space = validateFormat,
-	metadata = t.map(t.string, t.any),
+	metadata = t.optional(t.map(t.string, t.any)),
 })
 
 function printHelp(): ()
