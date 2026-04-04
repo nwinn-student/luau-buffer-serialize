@@ -19,6 +19,7 @@ export type Data = {
 	-- ["(lower to upper)"] = count
 	hist: { [string]: number },
 }
+export type DataOptions = { box_amount: number }
 
 local function avg(data: { number }): number
 	local total: number = 0
@@ -48,14 +49,16 @@ local function sformat(first: number, second: number): string
 end
 
 -- how much do we take out?
-local function hist(data: { number }): { [string]: number }
+local function hist(
+	data: { number },
+	iqr: number,
+	box_amount: number
+): { [string]: number }
 	local form: { [string]: number } = {}
 
-	local boxCount: number = 8
-
-	local histLow: number = percentile(data, 5)
-	local histHigh: number = percentile(data, 95)
-	local histRange: number = (histHigh - histLow) / boxCount
+	local histLow: number = percentile(data, 25) - 1.5 * iqr
+	local histHigh: number = percentile(data, 75) + 1.5 * iqr
+	local histRange: number = (histHigh - histLow) / box_amount
 
 	if histRange == 0 then
 		form[sformat(0, 0)] = #data
@@ -101,10 +104,10 @@ local function hist(data: { number }): { [string]: number }
 		priorCost = cost
 	end
 
-	if cacheBox == boxCount then
+	if cacheBox == box_amount then
 		form[sformat(
-			histLow + histRange * (boxCount - 1),
-			histLow + histRange * boxCount
+			histLow + histRange * (box_amount - 1),
+			histLow + histRange * box_amount
 		)] =
 			cache
 	end
@@ -143,10 +146,12 @@ end
 	 most other valuable measurements can be derived.
 
 	@param data - an array of numbers
+	@param options - allows for the box_amount for hist to be specified
 
 	@return a formatted version of the data
 ]]
-local function format_data(data: { number }): Data
+local function format_data(data: { number }, options: DataOptions?): Data
+	options = options or { box_amount = 8 }
 	table.sort(data) -- we expect no negative numbers**
 
 	local formatted: Data = {
@@ -162,7 +167,7 @@ local function format_data(data: { number }): Data
 	formatted.mad = mad(data, formatted.median)
 	formatted.mild_outliers = mild_outliers(data, formatted.iqr)
 	formatted.stdev = stdev(data, formatted.average)
-	formatted.hist = hist(data)
+	formatted.hist = hist(data, formatted.iqr, options.box_amount)
 
 	return formatted
 end
