@@ -56,7 +56,11 @@ local function hist(
 ): { [string]: number }
 	local form: { [string]: number } = {}
 
-	local histLow: number = percentile(data, 25) - 1.5 * iqr
+	local histLow: number
+	do
+		local temp_histLow: number = percentile(data, 25) - 1.5 * iqr
+		histLow = if temp_histLow < 0 then 0 else temp_histLow
+	end
 	local histHigh: number = percentile(data, 75) + 1.5 * iqr
 	local histRange: number = (histHigh - histLow) / box_amount
 
@@ -105,6 +109,7 @@ local function hist(
 	end
 
 	if cacheBox == box_amount then
+		print(form)
 		form[sformat(
 			histLow + histRange * (box_amount - 1),
 			histLow + histRange * box_amount
@@ -171,5 +176,7 @@ local function format_data(data: { number }, options: DataOptions?): Data
 
 	return formatted
 end
+
+print(format_data({ 1, 2, 3, 4, 5 }))
 
 return format_data
