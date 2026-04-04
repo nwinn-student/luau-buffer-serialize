@@ -109,7 +109,6 @@ local function hist(
 	end
 
 	if cacheBox == box_amount then
-		print(form)
 		form[sformat(
 			histLow + histRange * (box_amount - 1),
 			histLow + histRange * box_amount
@@ -176,7 +175,5 @@ local function format_data(data: { number }, options: DataOptions?): Data
 
 	return formatted
 end
-
-print(format_data({ 1, 2, 3, 4, 5 }))
 
 return format_data

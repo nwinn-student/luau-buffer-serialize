@@ -69,7 +69,7 @@ local validateFormat: (Data) -> (boolean, string) = t.strictInterface({
 	average = t.number,
 	max = t.number,
 	stdev = t.number,
-	-- (1 to 2), the pattern does not match perfectly
+	-- (1.000e+00 to 2.000e+00), the pattern does not match perfectly
 	hist = t.map(
 		t.match("^%(%d%.%d%d%de[%-%+]%d%d to %d%.%d%d%de[%-%+]%d%d%)$"),
 		t.number
