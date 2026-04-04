@@ -84,9 +84,12 @@ Usage: lune run tools/benchmark [options] <path>
 
 Codegen is enabled by default, to disable set environment
  LUNE_LUAU_JIT to "0" or "false" or "off"
+ - `export LUNE_LUAU_JIT="false"`
 
 Argument:
-  path: The location of the files to benchmark
+  path: The location of the .lua(u) files to obtain benchmark results from
+    All run files must return `{ time: Data, space: Data, metadata: { [string]: any }? }`
+	- `Data` is the output from using `tools/format-data.luau`
 
 Available options:
   -h, --help: Display this usage message
