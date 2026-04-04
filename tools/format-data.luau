@@ -99,8 +99,13 @@ local function hist(
 			box += 1
 		until lowerBound <= cost and cost <= upperBound
 
-		form[sformat(histLow + histRange * cacheBox, histLow + histRange * box)] =
-			cache
+		if cache > 0 then
+			form[sformat(
+				histLow + histRange * cacheBox,
+				histLow + histRange * box
+			)] =
+				cache
+		end
 
 		cache = 1
 		cacheBox = box
