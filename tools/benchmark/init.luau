@@ -70,10 +70,7 @@ local validateFormat: (Data) -> (boolean, string) = t.strictInterface({
 	max = t.number,
 	stdev = t.number,
 	-- (1.000e+00 to 2.000e+00), the pattern does not match perfectly
-	hist = t.map(
-		t.match("^%(%d%.%d%d%de[%-%+]%d%d to %d%.%d%d%de[%-%+]%d%d%)$"),
-		t.number
-	),
+	hist = t.map(t.match("^%(%d%.%d+e[+-]?%d+ to %d%.%d+e[+-]?%d+%)$"), t.number),
 })
 local validateBenchData: (BenchData) -> (boolean, string) = t.strictInterface({
 	time = validateFormat,
