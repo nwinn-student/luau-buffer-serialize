@@ -15,10 +15,6 @@ export type Data = {
 	average: number,
 	max: number,
 	stdev: number,
-
-	-- of pattern: ^%(%d%.%d+e[+-]?%d+ to %d%.%d+e[+-]?%d+%)$
-	-- ["(lower to upper)"] = count
-	hist: { [string]: number },
 }
 
 local function avg(data: { number }): number
@@ -42,83 +38,6 @@ end
 local function percentile(data: { number }, percentage: number): number
 	local index: number = ((percentage / 100) * #data) // 1
 	return data[index ~= 0 and index or 1]
-end
-
-local function sformat(first: number, second: number): string
-	return string.format("(%.3e to %.3e)", first, second)
-end
-
--- how much do we take out?
-local function hist(data: { number }, iqr: number): { [string]: number }
-	local form: { [string]: number } = {}
-	local box_amount: number = 8
-
-	local histLow: number
-	do
-		local temp_histLow: number = percentile(data, 25) - 1.5 * iqr
-		histLow = if temp_histLow < 0 then 0 else temp_histLow
-	end
-	local histHigh: number = percentile(data, 75) + 1.5 * iqr
-	local histRange: number = (histHigh - histLow) / box_amount
-
-	if histRange == 0 then
-		form[sformat(0, 0)] = #data
-		return
-	end
-
-	local cache: number = 0
-	local cacheBox: number = 1
-	local priorCost: number = -2 ^ 32
-	local lowerBound: number = histLow
-	local upperBound: number = histLow + histRange
-
-	for _, cost: number in data do
-		if cost == priorCost then
-			cache += 1
-			continue
-		end
-
-		if lowerBound <= cost and cost <= upperBound then
-			cache += 1
-			priorCost = cost
-			continue
-		end
-
-		if cost < histLow or cost > histHigh then
-			-- entered infrequently
-			continue
-		end
-
-		local box: number = cacheBox
-		repeat
-			lowerBound += histRange
-			upperBound += histRange
-			box += 1
-		until lowerBound <= cost and cost <= upperBound
-
-		if cache > 0 then
-			form[sformat(
-				histLow + histRange * cacheBox,
-				histLow + histRange * box
-			)] =
-				cache
-		end
-
-		cache = 1
-		cacheBox = box
-
-		priorCost = cost
-	end
-
-	if cacheBox == box_amount then
-		form[sformat(
-			histLow + histRange * (box_amount - 1),
-			histLow + histRange * box_amount
-		)] =
-			cache
-	end
-
-	return form
 end
 
 local function mad(data: { number }, median: number): number
@@ -172,7 +91,6 @@ local function format_data(data: { number }): Data
 	formatted.mad = mad(data, formatted.median)
 	formatted.mild_outliers = mild_outliers(data, formatted.iqr)
 	formatted.stdev = stdev(data, formatted.average)
-	formatted.hist = hist(data, formatted.iqr)
 
 	return formatted
 end
