@@ -1,3 +1,4 @@
+--!optimize 2
 --[[
     Used to prepare data `{ number }` into the specific format
      used by the benchmark tool.
@@ -52,7 +53,7 @@ local function mad(data: { number }, median: number): number
 	return percentile(temp_data, 50)
 end
 
-local function mild_outliers(data: { number }, iqr: number)
+local function mild_outliers(data: { number }, iqr: number): number
 	local count: number = 0
 	local lower: number = percentile(data, 25) - 1.5 * iqr
 	local upper: number = percentile(data, 75) + 1.5 * iqr
@@ -71,7 +72,6 @@ end
 	 most other valuable measurements can be derived.
 
 	@param data - an array of numbers
-	@param options - allows for the box_amount for hist to be specified
 
 	@return a formatted version of the data
 ]]
