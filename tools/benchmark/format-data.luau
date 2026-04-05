@@ -16,10 +16,10 @@ export type Data = {
 	max: number,
 	stdev: number,
 
+	-- of pattern: ^%(%d%.%d+e[+-]?%d+ to %d%.%d+e[+-]?%d+%)$
 	-- ["(lower to upper)"] = count
 	hist: { [string]: number },
 }
-export type DataOptions = { box_amount: number }
 
 local function avg(data: { number }): number
 	local total: number = 0
@@ -49,12 +49,9 @@ local function sformat(first: number, second: number): string
 end
 
 -- how much do we take out?
-local function hist(
-	data: { number },
-	iqr: number,
-	box_amount: number
-): { [string]: number }
+local function hist(data: { number }, iqr: number): { [string]: number }
 	local form: { [string]: number } = {}
+	local box_amount: number = 8
 
 	local histLow: number
 	do
@@ -159,8 +156,7 @@ end
 
 	@return a formatted version of the data
 ]]
-local function format_data(data: { number }, options: DataOptions?): Data
-	options = options or { box_amount = 8 }
+local function format_data(data: { number }): Data
 	table.sort(data) -- we expect no negative numbers**
 
 	local formatted: Data = {
@@ -176,7 +172,7 @@ local function format_data(data: { number }, options: DataOptions?): Data
 	formatted.mad = mad(data, formatted.median)
 	formatted.mild_outliers = mild_outliers(data, formatted.iqr)
 	formatted.stdev = stdev(data, formatted.average)
-	formatted.hist = hist(data, formatted.iqr, options.box_amount)
+	formatted.hist = hist(data, formatted.iqr)
 
 	return formatted
 end

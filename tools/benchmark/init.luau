@@ -13,21 +13,11 @@ local benchmark = {}
 	cd to/repo/path
 	lune run tools/benchmark results
 ]]
-type Data = {
-	sample_size: number, -- number of kept runs
-
-	median: number,
-	iqr: number, -- q3 - q1
-	mad: number, -- median absolute deviation ( median(|x_i - median|) )
-	mild_outliers: number, -- q1 - 1.5 * iqr and q3 + 1.5 * iqr
-
-	min: number,
-	average: number,
-	max: number,
-	stdev: number,
-
-	-- ["(lower to upper)"] = count
-	hist: { [string]: number },
+type Data = format_data.Data
+type PreBenchData = {
+	time: { number },
+	space: { number },
+	metadata: { [string]: any }?,
 }
 type BenchData = {
 	time: Format,
@@ -43,6 +33,7 @@ type CommandOptions = {
 	output: string,
 }
 
+local format_data: ({ number }) -> Data = require("@self/format-data")
 local fs = require("@lune/fs")
 local path = require("@self/path")
 local process = require("@lune/process")
@@ -57,24 +48,9 @@ local options: CommandOptions = {
 	skip = {},
 	output = "benchmark-results.json",
 }
-local validateFormat: (Data) -> (boolean, string) = t.strictInterface({
-	sample_size = t.number,
-
-	median = t.number,
-	iqr = t.number,
-	mad = t.number,
-	mild_outliers = t.number,
-
-	min = t.number,
-	average = t.number,
-	max = t.number,
-	stdev = t.number,
-	-- (1.000e+00 to 2.000e+00), the pattern does not match perfectly
-	hist = t.map(t.match("^%(%d%.%d+e[+-]?%d+ to %d%.%d+e[+-]?%d+%)$"), t.number),
-})
-local validateBenchData: (BenchData) -> (boolean, string) = t.strictInterface({
-	time = validateFormat,
-	space = validateFormat,
+local validatePreBenchData: (BenchData) -> (boolean, string) = t.strictInterface({
+	time = t.strictArray(t.number),
+	space = t.strictArray(t.number),
 	metadata = t.optional(t.map(t.string, t.any)),
 })
 
@@ -88,8 +64,8 @@ Codegen is enabled by default, to disable set environment
 
 Argument:
   path: The location of the .lua(u) files to obtain benchmark results from
-    All run files must return `{ time: Data, space: Data, metadata: { [string]: any }? }`
-	- `Data` is the output from using `tools/format-data.luau`
+    All run files must return 
+	  `{ time: { number }, space: { number }, metadata: { [string]: any }? }`
 
 Available options:
   -h, --help: Display this usage message
@@ -202,12 +178,17 @@ local function processData(file: string): BenchData
 	local fileName: string = file:sub(1 + pathsize)
 	progressCounter:run(fileName)
 
-	local data: BenchData = require(file)
-	assert(validateBenchData(data))
+	local data: PreBenchData = require(file)
+	assert(validatePreBenchData(data))
+	local formatted_data: BenchData = {
+		time = format_data(data.time),
+		space = format_data(data.space),
+		metadata = data.metadata,
+	}
 
 	progressCounter:complete(fileName)
 
-	return table.clone(data)
+	return formatted_data
 end
 
 for _, name: string in fs.readDir(options.path) do
