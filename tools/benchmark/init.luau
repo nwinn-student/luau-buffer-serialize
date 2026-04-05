@@ -54,6 +54,14 @@ local validatePreBenchData: (BenchData) -> (boolean, string) = t.strictInterface
 	metadata = t.optional(t.map(t.string, t.any)),
 })
 
+function cli_assert(cond: any, message: string)
+	if not cond then
+		print(message)
+		print()
+		printHelp()
+		process.exit(0)
+	end
+end
 function printHelp(): ()
 	print([[
 Usage: lune run tools/benchmark [options] <path>
@@ -141,19 +149,19 @@ for _, input: string in process.args do
 		options.output = input:sub(10)
 		continue
 	end
-	assert(fs.isDir(input), `{input} does not exist in the file system`)
+	cli_assert(fs.isDir(input), `{input} does not exist in the file system`)
 	options.path = input
 end
 
-assert(#options.path ~= 0, "path was not initialized")
+cli_assert(#options.path ~= 0, "path was not initialized")
 
 local data: Format = {}
 
 if fs.isFile(options.output) then
 	local success: boolean, output_data =
 		pcall(serde.decode, "json", fs.readFile(options.output))
-	assert(success, `{options.output} was not valid JSON`)
-	assert(
+	cli_assert(success, `{options.output} was not valid JSON`)
+	cli_assert(
 		type(output_data) == "table",
 		`{options.output} did not contain a table`
 	)
@@ -179,7 +187,7 @@ local function processData(file: string): BenchData
 	progressCounter:run(fileName)
 
 	local data: PreBenchData = require(file)
-	assert(validatePreBenchData(data))
+	cli_assert(validatePreBenchData(data))
 	local formatted_data: BenchData = {
 		time = format_data(data.time),
 		space = format_data(data.space),
