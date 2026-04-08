@@ -48,8 +48,6 @@ local options = {
 function cli_assert(cond: any, message: string)
 	if not cond then
 		print(message)
-		print()
-		printHelp()
 		process.exit(0)
 	end
 end
@@ -118,7 +116,7 @@ local function get_content(path: string)
 end
 
 local function set_content(file_path: string, url_path: string)
-	task.spawn(function()
+	task.spawn(function(): ()
 		local contents: string = get_content(url_path)
 
 		fs.writeFile(file_path, contents)
