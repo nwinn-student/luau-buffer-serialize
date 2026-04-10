@@ -98,9 +98,14 @@ local bench_root: string =
 local bs_pre_root: string =
 	"https://api.github.com/repos/nwinn-student/luau-buffer-serialize"
 
-local function ghrequest(url: string, root: string): net.FetchResponse
+local function ghrequest(
+	url: string,
+	root: string,
+	query: { [string]: string }?
+): net.FetchResponse
 	return net.request({
 		url = `{root}/{url}`,
+		query = query,
 		headers = {
 			["X-GitHub-Api-Version"] = "2022-11-28",
 		},
@@ -227,9 +232,29 @@ for _, version: string in options.versions do
 		)
 
 		local listversionDirs = serde.decode("json", list_version_result.body)
-
 		for _, version in listversionDirs do
 			fetch_tag(version.tag_name)
+		end
+
+		local page: number = 1
+		while true do
+			local listversionHeaders =
+				serde.decode("json", list_version_result.headers)
+			if not listversionHeaders.link then
+				break
+			end
+			page += 1
+			local next_list_version_result: net.FetchResponse =
+				ghrequest("releases", bs_pre_root, { page = page })
+			cli_assert(
+				next_list_version_result.ok,
+				`failure to get content from bufferserializer releases (page {page})`
+			)
+			local next_listversionDirs =
+				serde.decode("json", next_list_version_result.body)
+			for _, version in next_listversionDirs do
+				fetch_tag(version.tag_name)
+			end
 		end
 
 		break
