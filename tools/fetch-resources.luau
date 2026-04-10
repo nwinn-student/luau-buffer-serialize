@@ -237,14 +237,14 @@ for _, version: string in options.versions do
 		end
 
 		local page: number = 1
+		local next_list_version_result: net.FetchResponse = list_version_result
 		while true do
-			local listversionHeaders =
-				serde.decode("json", list_version_result.headers)
-			if not listversionHeaders.link then
+			if not next_list_version_result.headers.link then
 				break
 			end
+
 			page += 1
-			local next_list_version_result: net.FetchResponse =
+			next_list_version_result =
 				ghrequest("releases", bs_pre_root, { page = page })
 			cli_assert(
 				next_list_version_result.ok,
