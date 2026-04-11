@@ -132,8 +132,6 @@ end
 local function get_content(path: string): string
 	local results: net.FetchResponse = net.request(path)
 
-	-- do we fail? and catch in set_content?
-	-- or do we have something special for versions???
 	assert(results.ok, `failure to get content for {path}`)
 
 	return results.body
@@ -147,7 +145,10 @@ local function set_content(
 	task.spawn(function(): ()
 		local success: boolean, contents: string = pcall(get_content, url_path)
 
-		if not success and not should_not_assert then
+		if not success then
+			if should_not_assert then
+				return
+			end
 			cli_assert(true, contents)
 		end
 
