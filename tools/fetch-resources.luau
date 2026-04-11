@@ -97,6 +97,22 @@ local bench_root: string =
 	"https://api.github.com/repos/nwinn-student/luau-bench/contents"
 local bs_pre_root: string =
 	"https://api.github.com/repos/nwinn-student/luau-buffer-serialize"
+local raw_bs_root: string =
+	"https://raw.github.com/nwinn-student/luau-buffer-serialize"
+local cached_bs = {
+	"boolean",
+	"buffer",
+	"inflate",
+	"init",
+	"link", -- not in all
+	"nil",
+	"number",
+	"string",
+	"table",
+	"userdata",
+	"vector",
+	-- add more as needed
+}
 
 local function ghrequest(
 	url: string,
@@ -112,17 +128,27 @@ local function ghrequest(
 	})
 end
 
-local function get_content(path: string)
+local function get_content(path: string): string
 	local results: net.FetchResponse = net.request(path)
 
-	cli_assert(results.ok, `failure to get content for {path}`)
+	-- do we fail? and catch in set_content?
+	-- or do we have something special for versions???
+	assert(results.ok, `failure to get content for {path}`)
 
 	return results.body
 end
 
-local function set_content(file_path: string, url_path: string)
+local function set_content(
+	file_path: string,
+	url_path: string,
+	should_not_assert: boolean?
+): ()
 	task.spawn(function(): ()
-		local contents: string = get_content(url_path)
+		local success: boolean, contents: string = pcall(get_content, url_path)
+
+		if not success and not should_not_assert then
+			cli_assert(true, contents)
+		end
 
 		fs.writeFile(file_path, contents)
 	end)
@@ -136,7 +162,6 @@ local function fetch_dataset(): ()
 
 	-- is requestResult valuable?
 	cli_assert(success, tostring(dataset_result)) -- no connection
-
 	cli_assert(dataset_result.ok, `failure to get content from dataset benchmark`)
 
 	local datasetDirs = serde.decode("json", dataset_result.body)
@@ -184,24 +209,15 @@ local function fetch_bench(): ()
 end
 
 local function fetch_tag(version: string): ()
-	local version_result: net.FetchResponse =
-		ghrequest(`contents/src?ref={version}`, bs_pre_root)
-
-	cli_assert(
-		version_result.ok,
-		`failure to get content from bufferserializer src?ref={version}`
-	)
-
-	local versionDirs = serde.decode("json", version_result.body)
-
 	if not fs.isDir(`resources/BufferSerializer/{version}`) then
 		fs.writeDir(`resources/BufferSerializer/{version}`)
 	end
 
-	for _, dir: GitHubResult in versionDirs do
+	for _, name: string in cached_bs do
 		set_content(
-			`resources/BufferSerializer/{version}/{dir.name}`,
-			dir.download_url
+			`resources/BufferSerializer/{version}/{name}.luau`,
+			`{raw_bs_root}/{version}/src/{name}.luau`,
+			true
 		)
 	end
 end
