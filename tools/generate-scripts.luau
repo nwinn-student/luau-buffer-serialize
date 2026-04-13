@@ -172,8 +172,8 @@ local rawdata = serde.decode("json", fs.readFile("resources/size_datasets/%s/doc
 local data = format.serialize(rawdata)
 
 return {
-	time = {},
-	space = {},
+	time = { 0 },
+	space = { 0 },
 	metadata = {
 		taxonomy = "%s",
 		size = buffer.len(data),
