@@ -49,8 +49,8 @@ local options: CommandOptions = {
 	output = "benchmark-results.json",
 }
 local validatePreBenchData: (BenchData) -> (boolean, string) = t.strictInterface({
-	time = t.strictArray(t.number),
-	space = t.strictArray(t.number),
+	time = t.array(t.number),
+	space = t.array(t.number),
 	metadata = t.optional(t.map(t.string, t.any)),
 })
 

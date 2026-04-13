@@ -10,7 +10,8 @@
 
 	Places the resources in the resources directory.
 	- /resources
-	 - /datasets
+	 - pokedex.json
+	 - /size_datasets
 	 - /luau-bench
 	 - /BufferSerializer/{VERSION_TAG}
 
@@ -156,8 +157,8 @@ local function set_content(
 	end)
 end
 
-local function fetch_dataset(): ()
-	print("FETCHING DATASET...")
+local function fetch_size_datasets(): ()
+	print("FETCHING SIZE DATASETS...")
 
 	local success: boolean, dataset_result =
 		pcall(ghrequest, "benchmark", datasets_root)
@@ -168,26 +169,39 @@ local function fetch_dataset(): ()
 
 	local datasetDirs = serde.decode("json", dataset_result.body)
 
-	if not fs.isDir("resources/datasets") then
-		fs.writeDir("resources/datasets")
+	if not fs.isDir("resources/size_datasets") then
+		fs.writeDir("resources/size_datasets")
 	end
 
 	-- The dataset repo is a public archive, so we can make the
 	-- assumption that all file locations are stationary
 
 	for _, dir: GitHubResult in datasetDirs do
-		if not fs.isDir(`resources/datasets/{dir.name}`) then
-			fs.writeDir(`resources/datasets/{dir.name}`)
+		if not fs.isDir(`resources/size_datasets/{dir.name}`) then
+			fs.writeDir(`resources/size_datasets/{dir.name}`)
 		end
 
 		local data_url: string = `{raw_datasets_root}/{dir.path}/document.json`
 		local taxonomy_url: string = `{raw_datasets_root}/{dir.path}/TAXONOMY`
 		local source_url: string = `{raw_datasets_root}/{dir.path}/SOURCE`
 
-		set_content(`resources/datasets/{dir.name}/document.json`, data_url)
-		set_content(`resources/datasets/{dir.name}/TAXONOMY`, taxonomy_url)
-		set_content(`resources/datasets/{dir.name}/SOURCE`, source_url)
+		set_content(`resources/size_datasets/{dir.name}/document.json`, data_url)
+		set_content(`resources/size_datasets/{dir.name}/TAXONOMY`, taxonomy_url)
+		set_content(`resources/size_datasets/{dir.name}/SOURCE`, source_url)
 	end
+end
+
+local function fetch_pokedex_dataset(): ()
+	print("FETCHING POKEDEX DATASET...")
+
+	-- Note: We are using a blob link instead of the actual link:
+	-- https://raw.githubusercontent.com/Biuni/PokemonGO-Pokedex/master/pokedex.json
+	-- to avoid cases where the user is comprimised and the json is modified.
+
+	set_content(
+		"resources/pokedex.json",
+		"https://raw.githubusercontent.com/Biuni/PokemonGO-Pokedex/ee19a4e93d9df10783a4d04c5245ab4cb8810861/pokedex.json"
+	)
 end
 
 local function fetch_bench(): ()
@@ -231,7 +245,8 @@ if not fs.isDir("resources") then
 end
 
 if not options.exclude_datasets then
-	fetch_dataset()
+	fetch_size_datasets()
+	fetch_pokedex_dataset()
 end
 
 if not options.exclude_bench then
