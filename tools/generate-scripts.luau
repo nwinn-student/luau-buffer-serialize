@@ -1,9 +1,9 @@
 --[[
-	Creates a directory in results/ with the given name.
+	Creates a directory with the given structure.
 	- results
 	 - /BufferSerializer
 	 - .luaurc
-	  - /vN
+	  - /vN -- version
 	   - .luaurc
 	   - serialize.luau
 	   - deserialize.luau
@@ -20,10 +20,6 @@ local fs = require("@lune/fs")
 local process = require("@lune/process")
 local serde = require("@lune/serde")
 
-local options = {
-	versions = {},
-}
-
 function cli_assert(cond: any, message: string): ()
 	if not cond then
 		print(message)
@@ -32,17 +28,23 @@ function cli_assert(cond: any, message: string): ()
 end
 
 function printHelp(): ()
-	print(string.format(
-		[[
-Usage: %s [options]
+	print([[
+Usage: lune run tools/generate-scripts
+
+Creates a directory with the given structure.
+	- results
+	 - /BufferSerializer
+	 - .luaurc
+	  - /vN -- version
+	   - .luaurc
+	   - serialize.luau
+	   - deserialize.luau
+       - /size
+        - /... -- 1 script per size_dataset
 
 Available options:
   -h, --help: Display this usage message
-  --verisons=<tag[,tag]>: Generates time/space benchmark scripts for the provided versions
-      ALL can be used to generate all downloaded versions.
-	]],
-		process.env._
-	))
+	]])
 end
 
 if not fs.isDir("results") or not fs.isDir("results/BufferSerializer") then
@@ -68,22 +70,20 @@ cli_assert(
 	fs.isDir("resources/size_datasets"),
 	"resources/size_datasets directory must exist"
 )
+cli_assert(
+	fs.isDir("resources/BufferSerializer"),
+	"resources/BufferSerializer directory must exist when generating version scripts"
+)
 
 for _, input: string in process.args do
 	if input == "-h" or input == "--help" then
 		printHelp()
 		process.exit(0)
 	end
-	if input:sub(1, 11) == "--versions=" then
-		options.versions = input:sub(12):split(",")
-		continue
-	end
 	print(`{input} is not a valid command, see help:`)
 	printHelp()
 	process.exit(0)
 end
-
--- [[ GENERATE SERIALIZE ]]
 
 function get_serialize(): string
 	return [[-- serialize
@@ -119,8 +119,6 @@ return {
 }
 ]]
 end
-
--- [[ GENERATE DESERIALIZE ]]
 
 function get_deserialize(): string
 	return [[-- deserialize
@@ -234,20 +232,7 @@ local function gen_version(version: string)
 	)
 end
 
-for _, version: string in options.versions do
-	if version == "ALL" then
-		cli_assert(
-			fs.isDir("resources/BufferSerializer"),
-			"resources/BufferSerializer directory must exist when generating version scripts"
-		)
-
-		for _, version: string in fs.readDir("resources/BufferSerializer") do
-			gen_version(version)
-		end
-
-		break
-	end
-
+for _, version: string in fs.readDir("resources/BufferSerializer") do
 	gen_version(version)
 end
 
