@@ -2,13 +2,13 @@
 --!strict
 
 local function inflateInternal(data: buffer, size: number)
-	local newBuffer = buffer.create(size)
-
-	if size > buffer.len(data) then
-		buffer.copy(newBuffer, 0, data)
-	else
+	if size <= buffer.len(data) then
 		return data
 	end
+
+	local newBuffer = buffer.create(size)
+
+	buffer.copy(newBuffer, 0, data)
 
 	return newBuffer
 end
