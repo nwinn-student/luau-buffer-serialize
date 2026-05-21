@@ -2,7 +2,7 @@
 --!strict
 
 local function trim(data: buffer, pos: number)
-	if math.log(pos, 2) % 1 == 0 then
+	if pos == buffer.len(data) then
 		return data
 	end
 

@@ -21,17 +21,12 @@ local function reader(buf: buffer, pos: number): (unknown, number)
 	return nil, pos + 1
 end
 
-local function writer(
-	value: unknown,
-	buf: buffer,
-	pos: number,
-	size: number
-): (buffer, number, number)
+local function writer(value: unknown, buf: buffer, pos: number): (buffer, number)
 	if value ~= zero_proxy then
-		return buf, pos, size
+		return buf, pos
 	end
 	buffer.writeu8(buf, pos, 0)
-	return buf, pos + 1, size
+	return buf, pos + 1
 end
 userdata.addSupport({
 	serialize = writer,
