@@ -1,13 +1,16 @@
 --!optimize 2
 --!strict
 
-local function trim(data: buffer, pos: number, size: number)
-	if size == pos then
+local function trim(data: buffer, pos: number)
+	if math.log(pos, 2) % 1 == 0 then
 		return data
 	end
-	local newBuf = buffer.create(pos)
-	buffer.copy(newBuf, 0, data, 0, pos)
-	return newBuf
+
+	local newBuffer = buffer.create(pos)
+
+	buffer.copy(newBuffer, 0, data, 0, pos)
+
+	return newBuffer
 end
 
 -- TODO: Add documentation
@@ -38,12 +41,7 @@ local deserialModules = table.freeze({
 	userdata = require("@self/userdata").deserialize,
 })
 
-type Serialize = (
-	value: any,
-	buf: buffer,
-	pos: number,
-	size: number
-) -> (buffer, number, number)
+type Serialize = (value: any, buf: buffer, pos: number) -> (buffer, number)
 type Deserialize = (buf: buffer, pos: number) -> (any, number)
 
 --[[
@@ -73,9 +71,9 @@ function BufferSerializer.serialize(value: any): buffer
 
 	local serial: Serialize = (serialModules :: any)[typeValue]
 
-	local buf, pos, size = serial(value, nil :: any, 0, 0)
+	local buf, pos = serial(value, buffer.create(0), 0)
 
-	return trim(buf, pos, size)
+	return trim(buf, pos)
 end
 
 --[[

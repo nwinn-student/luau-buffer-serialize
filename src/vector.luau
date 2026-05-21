@@ -64,17 +64,12 @@ local function getType(value: number): number
 end
 
 @native
-local function vecSerializer(
-	value: vector,
-	buf: buffer,
-	pos: number,
-	size: number
-)
+local function vecSerializer(value: vector, buf: buffer, pos: number)
 	local builtin: number? = builtinSerialConst[value]
 	if builtin then
-		buf, size = inflate(buf, pos + 1, size)
+		buf = inflate(buf, pos, 1)
 		buffer.writeu8(buf, pos, builtin)
-		return buf, pos + 1, size
+		return buf, pos + 1
 	end
 
 	-- now we check scalar
@@ -103,7 +98,7 @@ local function vecSerializer(
 			or isYZAxis
 		then
 			-- 3+ bytes
-			buf, size = inflate(buf, pos + 3, size)
+			buf = inflate(buf, pos, 3)
 			buffer.writeu8(buf, pos, SCALAR_NUMBER)
 
 			local var = if isOneValue
@@ -124,7 +119,7 @@ local function vecSerializer(
 				then valueX
 				elseif isYAxis or isYZAxis then valueY
 				else valueZ
-			return numSerializer(val, buf, pos + 2, size)
+			return numSerializer(val, buf, pos + 2)
 		end
 	end
 
@@ -161,16 +156,16 @@ local function vecSerializer(
 
 	-- 4+ bytes (NOT intelligent, as a const byte will be more expensive)
 	if isNumber then
-		buf, size = inflate(buf, pos + 4, size)
+		buf = inflate(buf, pos, 4)
 		buffer.writeu8(buf, pos, NUMBER)
-		buf, pos, size = numSerializer(valueX, buf, pos + 1, size)
-		buf, pos, size = numSerializer(valueY, buf, pos, size)
-		return numSerializer(valueZ, buf, pos, size)
+		buf, pos = numSerializer(valueX, buf, pos + 1)
+		buf, pos = numSerializer(valueY, buf, pos)
+		return numSerializer(valueZ, buf, pos)
 	end
 
 	local newSize = 3 * ((typeX :: number) - YZ_AXIS) + 1
 	-- 4, 7, 10, 13
-	buf, size = inflate(buf, pos + newSize, size)
+	buf = inflate(buf, pos, newSize)
 	buffer.writeu8(buf, pos, typeX :: number)
 
 	if typeX == BYTE then
@@ -190,7 +185,7 @@ local function vecSerializer(
 		buffer.writef32(buf, pos + 5, valueY)
 		buffer.writef32(buf, pos + 9, valueZ)
 	end
-	return buf, pos + newSize, size
+	return buf, pos + newSize
 end
 
 --[[

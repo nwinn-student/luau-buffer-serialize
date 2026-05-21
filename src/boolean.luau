@@ -8,11 +8,11 @@ local inflate = require("./inflate")
 	Deserializes a buffer into a boolean value if applicable
 ]]
 return table.freeze({
-	serialize = function(value: boolean, buf: buffer, pos: number, size: number)
-		buf, size = inflate(buf, pos + 1, size)
+	serialize = function(value: boolean, buf: buffer, pos: number)
+		buf = inflate(buf, pos, 1)
 
 		buffer.writeu8(buf, pos, if value then 1 else 2)
-		return buf, pos + 1, size
+		return buf, pos + 1
 	end,
 	deserialize = function(buf: buffer, pos: number)
 		return buffer.readu8(buf, pos) == 1, pos + 1

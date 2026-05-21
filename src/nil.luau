@@ -8,10 +8,10 @@ local inflate = require("./inflate")
 	Deserializes a buffer into a nil value if applicable
 ]]
 return table.freeze({
-	serialize = function(value: nil, buf: buffer, pos: number, size: number)
-		buf, size = inflate(buf, pos + 1, size)
+	serialize = function(value: nil, buf: buffer, pos: number)
+		buf = inflate(buf, pos, 1)
 		buffer.writeu8(buf, pos, 0)
-		return buf, pos + 1, size
+		return buf, pos + 1
 	end,
 	deserialize = function(buf: buffer, pos: number)
 		return nil, pos + 1
