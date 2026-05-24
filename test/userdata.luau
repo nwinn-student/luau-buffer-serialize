@@ -3,6 +3,7 @@
 
 local test = require("./test")
 local userdata = require("../src/userdata")
+local isSupported = require("../src").isSupported
 
 local CUSTOM = 202
 local UNSUPPORTED = 203
@@ -12,6 +13,7 @@ local zero_proxy = newproxy()
 
 -- Check that userdata.luau works properly
 test.compare(test.newBuffer(UNSUPPORTED), test.inspect(userdata.unsupported))
+test.compare(false, isSupported(userdata.unsupported))
 
 local function reader(buf: buffer, pos: number): (unknown, number)
 	local id = buffer.readu8(buf, pos)
@@ -40,5 +42,6 @@ test.compare(test.newBuffer(UNSUPPORTED), obtainedBuffer)
 test.compare(userdata.unsupported, obtainedValue)
 
 test.compare(test.newBuffer(CUSTOM, 0), test.inspect(zero_proxy))
+test.compare(true, isSupported(zero_proxy))
 
 return {}
