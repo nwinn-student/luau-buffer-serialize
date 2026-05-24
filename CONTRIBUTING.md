@@ -28,7 +28,8 @@ If you find any part of the documentation unclear, please let us know.
    2. Luau-analyze can be run with `luau-analyze --fflags=LuauSolverV2=true .` in the root
  directory of the repository, assuming luau-analyze is installed.
    3. Luau-lsp can be run with `luau-lsp analyze --flag LuauSolverV2=true --definitions ~/luau-lsp/globalTypes.d.luau --base-luaurc .luaurc .` but it requires Roblox definitions due to the provided examples.
-4. Submit a pull request with a clear description.
+4. Run `luau test` while in the root directory of the repository.
+5. Submit a pull request with a clear description.
 
 ## Reporting Issues
 
