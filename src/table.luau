@@ -6,12 +6,7 @@ local linkType = link.type
 local isLink = link.islink
 local isDuo = link.isduo
 
-type Serialize = (
-	data: any,
-	buf: buffer,
-	pos: number,
-	size: number
-) -> (buffer, number, number)
+type Serialize = (data: any, buf: buffer, pos: number) -> (buffer, number)
 
 type Deserialize = (buf: buffer, pos: number) -> (any, number)
 
@@ -61,12 +56,7 @@ local DICT = 198
 local ARRAY_END = 199
 local TABLE_END = 200
 
-function tabSerializer(
-	value: { [any]: any },
-	buf: buffer,
-	pos: number,
-	size: number
-)
+function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 	do
 		local isEmpty = true
 		for _, _ in value do
@@ -74,9 +64,9 @@ function tabSerializer(
 			break
 		end
 		if isEmpty then
-			buf, size = inflate(buf, pos + 1, size)
+			buf = inflate(buf, pos, 1)
 			buffer.writeu8(buf, pos, EMPTY)
-			return buf, pos + 1, size
+			return buf, pos + 1
 		end
 	end
 
@@ -87,10 +77,6 @@ function tabSerializer(
 	local roundRobinIndex = 61440
 
 	local serialTable: (data: { [any]: any }) -> ()
-
-	if size == 0 then
-		buf, size = buffer.create(64), 64
-	end
 
 	@native
 	local function existingCache(data: any)
@@ -134,7 +120,7 @@ function tabSerializer(
 					break
 				end
 				if isEmpty then
-					buf, size = inflate(buf, pos + 1, size)
+					buf = inflate(buf, pos, 1)
 					buffer.writeu8(buf, pos, EMPTY)
 					pos += 1
 					return
@@ -148,7 +134,7 @@ function tabSerializer(
 		end
 
 		local oldPos = pos
-		buf, pos, size = serialSwitch[typeName](data, buf, pos, size)
+		buf, pos = serialSwitch[typeName](data, buf, pos)
 
 		if pos - oldPos > 2 and data == data then
 			existingCache(data)
@@ -158,7 +144,7 @@ function tabSerializer(
 	@native
 	function serialTable(data: { [any]: any })
 		local isDict = #data == 0
-		buf, size = inflate(buf, pos + 1, size)
+		buf = inflate(buf, pos, 1)
 
 		pos += 1
 
@@ -173,7 +159,7 @@ function tabSerializer(
 
 				local cached = existing[element]
 				if cached then
-					buf, size = inflate(buf, pos + 3, size)
+					buf = inflate(buf, pos, 3)
 					buffer.writeu8(buf, pos, EQ_EXISTING)
 					buffer.writeu16(buf, pos + 1, cached)
 					pos += 3
@@ -192,7 +178,7 @@ function tabSerializer(
 			end
 			if not endArray and not isDict then
 				endArray = true
-				buf, size = inflate(buf, pos + 1, size)
+				buf = inflate(buf, pos, 1)
 				buffer.writeu8(buf, pos, ARRAY_END)
 				pos += 1
 			end
@@ -210,7 +196,7 @@ function tabSerializer(
 
 			local cached = existing[key]
 			if cached then
-				buf, size = inflate(buf, pos + 3, size)
+				buf = inflate(buf, pos, 3)
 				buffer.writeu8(buf, pos, EQ_EXISTING)
 				buffer.writeu16(buf, pos + 1, cached)
 				pos += 3
@@ -221,7 +207,7 @@ function tabSerializer(
 
 			cached = existing[element]
 			if cached then
-				buf, size = inflate(buf, pos + 3, size)
+				buf = inflate(buf, pos, 3)
 				-- writebits is not faster
 				buffer.writeu8(buf, pos, EQ_EXISTING)
 				buffer.writeu16(buf, pos + 1, cached)
@@ -238,7 +224,7 @@ function tabSerializer(
 		else
 			buffer.writeu8(buf, oldPos - 1, if not endArray then ARRAY else TABLE)
 		end
-		buf, size = inflate(buf, pos + 1, size)
+		buf = inflate(buf, pos, 1)
 		buffer.writeu8(buf, pos, TABLE_END)
 		pos += 1
 	end
@@ -250,7 +236,7 @@ function tabSerializer(
 		table.clear(roundRobinCache)
 	end
 
-	return buf, pos, size
+	return buf, pos
 end
 
 --[[

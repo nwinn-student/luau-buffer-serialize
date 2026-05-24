@@ -16,17 +16,15 @@ local CFRAME = 5 -- assuming you want to have other userdata supported
 	 the values can be pre-processed to ensure a cheaper result.
 ]]
 
-local function cframeWriter(value: CFrame, buf: buffer, pos: number, size: number)
+local function cframeWriter(value: CFrame, buf: buffer, pos: number)
 	local typeV = typeof(value)
 	if typeV == "CFrame" then
 		buffer.writeu8(buf, pos, CFRAME)
-		buf, pos, size =
-			vectorSerial.serialize(value.Position, buf, pos + 1, size)
+		buf, pos = vectorSerial.serialize(value.Position, buf, pos + 1)
 		local x, y, z = value:ToEulerAnglesXYZ()
-		buf, pos, size =
-			vectorSerial.serialize(vector.create(x, y, z), buf, pos, size)
+		buf, pos = vectorSerial.serialize(vector.create(x, y, z), buf, pos)
 	end
-	return buf, pos, size
+	return buf, pos
 end
 
 local function cframeReader(buf: buffer, pos: number): (any, number)

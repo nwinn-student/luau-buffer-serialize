@@ -1,18 +1,16 @@
 --!optimize 2
 --!strict
 
-local function inflateInternal(data: buffer, minSize: number, oldSize: number)
-	if oldSize == 0 then
-		return buffer.create(minSize), minSize
+local function inflateInternal(data: buffer, size: number)
+	if size <= buffer.len(data) then
+		return data
 	end
 
-	while minSize > oldSize do
-		oldSize *= 2
-	end
+	local newBuffer = buffer.create(size)
 
-	local temp = buffer.create(oldSize)
-	buffer.copy(temp, 0, data)
-	return temp, oldSize
+	buffer.copy(newBuffer, 0, data)
+
+	return newBuffer
 end
 
 --[[
@@ -20,13 +18,14 @@ end
 
 	- Uses a doubling approach to inflate.
 ]]
-local function inflate(data: buffer, minSize: number, oldSize: number)
-	if minSize > oldSize then
-		-- Allows for multiple return inlining
-		local newData, newSize = inflateInternal(data, minSize, oldSize)
-		return newData, newSize
+local function inflate(data: buffer, pos: number, len: number)
+	local bits = bit32.countlz(pos + len)
+
+	if bit32.countlz(pos) == bits then
+		return data
 	end
-	return data, oldSize
+
+	return inflateInternal(data, 2 ^ (32 - bits))
 end
 
 return inflate

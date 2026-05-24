@@ -1,13 +1,16 @@
 --!optimize 2
 --!strict
 
-local function trim(data: buffer, pos: number, size: number)
-	if size == pos then
+local function trim(data: buffer, pos: number)
+	if pos == buffer.len(data) then
 		return data
 	end
-	local newBuf = buffer.create(pos)
-	buffer.copy(newBuf, 0, data, 0, pos)
-	return newBuf
+
+	local newBuffer = buffer.create(pos)
+
+	buffer.copy(newBuffer, 0, data, 0, pos)
+
+	return newBuffer
 end
 
 -- TODO: Add documentation
@@ -38,12 +41,7 @@ local deserialModules = table.freeze({
 	userdata = require("@self/userdata").deserialize,
 })
 
-type Serialize = (
-	value: any,
-	buf: buffer,
-	pos: number,
-	size: number
-) -> (buffer, number, number)
+type Serialize = (value: any, buf: buffer, pos: number) -> (buffer, number)
 type Deserialize = (buf: buffer, pos: number) -> (any, number)
 
 --[[
@@ -73,9 +71,9 @@ function BufferSerializer.serialize(value: any): buffer
 
 	local serial: Serialize = (serialModules :: any)[typeValue]
 
-	local buf, pos, size = serial(value, nil :: any, 0, 0)
+	local buf, pos = serial(value, buffer.create(0), 0)
 
-	return trim(buf, pos, size)
+	return trim(buf, pos)
 end
 
 --[[
@@ -192,12 +190,12 @@ export type UserdataSupport = {
 	local sample_id = 0
 
 	BufferSerializer.supportUserdata({
-		serialize = function(value: any, buf: buffer, pos: number, size: number)
+		serialize = function(value: any, buf: buffer, pos: number)
 			if value ~= sample_userdata then
-				return buf, pos, size
+				return buf, pos
 			end
 			buffer.writeu8(buf, pos, sample_id)
-			return buf, pos + 1, size
+			return buf, pos + 1
 		end,
 		deserialize = function(buf: buffer, pos: number)
 			local id = buffer.readu8(buf, pos)
@@ -240,7 +238,7 @@ function BufferSerializer.isSupported(ud: any): boolean
 	if ud == userdata.unsupported then
 		return false
 	end
-	return userdata.deserialize(userdata.serialize(ud, nil :: any, 0, 0), 0)
+	return userdata.deserialize(userdata.serialize(ud, buffer.create(0), 0), 0)
 		~= userdata.unsupported
 end
 

@@ -10,16 +10,11 @@ local INT = 12
 local STRING_15 = 27
 
 @native
-local function strSerializer(
-	value: string,
-	buf: buffer,
-	pos: number,
-	size: number
-)
+local function strSerializer(value: string, buf: buffer, pos: number)
 	if value == "" then
-		buf, size = inflate(buf, pos + 1, size)
+		buf = inflate(buf, pos, 1)
 		buffer.writeu8(buf, pos, EMPTY)
-		return buf, pos + 1, size
+		return buf, pos + 1
 	end
 
 	local len = #value
@@ -31,12 +26,12 @@ local function strSerializer(
 		elseif len < 16_777_216 then 4
 		else 5
 
-	buf, size = inflate(buf, pos + len + newSize, size)
+	buf = inflate(buf, pos, len + newSize)
 
 	if len < 16 then
 		buffer.writeu8(buf, pos, INT + len)
 		buffer.writestring(buf, pos + 1, value :: string, len)
-		return buf, pos + 1 + len, size
+		return buf, pos + 1 + len
 	end
 
 	buffer.writeu8(buf, pos, 7 + newSize)
@@ -52,7 +47,7 @@ local function strSerializer(
 	end
 
 	buffer.writestring(buf, pos + newSize, value :: string, len)
-	return buf, pos + newSize + len, size
+	return buf, pos + newSize + len
 end
 
 --[[

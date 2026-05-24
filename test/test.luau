@@ -218,18 +218,17 @@ function test.inspect<T>(value: T, options: InspectOptions?): (buffer, T)
 	local serial = (require(`@BufferSerializer/{type(value)}`) :: any).serialize
 	local deserial = (require(`@BufferSerializer/{type(value)}`) :: any).deserialize
 
-	-- we need to see how large it will be
 	local mainBuffer = mainSerial(value)
 	local size = buffer.len(mainBuffer)
 
 	local expectedPos = size + 1
-	local expectedSize = size + 2
+	local expectedSize = 2 ^ (32 - bit32.countlz(size + 2))
 
 	local wrappedBuffer = test.sizedBuffer(expectedSize, 100)
 	buffer.writeu8(wrappedBuffer, expectedPos, 200)
 
-	local obtainedBuffer, obtainedPos, obtainedSize =
-		serial(value, wrappedBuffer, 1, size + 2)
+	local obtainedBuffer, obtainedPos = serial(value, wrappedBuffer, 1)
+	local obtainedSize = buffer.len(obtainedBuffer)
 
 	-- We must ensure byte 1 is 100 and final byte is 200
 	if buffer.readu8(obtainedBuffer, 0) ~= 100 then

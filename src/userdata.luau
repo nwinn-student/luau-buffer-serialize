@@ -9,9 +9,8 @@ type Support = {
 	serialize: (
 		udata: any,
 		buf: buffer,
-		pos: number,
-		size: number
-	) -> (buffer, number, number),
+		pos: number
+	) -> (buffer, number),
 	deserialize: (buf: buffer, pos: number) -> (any?, number),
 }
 
@@ -22,40 +21,39 @@ local supports = {
 	deserializers = {},
 }
 
-local function writeUnsupported(buf: buffer, pos: number, size: number)
-	buf, size = inflate(buf, pos + 1, size)
+local function writeUnsupported(buf: buffer, pos: number)
+	buf = inflate(buf, pos, 1)
 	buffer.writeu8(buf, pos, UNSUPPORTED)
-	return buf, pos + 1, size
+	return buf, pos + 1
 end
 
-local function userSerializer(value: any, buf: buffer, pos: number, size: number)
+local function userSerializer(value: any, buf: buffer, pos: number)
 	if #supports.serializers == 0 or value == UNSUPPORTED_USERDATA then
-		return writeUnsupported(buf, pos, size)
+		return writeUnsupported(buf, pos)
 	end
 
-	local end_buf: buffer, end_pos: number, end_size: number
+	local end_buf: buffer, end_pos: number
 	local isSupported: boolean = false
 
-	buf, size = inflate(buf, pos + 2, size)
+	buf = inflate(buf, pos, 2)
 	buffer.writeu8(buf, pos, CUSTOM)
 
 	-- this is faster than functions that call functions (since we would need to wrap each)
 	for _, serializer in supports.serializers do
-		local temp_buf, temp_pos, temp_size =
-			serializer(value, buf, pos + 1, size)
+		local temp_buf, temp_pos = serializer(value, buf, pos + 1)
 		if temp_pos ~= pos + 1 then
 			isSupported = true
-			end_buf, end_pos, end_size = temp_buf, temp_pos, temp_size
+			end_buf, end_pos = temp_buf, temp_pos
 			break
 		end
 	end
 
 	-- we assume no modifications to the buffer!!
 	if not isSupported then
-		return writeUnsupported(buf, pos, size)
+		return writeUnsupported(buf, pos)
 	end
 
-	return end_buf, end_pos, end_size
+	return end_buf, end_pos
 end
 
 --[[

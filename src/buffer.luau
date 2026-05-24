@@ -11,13 +11,13 @@ local INT = 7
 local EMPTY_BUFFER = buffer.create(0)
 
 return table.freeze({
-	serialize = function(value: buffer, buf: buffer, pos: number, size: number)
+	serialize = function(value: buffer, buf: buffer, pos: number)
 		local len = buffer.len(value)
 
 		if len == 0 then
-			buf, size = inflate(buf, pos + 1, size)
+			buf = inflate(buf, pos, 1)
 			buffer.writeu8(buf, pos, EMPTY)
-			return buf, pos + 1, size
+			return buf, pos + 1
 		end
 
 		local newSize = if len < 256
@@ -26,7 +26,7 @@ return table.freeze({
 			elseif len < 16_777_216 then 4
 			else 5
 
-		buf, size = inflate(buf, pos + len + newSize, size)
+		buf = inflate(buf, pos, len + newSize)
 		buffer.writeu8(buf, pos, 2 + newSize)
 
 		if len < 256 then
@@ -40,7 +40,7 @@ return table.freeze({
 		end
 
 		buffer.copy(buf, pos + newSize, value)
-		return buf, pos + newSize + len, size
+		return buf, pos + newSize + len
 	end,
 
 	--[[

@@ -3,6 +3,7 @@
 
 local test = require("./test")
 local userdata = require("../src/userdata")
+local isSupported = require("../src").isSupported
 
 local CUSTOM = 202
 local UNSUPPORTED = 203
@@ -12,6 +13,7 @@ local zero_proxy = newproxy()
 
 -- Check that userdata.luau works properly
 test.compare(test.newBuffer(UNSUPPORTED), test.inspect(userdata.unsupported))
+test.compare(false, isSupported(userdata.unsupported))
 
 local function reader(buf: buffer, pos: number): (unknown, number)
 	local id = buffer.readu8(buf, pos)
@@ -21,17 +23,12 @@ local function reader(buf: buffer, pos: number): (unknown, number)
 	return nil, pos + 1
 end
 
-local function writer(
-	value: unknown,
-	buf: buffer,
-	pos: number,
-	size: number
-): (buffer, number, number)
+local function writer(value: unknown, buf: buffer, pos: number): (buffer, number)
 	if value ~= zero_proxy then
-		return buf, pos, size
+		return buf, pos
 	end
 	buffer.writeu8(buf, pos, 0)
-	return buf, pos + 1, size
+	return buf, pos + 1
 end
 userdata.addSupport({
 	serialize = writer,
@@ -45,5 +42,6 @@ test.compare(test.newBuffer(UNSUPPORTED), obtainedBuffer)
 test.compare(userdata.unsupported, obtainedValue)
 
 test.compare(test.newBuffer(CUSTOM, 0), test.inspect(zero_proxy))
+test.compare(true, isSupported(zero_proxy))
 
 return {}
