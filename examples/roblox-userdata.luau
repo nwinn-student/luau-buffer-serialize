@@ -57,79 +57,69 @@ local COLOR_SEQUENCE_KEYPOINT = 16
 local EnumList = Enum:GetEnums()
 
 @native
-local function userdataWriter(value: any, buf: buffer, pos: number, size: number)
+local function userdataWriter(value: any, buf: buffer, pos: number)
 	local userType = typeof(value)
 	if userType == "BrickColor" then
 		buffer.writeu8(buf, pos, BRICKCOLOR)
-		buf, pos, size = numberSerial.serialize(value.Number, buf, pos + 1, size)
+		buf, pos = numberSerial.serialize(value.Number, buf, pos + 1)
 	elseif userType == "Color3" then
 		-- only needed when using buffer library directly
 		-- some libs have their own inflate built-in
-		buf, size = inflate(buf, pos + 4, size)
+		buf = inflate(buf, pos, 4)
 		buffer.writeu8(buf, pos, COLOR3)
 		buffer.writebits(buf, (pos + 1) * 8, 24, tonumber(value:ToHex(), 16))
 		pos += 4
 	elseif userType == "EnumItem" then
 		buffer.writeu8(buf, pos, ENUMITEM)
-		buf, pos, size = numberSerial.serialize(
+		buf, pos = numberSerial.serialize(
 			table.find(EnumList, value.EnumType),
 			buf,
-			pos + 1,
-			size
+			pos + 1
 		)
-		buf, pos, size = numberSerial.serialize(value.Value, buf, pos, size)
+		buf, pos = numberSerial.serialize(value.Value, buf, pos)
 	elseif userType == "CFrame" then
 		buffer.writeu8(buf, pos, CFRAME)
-		buf, pos, size =
-			vectorSerial.serialize(value.Position, buf, pos + 1, size)
+		buf, pos = vectorSerial.serialize(value.Position, buf, pos + 1)
 		local x, y, z = (value :: CFrame):ToEulerAnglesXYZ()
-		buf, pos, size =
-			vectorSerial.serialize(vector.create(x, y, z), buf, pos, size)
+		buf, pos = vectorSerial.serialize(vector.create(x, y, z), buf, pos)
 	elseif userType == "Ray" then
 		buffer.writeu8(buf, pos, RAY)
-		buf, pos, size = vectorSerial.serialize(value.Origin, buf, pos + 1, size)
-		buf, pos, size = vectorSerial.serialize(value.Direction, buf, pos, size)
+		buf, pos = vectorSerial.serialize(value.Origin, buf, pos + 1)
+		buf, pos = vectorSerial.serialize(value.Direction, buf, pos)
 	elseif userType == "Instance" then
 		buffer.writeu8(buf, pos, INSTANCE)
-		buf, pos, size =
-			tableSerial.serialize(rose.serialize(value), buf, pos + 1, size)
+		buf, pos = tableSerial.serialize(rose.serialize(value), buf, pos + 1)
 	elseif userType == "Enum" then
 		buffer.writeu8(buf, pos, ENUM)
-		buf, pos, size = numberSerial.serialize(
-			table.find(EnumList, value),
-			buf,
-			pos + 1,
-			size
-		)
+		buf, pos =
+			numberSerial.serialize(table.find(EnumList, value), buf, pos + 1)
 	elseif userType == "UDim" then
 		buffer.writeu8(buf, pos, UDIM)
-		buf, pos, size = numberSerial.serialize(value.Scale, buf, pos + 1, size)
-		buf, pos, size = numberSerial.serialize(value.Offset, buf, pos, size)
+		buf, pos = numberSerial.serialize(value.Scale, buf, pos + 1)
+		buf, pos = numberSerial.serialize(value.Offset, buf, pos)
 	elseif userType == "UDim2" then
 		buffer.writeu8(buf, pos, UDIM2)
-		buf, pos, size = numberSerial.serialize(value.X.Scale, buf, pos + 1, size)
-		buf, pos, size = numberSerial.serialize(value.X.Offset, buf, pos, size)
-		buf, pos, size = numberSerial.serialize(value.Y.Offset, buf, pos, size)
-		buf, pos, size = numberSerial.serialize(value.Y.Offset, buf, pos, size)
+		buf, pos = numberSerial.serialize(value.X.Scale, buf, pos + 1)
+		buf, pos = numberSerial.serialize(value.X.Offset, buf, pos)
+		buf, pos = numberSerial.serialize(value.Y.Offset, buf, pos)
+		buf, pos = numberSerial.serialize(value.Y.Offset, buf, pos)
 	elseif userType == "Vector2" then
 		buffer.writeu8(buf, pos, VECTOR2)
-		buf, pos, size = numberSerial.serialize(value.X, buf, pos + 1, size)
-		buf, pos, size = numberSerial.serialize(value.Y, buf, pos, size)
+		buf, pos = numberSerial.serialize(value.X, buf, pos + 1)
+		buf, pos = numberSerial.serialize(value.Y, buf, pos)
 	elseif userType == "NumberSequence" then
 		buffer.writeu8(buf, pos, NUMBER_SEQUENCE)
-		buf, pos, size =
-			tableSerial.serialize(value.Keypoints, buf, pos + 1, size)
+		buf, pos = tableSerial.serialize(value.Keypoints, buf, pos + 1)
 	elseif userType == "NumberSequenceKeypoint" then
 		buffer.writeu8(buf, pos, NUMBER_SEQUENCE_KEYPOINT)
-		buf, pos, size = numberSerial.serialize(value.Time, buf, pos + 1, size)
-		buf, pos, size = numberSerial.serialize(value.Value, buf, pos, size)
-		buf, pos, size = numberSerial.serialize(value.Envelope, buf, pos, size)
+		buf, pos = numberSerial.serialize(value.Time, buf, pos + 1)
+		buf, pos = numberSerial.serialize(value.Value, buf, pos)
+		buf, pos = numberSerial.serialize(value.Envelope, buf, pos)
 	elseif userType == "ColorSequence" then
 		buffer.writeu8(buf, pos, COLOR_SEQUENCE)
-		buf, pos, size =
-			tableSerial.serialize(value.Keypoints, buf, pos + 1, size)
+		buf, pos = tableSerial.serialize(value.Keypoints, buf, pos + 1)
 	elseif userType == "ColorSequenceKeypoint" then
-		buf, size = inflate(buf, pos + 5, size)
+		buf = inflate(buf, pos, 5)
 		buffer.writeu8(buf, pos, COLOR_SEQUENCE_KEYPOINT)
 		buffer.writebits(
 			buf,
@@ -137,25 +127,24 @@ local function userdataWriter(value: any, buf: buffer, pos: number, size: number
 			24,
 			tonumber(value.Value:ToHex(), 16)
 		)
-		buf, pos, size = numberSerial.serialize(value.Time, buf, pos + 4, size)
+		buf, pos = numberSerial.serialize(value.Time, buf, pos + 4)
 	elseif userType == "NumberRange" then
 		buffer.writeu8(buf, pos, NUMBER_RANGE)
-		buf, pos, size = numberSerial.serialize(value.Min, buf, pos + 1, size)
-		buf, pos, size = numberSerial.serialize(value.Max, buf, pos, size)
+		buf, pos = numberSerial.serialize(value.Min, buf, pos + 1)
+		buf, pos = numberSerial.serialize(value.Max, buf, pos)
 	elseif userType == "Rect" then
 		buffer.writeu8(buf, pos, RECT)
-		buf, pos, size = numberSerial.serialize(value.Min.X, buf, pos + 1, size)
-		buf, pos, size = numberSerial.serialize(value.Min.Y, buf, pos, size)
-		buf, pos, size = numberSerial.serialize(value.Max.X, buf, pos, size)
-		buf, pos, size = numberSerial.serialize(value.Max.Y, buf, pos, size)
+		buf, pos = numberSerial.serialize(value.Min.X, buf, pos + 1)
+		buf, pos = numberSerial.serialize(value.Min.Y, buf, pos)
+		buf, pos = numberSerial.serialize(value.Max.X, buf, pos)
+		buf, pos = numberSerial.serialize(value.Max.Y, buf, pos)
 	elseif userType == "Font" then
 		buffer.writeu8(buf, pos, FONT)
-		buf, pos, size = stringSerial.serialize(value.Family, buf, pos + 1, size)
-		buf, pos, size =
-			numberSerial.serialize(value.Weight.Value, buf, pos, size)
-		buf, pos, size = numberSerial.serialize(value.Style.Value, buf, pos, size)
+		buf, pos = stringSerial.serialize(value.Family, buf, pos + 1)
+		buf, pos = numberSerial.serialize(value.Weight.Value, buf, pos)
+		buf, pos = numberSerial.serialize(value.Style.Value, buf, pos)
 	end
-	return buf, pos, size
+	return buf, pos
 end
 
 @native
