@@ -135,12 +135,12 @@ end
 	local sample_id = 0
 
 	BufferSerializer.supportUserdata({
-		serialize = function(value: any, buf: buffer, pos: number, size: number)
+		serialize = function(value: any, buf: buffer, pos: number)
 			if value ~= sample_userdata then
-				return buf, pos, size
+				return buf, pos
 			end
 			buffer.writeu8(buf, pos, sample_id)
-			return buf, pos + 1, size
+			return buf, pos + 1
 		end,
 		deserialize = function(buf: buffer, pos: number)
 			local id = buffer.readu8(buf, pos)
