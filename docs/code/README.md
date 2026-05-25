@@ -152,7 +152,7 @@ local serialData = BufferSerializer.serialize(sample_userdata)
 
 Returns whether the userdata is capable of being serialized and deserialized.
 
-- Meaning the userdata does not deserialize into the unsupported userdata constant.
+- Meaning the userdata does not deserialize into an unsupported userdata.
 
 **Recommendations:**
 - Ensure the userdata deserializes into the desired form.
