@@ -14,8 +14,6 @@ type Support = {
 	deserialize: (buf: buffer, pos: number) -> (any?, number),
 }
 
-local UNSUPPORTED_USERDATA = setmetatable({}, { __mode = "ks" })
-
 local supports = {
 	serializers = {},
 	deserializers = {},
@@ -74,7 +72,6 @@ local function userDeserializer(buf: buffer, pos: number)
 
 	if id == UNSUPPORTED then
 		local unsupported = newproxy()
-		UNSUPPORTED_USERDATA[unsupported] = true
 		return unsupported, pos + 1
 	end
 
@@ -197,15 +194,10 @@ function addSupport(record: Support)
 	end
 end
 
-function isUnsupported(udata: unknown)
-	return UNSUPPORTED_USERDATA[udata] == true
-end
-
 local Userdata = {
 	serialize = userSerializer,
 	deserialize = userDeserializer,
 	addSupport = addSupport,
-	isUnsupported = isUnsupported,
 }
 
 return table.freeze(Userdata)
