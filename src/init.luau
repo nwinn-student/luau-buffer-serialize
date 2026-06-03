@@ -235,12 +235,11 @@ end
 	@error buffer access out of bounds
 ]]
 function BufferSerializer.isSupported(ud: any): boolean
-	if userdata.isUnsupported(ud) then
-		return false
-	end
-	local new_udata =
-		userdata.deserialize(userdata.serialize(ud, buffer.create(0), 0), 0)
-	return not userdata.isUnsupported(new_udata)
+	local buf, pos = userdata.serialize(ud, buffer.create(0), 0)
+
+	userdata.deserialize(buf, 0)
+	-- Only unsupported userdata can return pos == 1
+	return pos ~= 1
 end
 
 return table.freeze(BufferSerializer)
