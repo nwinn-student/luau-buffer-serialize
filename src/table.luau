@@ -5,6 +5,7 @@ local link = require("./link")
 local linkType = link.type
 local isLink = link.islink
 local isDuo = link.isduo
+local existingBuffers = link.existingBuffers
 
 type Serialize = (data: any, buf: buffer, pos: number) -> (buffer, number)
 
@@ -70,11 +71,22 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 		end
 	end
 
-	local existingIndex = 1
-	local existing: { [any]: number } = { [value] = 0 }
-	local roundRobinCache: { [number]: any } = {}
-	local roundRobinLength = 0
-	local roundRobinIndex = 61440
+	local existingData = if existingBuffers[buf]
+		then existingBuffers[buf]
+		else {
+			index = 1,
+			data = { [value] = 0,
+			-- round robin
+			rr_data = {},
+			rr_length = 0,
+			rr_index = 61_440,
+		}
+
+	local existingIndex = existingData.index
+	local existing: { [any]: number } = existingData.data
+	local roundRobinCache: { [number]: any } = existingData.rr_data
+	local roundRobinLength = existingData.rr_length
+	local roundRobinIndex = existingData.rr_index
 
 	local serialTable: (data: { [any]: any }) -> ()
 
@@ -129,7 +141,15 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 
 			existingCache(data)
 
+			existingData.index = existingIndex
+			existingData.rr_length = roundRobinLength
+			existingData.rr_index = roundRobinIndex
+
 			serialTable(data)
+
+			existingIndex = existingData.index
+			roundRobinLength = existingData.rr_length
+			roundRobinIndex = existingData.rr_index
 			return
 		end
 
