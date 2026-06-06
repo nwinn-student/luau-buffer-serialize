@@ -298,10 +298,23 @@ function tabDeserializer(buf: buffer, pos: number)
 		end
 	end
 
-	local existingIndex = 1
-	local existing: { any } = { [0] = returnedTab }
-	local roundRobinIndex = 61_440
-	local paired = {}
+	local existingData = if existingBuffers[buf]
+		then existingBuffers[buf]
+		else {
+			index = 1,
+			data = { [0] = returnedTab },
+			-- round robin
+			rr_index = 61_440,
+			paired = {},
+		}
+	if existingBuffers[buf] == nil then
+		existingBuffers[buf] = existingData
+	end
+
+	local existingIndex = existingData.index
+	local existing: { any } = existingData.data
+	local roundRobinIndex = existingData.rr_index
+	local paired = existingData.paired
 
 	local deserialTable: (data: { [any]: any }) -> { [any]: any }
 
@@ -329,7 +342,16 @@ function tabDeserializer(buf: buffer, pos: number)
 		elseif valId == TABLE or valId == ARRAY or valId == DICT then
 			local value = {}
 			existingCache(value)
-			return deserialTable(value)
+
+			existingData.index = existingIndex
+			existingData.rr_index = roundRobinIndex
+
+			deserialTable(value)
+
+			existingIndex = existingData.index
+			roundRobinIndex = existingData.rr_index
+
+			return value
 		end
 
 		local value: any = nil
