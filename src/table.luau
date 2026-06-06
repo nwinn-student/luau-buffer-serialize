@@ -11,6 +11,22 @@ type Serialize = (data: any, buf: buffer, pos: number) -> (buffer, number)
 
 type Deserialize = (buf: buffer, pos: number) -> (any, number)
 
+type SerExisting = {
+	index: number,
+	data: { [any]: number },
+	-- round robin
+	rr_index: number,
+	rr_length: number,
+	rr_data: { [number]: any },
+}
+type DeserExisting = {
+	index: number,
+	data: { any },
+	-- round robin
+	rr_index: number,
+	paired: { any },
+}
+
 type Switch<VAR, F> = {
 	[VAR]: F,
 }
@@ -71,15 +87,15 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 		end
 	end
 
-	local existingData = if existingBuffers[buf]
-		then existingBuffers[buf]
+	local existingData: SerExisting = if existingBuffers[buf]
+		then existingBuffers[buf] :: SerExisting
 		else {
 			index = 1,
-			data = { [value] = 0,
+			data = { [value] = 0 },
 			-- round robin
-			rr_data = {},
 			rr_length = 0,
 			rr_index = 61_440,
+			rr_data = {},
 		}
 
 	local existingIndex = existingData.index
@@ -141,20 +157,26 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 
 			existingCache(data)
 
-			existingData.index = existingIndex
-			existingData.rr_length = roundRobinLength
-			existingData.rr_index = roundRobinIndex
-
 			serialTable(data)
 
-			existingIndex = existingData.index
-			roundRobinLength = existingData.rr_length
-			roundRobinIndex = existingData.rr_index
 			return
 		end
 
 		local oldPos = pos
+
+		if typeName == "userdata" then
+			existingData.index = existingIndex
+			existingData.rr_length = roundRobinLength
+			existingData.rr_index = roundRobinIndex
+		end
+
 		buf, pos = serialSwitch[typeName](data, buf, pos)
+
+		if typeName == "userdata" then
+			existingIndex = existingData.index
+			roundRobinLength = existingData.rr_length
+			roundRobinIndex = existingData.rr_index
+		end
 
 		if pos - oldPos > 2 and data == data then
 			existingCache(data)
@@ -299,7 +321,7 @@ function tabDeserializer(buf: buffer, pos: number)
 	end
 
 	local existingData = if existingBuffers[buf]
-		then existingBuffers[buf]
+		then existingBuffers[buf] :: DeserExisting
 		else {
 			index = 1,
 			data = { [0] = returnedTab },
@@ -307,6 +329,7 @@ function tabDeserializer(buf: buffer, pos: number)
 			rr_index = 61_440,
 			paired = {},
 		}
+
 	if existingBuffers[buf] == nil then
 		existingBuffers[buf] = existingData
 	end
@@ -343,13 +366,7 @@ function tabDeserializer(buf: buffer, pos: number)
 			local value = {}
 			existingCache(value)
 
-			existingData.index = existingIndex
-			existingData.rr_index = roundRobinIndex
-
 			deserialTable(value)
-
-			existingIndex = existingData.index
-			roundRobinIndex = existingData.rr_index
 
 			return value
 		end
@@ -379,7 +396,17 @@ function tabDeserializer(buf: buffer, pos: number)
 			return value
 		end
 
+		if case == "userdata" then
+			existingData.index = existingIndex
+			existingData.rr_index = roundRobinIndex
+		end
+
 		value, pos = deserialSwitch[case](buf, pos)
+
+		if case == "userdata" then
+			existingIndex = existingData.index
+			roundRobinIndex = existingData.rr_index
+		end
 
 		if pos - 2 > oldPos then
 			existingCache(value)
