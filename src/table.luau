@@ -87,7 +87,8 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 		end
 	end
 
-	local existingData: SerExisting = if existingBuffers[buf]
+	local isRoot = existingBuffers[buf] == nil
+	local existingData: SerExisting = if not isRoot
 		then existingBuffers[buf] :: SerExisting
 		else {
 			index = 1,
@@ -273,9 +274,11 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 
 	serialTable(value)
 
-	table.clear(existing)
-	if roundRobinLength > 0 then
-		table.clear(roundRobinCache)
+	if isRoot then
+		table.clear(existing)
+		if roundRobinLength > 0 then
+			table.clear(roundRobinCache)
+		end
 	end
 
 	return buf, pos
@@ -320,7 +323,8 @@ function tabDeserializer(buf: buffer, pos: number)
 		end
 	end
 
-	local existingData = if existingBuffers[buf]
+	local isRoot = existingBuffers[buf] == nil
+	local existingData = if not isRoot
 		then existingBuffers[buf] :: DeserExisting
 		else {
 			index = 1,
@@ -513,7 +517,9 @@ function tabDeserializer(buf: buffer, pos: number)
 
 	local data = deserialTable(returnedTab)
 
-	table.clear(existing)
+	if isRoot then
+		table.clear(existing)
+	end
 
 	return data, pos
 end
