@@ -9,8 +9,9 @@ Definitions:
 - `[a-b]` is a set of all bytes between the two specified, including both
 - `a{N}` where `N` is a number represents `N` repetitions of set `a`
 - `(a)` allows for order of operations, first priority
-- `$NAME` is an `ANY` value declaration where `NAME` is `[a-zA-Z0-9]+`.  
+- `$NAME` is an `ANY` value declaration where `NAME` is `[a-zA-Z]+`.  
  `NAME` can be used in the same scope, or definition origin, as a number representing the byte at the specified location.
+ `NAME` is immutable in nature, redefinitions (`$NAME`) do not change the value of prior usages of `NAME`.
 
 - An intersection of a set with one or more repetitions (+) and a limited repetition set result in the a set with strings of length specified by the limited repetitions
 - An intersection of a set and a value declaration narrow the possible values from `ANY` into the first byte of the set.
