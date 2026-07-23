@@ -6,7 +6,7 @@ Definitions:
 - `&` is an intersection of the two sets
 - `~` is a negation of the set
 - `+` is one or more repetitions of the set
-- `[a-b]` is a set of all bytes between the two specified, including both
+- `[a-b]` is a set of all bytes between the two specified bytes, including both `a` and `b`.
 - `a{N}` where `N` is a number represents `N` repetitions of set `a`
 - `(a)` allows for order of operations, first priority
 - `$NAME` is an `ANY` value declaration where `NAME` is `[a-zA-Z]+`.  
