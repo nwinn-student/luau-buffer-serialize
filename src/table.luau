@@ -5,10 +5,27 @@ local link = require("./link")
 local linkType = link.type
 local isLink = link.islink
 local isDuo = link.isduo
+local existingBuffers = link.existingBuffers
 
 type Serialize = (data: any, buf: buffer, pos: number) -> (buffer, number)
 
 type Deserialize = (buf: buffer, pos: number) -> (any, number)
+
+type SerExisting = {
+	index: number,
+	data: { [any]: number },
+	-- round robin
+	rr_index: number,
+	rr_length: number,
+	rr_data: { [number]: any },
+}
+type DeserExisting = {
+	index: number,
+	data: { any },
+	-- round robin
+	rr_index: number,
+	paired: { any },
+}
 
 type Switch<VAR, F> = {
 	[VAR]: F,
@@ -70,11 +87,23 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 		end
 	end
 
-	local existingIndex = 1
-	local existing: { [any]: number } = { [value] = 0 }
-	local roundRobinCache: { [number]: any } = {}
-	local roundRobinLength = 0
-	local roundRobinIndex = 61440
+	local isRoot = existingBuffers[buf] == nil
+	local existingData: SerExisting = if not isRoot
+		then existingBuffers[buf] :: SerExisting
+		else {
+			index = 1,
+			data = { [value] = 0 },
+			-- round robin
+			rr_length = 0,
+			rr_index = 61_440,
+			rr_data = {},
+		}
+
+	local existingIndex = existingData.index
+	local existing: { [any]: number } = existingData.data
+	local roundRobinCache: { [number]: any } = existingData.rr_data
+	local roundRobinLength = existingData.rr_length
+	local roundRobinIndex = existingData.rr_index
 
 	local serialTable: (data: { [any]: any }) -> ()
 
@@ -130,11 +159,25 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 			existingCache(data)
 
 			serialTable(data)
+
 			return
 		end
 
 		local oldPos = pos
+
+		if typeName == "userdata" then
+			existingData.index = existingIndex
+			existingData.rr_length = roundRobinLength
+			existingData.rr_index = roundRobinIndex
+		end
+
 		buf, pos = serialSwitch[typeName](data, buf, pos)
+
+		if typeName == "userdata" then
+			existingIndex = existingData.index
+			roundRobinLength = existingData.rr_length
+			roundRobinIndex = existingData.rr_index
+		end
 
 		if pos - oldPos > 2 and data == data then
 			existingCache(data)
@@ -231,9 +274,11 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 
 	serialTable(value)
 
-	table.clear(existing)
-	if roundRobinLength > 0 then
-		table.clear(roundRobinCache)
+	if isRoot then
+		table.clear(existing)
+		if roundRobinLength > 0 then
+			table.clear(roundRobinCache)
+		end
 	end
 
 	return buf, pos
@@ -278,10 +323,25 @@ function tabDeserializer(buf: buffer, pos: number)
 		end
 	end
 
-	local existingIndex = 1
-	local existing: { any } = { [0] = returnedTab }
-	local roundRobinIndex = 61_440
-	local paired = {}
+	local isRoot = existingBuffers[buf] == nil
+	local existingData = if not isRoot
+		then existingBuffers[buf] :: DeserExisting
+		else {
+			index = 1,
+			data = { [0] = returnedTab },
+			-- round robin
+			rr_index = 61_440,
+			paired = {},
+		}
+
+	if existingBuffers[buf] == nil then
+		existingBuffers[buf] = existingData
+	end
+
+	local existingIndex = existingData.index
+	local existing: { any } = existingData.data
+	local roundRobinIndex = existingData.rr_index
+	local paired = existingData.paired
 
 	local deserialTable: (data: { [any]: any }) -> { [any]: any }
 
@@ -309,7 +369,10 @@ function tabDeserializer(buf: buffer, pos: number)
 		elseif valId == TABLE or valId == ARRAY or valId == DICT then
 			local value = {}
 			existingCache(value)
-			return deserialTable(value)
+
+			deserialTable(value)
+
+			return value
 		end
 
 		local value: any = nil
@@ -337,7 +400,17 @@ function tabDeserializer(buf: buffer, pos: number)
 			return value
 		end
 
+		if case == "userdata" then
+			existingData.index = existingIndex
+			existingData.rr_index = roundRobinIndex
+		end
+
 		value, pos = deserialSwitch[case](buf, pos)
+
+		if case == "userdata" then
+			existingIndex = existingData.index
+			roundRobinIndex = existingData.rr_index
+		end
 
 		if pos - 2 > oldPos then
 			existingCache(value)
@@ -444,7 +517,9 @@ function tabDeserializer(buf: buffer, pos: number)
 
 	local data = deserialTable(returnedTab)
 
-	table.clear(existing)
+	if isRoot then
+		table.clear(existing)
+	end
 
 	return data, pos
 end

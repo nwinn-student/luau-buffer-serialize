@@ -60,7 +60,7 @@
 type SerialFormat = {
 	number -- class Index
 	| { any }? -- properties, w/o defaults
-	| { SerialFormat }? -- children
+	| { Instance }? -- children
 	| { [string]: any }? -- attributes
 }
 
@@ -130,13 +130,9 @@ function serialize_instance(obj: Instance)
 		props = nil
 	end
 
-	local children = {}
-	local child_pool = obj:GetChildren()
-	if #child_pool == 0 then
+	local children = obj:GetChildren()
+	if #children == 0 then
 		children = nil
-	end
-	for _, child in child_pool do
-		table.insert(children, serialize_instance(child))
 	end
 
 	local attributes = obj:GetAttributes()
@@ -170,7 +166,7 @@ function deserialize_instance(obj: SerialFormat, parent: Instance?)
 	local children = obj[3]
 	if children then
 		for _, child in children do
-			deserialize_instance(child, instance)
+			child.Parent = instance
 		end
 	end
 
