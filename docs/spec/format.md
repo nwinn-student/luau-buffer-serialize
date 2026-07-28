@@ -1,6 +1,6 @@
 Definitions:
 
-- All sets are made up of "\N" characters, where `N` is a number between 0 and 255, including both ends.
+- All sets are made up of "\N" characters, where `N` is a number between 0 and 255, including both ends, `ANY`.
 - `|` is a union of the two sets
 - ` ` is a concatenation of the two sets, means nothing when used for spacing operators, including itself.
 - `&` is an intersection of the two sets
@@ -9,12 +9,11 @@ Definitions:
 - `[a-b]` is a set of all bytes between the two specified bytes, including both `a` and `b`.
 - `a{N}` where `N` is a number represents `N` repetitions of set `a`
 - `(a)` allows for order of operations, first priority
-- `$NAME` is an `ANY` value declaration where `NAME` is `[a-zA-Z]+`.  
- `NAME` can be used in the same scope, or definition origin, as a number representing the byte at the specified location.
- `NAME` is immutable in nature, redefinitions (`$NAME`) do not change the value of prior usages of `NAME`.
+- `$NAME` is an `ANY` variable where `NAME` is `[a-zA-Z]+`, and can be narrowed using operations.
+ `NAME` can be used in the same scope, or definition origin, as a number representing the byte at the specified location, or the byte itself.
+ Redefinitions (`$NAME`) do not change the value of prior usages of `NAME`.
 
 - An intersection of a set with one or more repetitions (+) and a limited repetition set result in the a set with strings of length specified by the limited repetitions
-- An intersection of a set and a value declaration narrow the possible values from `ANY` into the first byte of the set.
 
 Regular Expression Form:
 
