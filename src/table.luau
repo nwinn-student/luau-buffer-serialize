@@ -113,6 +113,8 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 			-- We will need to ensure the cycle is nonproblematic
 			-- Currently: Assumed improbable
 
+			existingCache(data)
+
 			do
 				local isEmpty = true
 				for _, _ in data :: { [any]: any } do
@@ -126,8 +128,6 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 					return
 				end
 			end
-
-			existingCache(data)
 
 			serialTable(data)
 			return
