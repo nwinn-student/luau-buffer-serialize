@@ -304,9 +304,10 @@ function tabDeserializer(buf: buffer, pos: number)
 	@native
 	local function deserialCache(valId: number): unknown
 		if valId == EMPTY then
+			local value = {}
 			pos += 1
 			existingCache(value)
-			return {}
+			return value
 		elseif valId == TABLE or valId == ARRAY or valId == DICT then
 			local value = {}
 			existingCache(value)
