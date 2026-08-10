@@ -2,7 +2,8 @@ Definitions:
 
 - All sets are made up of "\N" characters, where `N` is a number between 0 and 255, including both ends, `ANY`.
 - `|` is a union of the two sets
-- ` ` is a concatenation of the two sets, means nothing when used for spacing operators, including itself.
+- `..` is a concatenation of the two sets
+- Whitespace has no meaning.
 - `&` is an intersection of the two sets
 - `~` is a negation of the set
 - `+` is one or more repetitions of the set
@@ -32,10 +33,10 @@ FALSE = "\2"
 ANY = ["\0"-"\255"]
 
 BUFFER = EMPTY_BUFFER
-      | (BUFFER_BYTE_SIZE $BYTE ANY{BYTE})
-      | (BUFFER_CHAR_SIZE $BYTE $CHAR ANY{CHAR * 2^8 + BYTE})
-      | (BUFFER_TRYTE_SIZE $BYTE $CHAR $TRYTE ANY{TRYTE * 2^16 + CHAR * 2^8 + BYTE})
-      | (BUFFER_INT_SIZE BYTE $CHAR $TRYTE $INT ANY{INT * 2^24 + TRYTE * 2^16 + CHAR * 2^8 + BYTE})
+      | (BUFFER_BYTE_SIZE .. $BYTE .. ANY{BYTE})
+      | (BUFFER_CHAR_SIZE .. $BYTE .. $CHAR .. ANY{CHAR * 2^8 + BYTE})
+      | (BUFFER_TRYTE_SIZE .. $BYTE .. $CHAR .. $TRYTE .. ANY{TRYTE * 2^16 + CHAR * 2^8 + BYTE})
+      | (BUFFER_INT_SIZE .. $BYTE .. $CHAR .. $TRYTE .. $INT .. ANY{INT * 2^24 + TRYTE * 2^16 + CHAR * 2^8 + BYTE})
 EMPTY_BUFFER = "\3"
 BUFFER_BYTE_SIZE = "\4"
 BUFFER_CHAR_SIZE = "\5"
@@ -43,11 +44,11 @@ BUFFER_TRYTE_SIZE = "\6"
 BUFFER_INT_SIZE = "\7"
 
 STRING = EMPTY_STRING
-      | (STRING_BYTE_SIZE $BYTE ANY{BYTE})
-      | (STRING_CHAR_SIZE $BYTE $CHAR ANY{CHAR * 2^8 + BYTE})
-      | (STRING_TRYTE_SIZE $BYTE $CHAR $TRYTE ANY{TRYTE * 2^16 + CHAR * 2^8 + BYTE})
-      | (STRING_INT_SIZE BYTE $CHAR $TRYTE $INT ANY{INT * 2^24 + TRYTE * 2^16 + CHAR * 2^8 + BYTE})
-      | (($SIZE & SHORT_STRING) ANY{SIZE - 13})
+      | (STRING_BYTE_SIZE .. $BYTE .. ANY{BYTE})
+      | (STRING_CHAR_SIZE .. $BYTE .. $CHAR .. ANY{CHAR * 2^8 + BYTE})
+      | (STRING_TRYTE_SIZE .. $BYTE .. $CHAR .. $TRYTE .. ANY{TRYTE * 2^16 + CHAR * 2^8 + BYTE})
+      | (STRING_INT_SIZE .. $BYTE .. $CHAR .. $TRYTE .. $INT .. ANY{INT * 2^24 + TRYTE * 2^16 + CHAR * 2^8 + BYTE})
+      | (($SIZE & SHORT_STRING) .. ANY{SIZE - 13})
 EMPTY_STRING = "\8"
 STRING_BYTE_SIZE = "\9"
 STRING_CHAR_SIZE = "\10"
@@ -56,12 +57,12 @@ STRING_INT_SIZE = "\12"
 SHORT_STRING = ["\13"-"\27"]
 
 NUMBER = NUMBER_CONSTANTS
-      | (BYTE ANY)
-      | (CHAR ANY{2})
-      | (TRYTE ANY{3})
-      | (INT ANY{4})
-      | (FLOAT ANY{4})
-      | (DOUBLE ANY{8})
+      | (BYTE .. ANY)
+      | (CHAR .. ANY{2})
+      | (TRYTE .. ANY{3})
+      | (INT .. ANY{4})
+      | (FLOAT .. ANY{4})
+      | (DOUBLE .. ANY{8})
 NUMBER_CONSTANTS = ZERO | ONE | NAN
 ZERO = "\97"
 ONE = "\98"
@@ -74,12 +75,12 @@ DOUBLE = "\104"
 NAN = "\105"
 
 VECTOR = VECTOR_CONSTANTS
-      | (VECTOR_BYTE   ANY{3})
-      | (VECTOR_CHAR   ANY{6})
-      | (VECTOR_TRYTE  ANY{9})
-      | (VECTOR_FLOAT  ANY{12})
-      | (VECTOR_NUMBER NUMBER{3})
-      | (VECTOR_SCALAR VECTOR_CONSTANTS NUMBER)
+      | (VECTOR_BYTE .. ANY{3})
+      | (VECTOR_CHAR .. ANY{6})
+      | (VECTOR_TRYTE .. ANY{9})
+      | (VECTOR_FLOAT .. ANY{12})
+      | (VECTOR_NUMBER .. NUMBER{3})
+      | (VECTOR_SCALAR .. VECTOR_CONSTANTS .. NUMBER)
 VECTOR_CONSTANTS = ["\142"-"\149"]
 VECTOR_BYTE = "\150"
 VECTOR_CHAR = "\151"
@@ -89,16 +90,16 @@ VECTOR_NUMBER = "\154"
 VECTOR_SCALAR = "\155"
 
 TABLE = EMPTY_TABLE
-     | (DICT (KEY VALUE)+ TABLEEND)
-     | (ARRAY ARRAY_VALUE+ TABLEEND)
-     | (TABLESTART ARRAY_VALUE+ ARRAYEND (KEY VALUE)+ TABLEEND)
+     | (DICT .. (KEY .. VALUE)+ .. TABLEEND)
+     | (ARRAY .. ARRAY_VALUE+ .. TABLEEND)
+     | (TABLESTART .. ARRAY_VALUE+ .. ARRAYEND .. (KEY .. VALUE)+ .. TABLEEND)
 ARRAY_VALUE = VALUE & NIL
 VALUE = ANY_TYPE & ~NIL & EXISTING_SEQUENCE
 KEY = ANY_TYPE & ~INVALID_KEY & EXISTING_SEQUENCE
 INVALID_KEY = NIL | NAN
-      | (VECTOR_NUMBER (NUMBER{3} & NAN+))
-      | (VECTOR_SCALAR VECTOR_CONSTANTS NAN)
-EXISTING_SEQUENCE = EXISTING ANY{2}
+      | (VECTOR_NUMBER .. (NUMBER{3} & NAN+))
+      | (VECTOR_SCALAR .. VECTOR_CONSTANTS .. NAN)
+EXISTING_SEQUENCE = EXISTING .. ANY{2}
 EMPTY_TABLE = "\194"
 TABLESTART = "\195"
 EXISTING = "\196"
@@ -107,7 +108,7 @@ ARRAY = "\198"
 ARRAYEND = "\199"
 TABLEEND = "\200"
 
-USERDATA = UNSUPPORTED | CUSTOM ANY+
+USERDATA = UNSUPPORTED | CUSTOM .. ANY+
 CUSTOM = "\202"
 UNSUPPORTED = "\203"
 ```
