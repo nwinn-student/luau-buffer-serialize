@@ -95,8 +95,8 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 				roundRobinIndex = 61_440
 			end
 			-- Cycle time
-			existing[roundRobinCache[roundRobinIndex - 61_439]] = nil
 			existing[data] = roundRobinIndex
+			existing[roundRobinCache[roundRobinIndex - 61_439]] = nil
 			roundRobinCache[roundRobinIndex] = data
 			roundRobinIndex += 1
 			return
