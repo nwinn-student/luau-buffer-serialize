@@ -1,3 +1,12 @@
+**Performance Requirements**
+
+All performance requirements **must** be met prior to a version being merged 
+into the root repository.
+
+- The maximum time to serialize `N` bytes is `5N * 10^-6` seconds.
+- The maximum time to deserialize `N` bytes is `3N * 10^-6` seconds.
+
+
 <!--
 
 The speed, memory, and output size will be compared for serialization, while
