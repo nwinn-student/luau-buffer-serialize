@@ -1,6 +1,7 @@
 --!strict
 -- Runs tests for ../src/table
 
+local bs = require("@BufferSerializer")
 local test = require("./test")
 
 local ZERO = 97
@@ -17,6 +18,14 @@ local TABLEEND = 200
 local recurse = {}
 recurse[1] = recurse
 
+local fullExisting = {}
+for i = 1, 65536 do
+	fullExisting[i] = { 1 } -- force entry into existing
+end
+for i = 1, 5 do
+	fullExisting[i + 65536] = fullExisting[i + 61440]
+end
+
 -- Check that table.luau works properly
 test.compare(test.newBuffer(EMPTY), test.inspect({}))
 test.compare(
@@ -30,6 +39,7 @@ test.compare(
 	test.inspect({ "bbb", "bbb" })
 )
 test.compare(test.newBuffer(ARRAY, EXIST, 0, 0, TABLEEND), test.inspect(recurse))
+test.compare(fullExisting, bs.deserialize(bs.serialize(fullExisting)))
 
 -- error check
 local tabDeserialize = require("../src/table").deserialize

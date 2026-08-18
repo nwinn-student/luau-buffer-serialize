@@ -292,7 +292,6 @@ function tabDeserializer(buf: buffer, pos: number)
 			existingIndex += 1
 			return
 		end
-		-- TODO: roundRobin stuff
 		if roundRobinIndex == 65_536 then
 			roundRobinIndex = 61_440
 		end
