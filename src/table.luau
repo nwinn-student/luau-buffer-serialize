@@ -88,8 +88,6 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 			existingIndex += 1
 			return
 		end
-		-- TODO: Verify validity w/ larger datasets
-		-- 4096 values we cache in a cycle
 		if roundRobinLength == 4096 then
 			if roundRobinIndex == 65_536 then
 				roundRobinIndex = 61_440
