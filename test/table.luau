@@ -54,7 +54,7 @@ for i = 65536, 65536 + 65535 do
 	doubleFullExisting[i] = doubleFullExisting[i - 65536]
 end
 for i = 65536 + 65535, 65536 + 65535 + 4096 do
-	doubleFullExisting[i] = string.format("%-5i", i - 65536)
+	doubleFullExisting[i] = string.format("%-5i", i - 65535)
 end
 for i = 65536 + 65535 + 4096, 65536 + 65535 + 4096 + 4096 do
 	doubleFullExisting[i] = doubleFullExisting[i - 4096]
