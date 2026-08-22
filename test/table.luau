@@ -19,11 +19,45 @@ local recurse = {}
 recurse[1] = recurse
 
 local fullExisting = {}
-for i = 1, 65536 do
-	fullExisting[i] = { 1 } -- force entry into existing
+for i = 1, 65535 do
+	fullExisting[i] = string.format("%-5i", i) -- force entry into existing
 end
-for i = 1, 5 do
-	fullExisting[i + 65536] = fullExisting[i + 61440]
+fullExisting[65536] = fullExisting
+for i = 65536, 65535 + 65536 do
+	fullExisting[i] = fullExisting[i - 65535]
+end
+
+local overflowExisting = {}
+for i = 1, 65536 do
+	overflowExisting[i] = string.format("%-5i", i) -- force entry into existing
+end
+overflowExisting[65537] = overflowExisting[61440]
+
+local overflowExistingUnder = {}
+for i = 1, 65536 do
+	overflowExistingUnder[i] = string.format("%-5i", i) -- force entry into existing
+end
+overflowExistingUnder[65537] = overflowExistingUnder[61439]
+
+local overflowExistingOver = {}
+for i = 1, 65536 do
+	overflowExistingOver[i] = string.format("%-5i", i) -- force entry into existing
+end
+overflowExistingOver[65537] = overflowExistingOver[61441]
+
+local doubleFullExisting = {}
+for i = 1, 65535 do
+	doubleFullExisting[i] = string.format("%-5i", i) -- force entry into existing
+end
+doubleFullExisting[65536] = doubleFullExisting
+for i = 65536, 65536 + 65535 do
+	doubleFullExisting[i] = doubleFullExisting[i - 65536]
+end
+for i = 65536 + 65535, 65536 + 65535 + 4096 do
+	doubleFullExisting[i] = string.format("%-5i", i - 65536)
+end
+for i = 65536 + 65535 + 4096, 65536 + 65535 + 4096 + 4096 do
+	doubleFullExisting[i] = doubleFullExisting[i - 4096]
 end
 
 -- Check that table.luau works properly
@@ -39,7 +73,40 @@ test.compare(
 	test.inspect({ "bbb", "bbb" })
 )
 test.compare(test.newBuffer(ARRAY, EXIST, 0, 0, TABLEEND), test.inspect(recurse))
-test.compare(fullExisting, bs.deserialize(bs.serialize(fullExisting)))
+
+-- flaws cause output to be flooded
+local fullExistingBuffer = bs.serialize(fullExisting)
+test.compare(fullExisting, bs.deserialize(fullExistingBuffer))
+test.compare(
+	EXIST,
+	buffer.readu8(fullExistingBuffer, buffer.len(fullExistingBuffer) - 4)
+)
+local overflowExistingBuffer = bs.serialize(overflowExisting)
+test.compare(overflowExisting, bs.deserialize(overflowExistingBuffer))
+test.compare(
+	17, -- string 5, fails to save this as existing
+	buffer.readu8(overflowExistingBuffer, buffer.len(overflowExistingBuffer) - 7)
+)
+local overflowExistingUnderBuffer = bs.serialize(overflowExistingUnder)
+test.compare(overflowExistingUnder, bs.deserialize(overflowExistingUnderBuffer))
+test.compare(
+	EXIST,
+	buffer.readu8(
+		overflowExistingUnderBuffer,
+		buffer.len(overflowExistingUnderBuffer) - 4
+	)
+)
+local overflowExistingOverBuffer = bs.serialize(overflowExistingOver)
+test.compare(overflowExistingOver, bs.deserialize(overflowExistingOverBuffer))
+test.compare(
+	EXIST,
+	buffer.readu8(
+		overflowExistingOverBuffer,
+		buffer.len(overflowExistingOverBuffer) - 4
+	)
+)
+
+test.compare(doubleFullExisting, bs.deserialize(bs.serialize(doubleFullExisting)))
 
 -- error check
 local tabDeserialize = require("../src/table").deserialize
