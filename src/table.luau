@@ -279,6 +279,10 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 		if roundRobinLength > 0 then
 			table.clear(roundRobinCache)
 		end
+	else
+		existingData.index = existingIndex
+		existingData.rr_length = roundRobinLength
+		existingData.rr_index = roundRobinIndex
 	end
 
 	return buf, pos
@@ -519,6 +523,9 @@ function tabDeserializer(buf: buffer, pos: number)
 
 	if isRoot then
 		table.clear(existing)
+	else
+		existingData.index = existingIndex
+		existingData.rr_index = roundRobinIndex
 	end
 
 	return data, pos
