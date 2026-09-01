@@ -115,6 +115,7 @@ function serialize_instance(obj: Instance)
 	local props = {}
 
 	if not prop_pool then
+		print(`UNSUPPORT INSTANCE CLASS: {class_name}; INSTANCE:`, obj)
 		prop_pool = SUPPORTED_INSTANCES.Folder
 	end
 
