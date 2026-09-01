@@ -114,6 +114,10 @@ function serialize_instance(obj: Instance)
 
 	local props = {}
 
+	if not prop_pool then
+		prop_pool = SUPPORTED_INSTANCES.Folder
+	end
+
 	for index, property in prop_pool do
 		local object_property = obj[property]
 		if default_instance[property] == object_property then
