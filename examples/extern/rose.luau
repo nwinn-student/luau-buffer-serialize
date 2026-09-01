@@ -119,12 +119,7 @@ function serialize_instance(obj: Instance)
 		if default_instance[property] == object_property then
 			continue
 		end
-		-- Properties could be Instances, they are serialized recursively
-		-- Highly recommended to **NOT** save a property that is an Instance
-		-- 	due to overhead
-		props[index] = if typeof(object_property) == "Instance"
-			then serialize_instance(object_property)
-			else object_property
+		props[index] = object_property
 	end
 	if next(props) == nil then
 		props = nil
