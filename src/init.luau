@@ -223,7 +223,7 @@ end
 --[[
 	Returns whether the userdata is capable of being serialized and deserialized.
 
-	- Meaning the userdata does not deserialize into the unsupported userdata constant
+	- Meaning the userdata does not deserialize into an unsupported userdata.
 
 	**Recommendations:**
 	- Ensure the userdata deserializes into the desired form.
@@ -235,11 +235,11 @@ end
 	@error buffer access out of bounds
 ]]
 function BufferSerializer.isSupported(ud: any): boolean
-	if ud == userdata.unsupported then
-		return false
-	end
-	return userdata.deserialize(userdata.serialize(ud, buffer.create(0), 0), 0)
-		~= userdata.unsupported
+	local buf, pos = userdata.serialize(ud, buffer.create(0), 0)
+
+	userdata.deserialize(buf, 0)
+	-- Only unsupported userdata can return pos == 1
+	return pos ~= 1
 end
 
 return table.freeze(BufferSerializer)

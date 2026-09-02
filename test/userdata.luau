@@ -12,8 +12,7 @@ local proxy = newproxy()
 local zero_proxy = newproxy()
 
 -- Check that userdata.luau works properly
-test.compare(test.newBuffer(UNSUPPORTED), test.inspect(userdata.unsupported))
-test.compare(false, isSupported(userdata.unsupported))
+test.compare(false, isSupported(proxy))
 
 local function reader(buf: buffer, pos: number): (unknown, number)
 	local id = buffer.readu8(buf, pos)
@@ -39,7 +38,7 @@ local obtainedBuffer, obtainedValue = test.inspect(proxy, {
 	disableValueComparison = true,
 })
 test.compare(test.newBuffer(UNSUPPORTED), obtainedBuffer)
-test.compare(userdata.unsupported, obtainedValue)
+test.compare(false, isSupported(obtainedValue))
 
 test.compare(test.newBuffer(CUSTOM, 0), test.inspect(zero_proxy))
 test.compare(true, isSupported(zero_proxy))

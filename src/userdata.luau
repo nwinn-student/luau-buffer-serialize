@@ -14,8 +14,6 @@ type Support = {
 	deserialize: (buf: buffer, pos: number) -> (any?, number),
 }
 
-local UNSUPPORTED_USERDATA = newproxy()
-
 local supports = {
 	serializers = {},
 	deserializers = {},
@@ -28,7 +26,7 @@ local function writeUnsupported(buf: buffer, pos: number)
 end
 
 local function userSerializer(value: any, buf: buffer, pos: number)
-	if #supports.serializers == 0 or value == UNSUPPORTED_USERDATA then
+	if #supports.serializers == 0 then
 		return writeUnsupported(buf, pos)
 	end
 
@@ -73,7 +71,8 @@ local function userDeserializer(buf: buffer, pos: number)
 	local id = buffer.readu8(buf, pos)
 
 	if id == UNSUPPORTED then
-		return UNSUPPORTED_USERDATA, pos + 1
+		local unsupported = newproxy()
+		return unsupported, pos + 1
 	end
 
 	if id ~= CUSTOM then
@@ -135,12 +134,12 @@ end
 	local sample_id = 0
 
 	BufferSerializer.supportUserdata({
-		serialize = function(value: any, buf: buffer, pos: number, size: number)
+		serialize = function(value: any, buf: buffer, pos: number)
 			if value ~= sample_userdata then
-				return buf, pos, size
+				return buf, pos
 			end
 			buffer.writeu8(buf, pos, sample_id)
-			return buf, pos + 1, size
+			return buf, pos + 1
 		end,
 		deserialize = function(buf: buffer, pos: number)
 			local id = buffer.readu8(buf, pos)
@@ -199,8 +198,6 @@ local Userdata = {
 	serialize = userSerializer,
 	deserialize = userDeserializer,
 	addSupport = addSupport,
-
-	unsupported = UNSUPPORTED_USERDATA,
 }
 
 return table.freeze(Userdata)
