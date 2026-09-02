@@ -68,4 +68,6 @@ function link.isduo(byte: number, type: SERIALIZABLE_TYPES): boolean
 		or type == "userdata" and byte >= USER_DUOSTART
 end
 
+link.existingBuffers = {} :: { [buffer]: unknown }
+
 return table.freeze(link)
