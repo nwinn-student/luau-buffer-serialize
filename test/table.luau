@@ -23,8 +23,8 @@ for i = 1, 65535 do
 	fullExisting[i] = string.format("%-5i", i) -- force entry into existing
 end
 fullExisting[65536] = fullExisting
-for i = 65536, 65535 + 65536 do
-	fullExisting[i] = fullExisting[i - 65535]
+for i = 65537, 65535 + 65536 do
+	fullExisting[i] = fullExisting[i - 65536]
 end
 
 local overflowExisting = {}
@@ -33,31 +33,18 @@ for i = 1, 65536 do
 end
 overflowExisting[65537] = overflowExisting[61440]
 
-local overflowExistingUnder = {}
-for i = 1, 65536 do
-	overflowExistingUnder[i] = string.format("%-5i", i) -- force entry into existing
-end
+local overflowExistingUnder = table.clone(overflowExisting)
 overflowExistingUnder[65537] = overflowExistingUnder[61439]
 
-local overflowExistingOver = {}
-for i = 1, 65536 do
-	overflowExistingOver[i] = string.format("%-5i", i) -- force entry into existing
-end
+local overflowExistingOver = table.clone(overflowExisting)
 overflowExistingOver[65537] = overflowExistingOver[61441]
 
-local doubleFullExisting = {}
-for i = 1, 65535 do
-	doubleFullExisting[i] = string.format("%-5i", i) -- force entry into existing
+local doubleFullExisting = table.clone(fullExisting)
+for i = 65536 + 65536, 65536 + 65536 + 4096 do
+	doubleFullExisting[i] = string.format("%-5i", i - 65536)
 end
-doubleFullExisting[65536] = doubleFullExisting
-for i = 65536, 65536 + 65535 do
-	doubleFullExisting[i] = doubleFullExisting[i - 65536]
-end
-for i = 65536 + 65535, 65536 + 65535 + 4096 do
-	doubleFullExisting[i] = string.format("%-5i", i - 65535)
-end
-for i = 65536 + 65535 + 4096, 65536 + 65535 + 4096 + 4096 do
-	doubleFullExisting[i] = doubleFullExisting[i - 4096]
+for i = 65536 + 65536 + 4097, 65536 + 65536 + 4097 + 4096 do
+	doubleFullExisting[i] = doubleFullExisting[i - 4097]
 end
 
 -- Check that table.luau works properly
