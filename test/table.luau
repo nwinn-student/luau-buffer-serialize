@@ -17,6 +17,10 @@ local TABLEEND = 200
 local recurse = {}
 recurse[1] = recurse
 
+local empty_ref = {}
+empty_ref[1] = {}
+empty_ref[2] = empty_ref[1]
+
 -- Check that table.luau works properly
 test.compare(test.newBuffer(EMPTY), test.inspect({}))
 test.compare(
@@ -30,6 +34,10 @@ test.compare(
 	test.inspect({ "bbb", "bbb" })
 )
 test.compare(test.newBuffer(ARRAY, EXIST, 0, 0, TABLEEND), test.inspect(recurse))
+test.compare(
+	test.newBuffer(ARRAY, EMPTY, EXIST, 1, 0, TABLEEND),
+	test.inspect(empty_ref)
+)
 
 -- error check
 local tabDeserialize = require("../src/table").deserialize
