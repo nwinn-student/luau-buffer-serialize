@@ -40,11 +40,12 @@ local overflowExistingOver = table.clone(overflowExisting)
 overflowExistingOver[65537] = overflowExistingOver[61441]
 
 local doubleFullExisting = table.clone(fullExisting)
+doubleFullExisting[65536] = doubleFullExisting
 for i = 65536 + 65536, 65536 + 65536 + 4096 do
 	doubleFullExisting[i] = string.format("%-5i", i - 65536)
 end
 for i = 65536 + 65536 + 4097, 65536 + 65536 + 4097 + 4096 do
-	doubleFullExisting[i] = doubleFullExisting[i - 4097]
+	doubleFullExisting[i] = doubleFullExisting[i - 4096]
 end
 
 -- Check that table.luau works properly
