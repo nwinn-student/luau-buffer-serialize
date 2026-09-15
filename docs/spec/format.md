@@ -26,7 +26,22 @@ Vectors are immutable storage mediums for three 32-bit floating point numbers
 
 **How are cyclic tables stored?**
 
-Values are recorded and any duplicate is fast pathed to avoid re-serializing and is compressed to 3 bytes (`196`).  Tables are recorded before serializing, so cyclic tables are stored as 3 byte references to prior serialized or currently serializing tables.
+Values are recorded and any duplicate is fast pathed to avoid re-serializing and
+ is compressed to 3 bytes (`196`).  Tables are recorded before serializing, so
+ cyclic tables are stored as 3 byte references to prior serialized or currently
+ serializing tables.
+
+**What are the limitations to the duplicate value byte?**
+
+The first noteworthy aspect is that the duplicate value byte can only occur after
+ a table opener byte has been presented.  That is, duplicate values are not
+ considered until the first table is serialized.  The first 61,439 values within
+ the provided table are finalized as duplicate values.  The table itself is
+ finalized as the `0th` value.  All later usages will cause the duplicate value
+ byte to be used, 61,440 and up.  The next 4096 unique values are temporarily
+ viable to cause the duplicate value byte to be used.  Each unique value, not
+ within the current 65536, will override a prior duplicate value in the 4096.  A
+ round robin approach is taken, where upon reaching 4096, it cycles back to 1.
 
 **How can I find the size of a table?**
 
