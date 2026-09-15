@@ -36,12 +36,12 @@ Values are recorded and any duplicate is fast pathed to avoid re-serializing and
 The first noteworthy aspect is that the duplicate value byte can only occur after
  a table opener byte has been presented.  That is, duplicate values are not
  considered until the first table is serialized.  The first 61,439 values within
- the provided table, including the table itself, are finalized as duplicate values.
- All later usages will cause the duplicate value byte to be used.  The next 4096
- unique values are temporarily viable to cause the duplicate value byte to be used.
- Each unique value, not within the current 65535, will override a prior duplicate
- value in the 4096.  The round robin approach is taken, where upon reaching 4096,
- it cycles back to 1.
+ the provided table are finalized as duplicate values.  The table itself is
+ finalized as the `0th` value.  All later usages will cause the duplicate value
+ byte to be used, 61,440 and up.  The next 4096 unique values are temporarily
+ viable to cause the duplicate value byte to be used.  Each unique value, not
+ within the current 65536, will override a prior duplicate value in the 4096.  A
+ round robin approach is taken, where upon reaching 4096, it cycles back to 1.
 
 **How can I find the size of a table?**
 
