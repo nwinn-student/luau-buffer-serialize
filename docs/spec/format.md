@@ -39,7 +39,7 @@ The first 61,440 unique values serialized are finalized as duplicate values.
  would be `UNIQUE_VALUE_POSITION - 1` where after each time a value is added, 
  `UNIQUE_VALUE_POSITION` is incremented, starting at 1.  Unique values immediately
  past 61,440 will continue as prior, however upon reaching the 65,536th unique value,
- the `UNIQUE_VALUE_POSITION` is reset to 61,440.  Such a pattern persists, and has drawbacks
+ the `UNIQUE_VALUE_POSITION` is reset to 61,441.  Such a pattern persists, and has drawbacks
  when backreferencing a unique value assumed to be stored as a duplicate value.
 
 **How can I find the size of a table?**
