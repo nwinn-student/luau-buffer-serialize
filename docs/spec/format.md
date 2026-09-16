@@ -33,15 +33,16 @@ Values are recorded and any duplicate is fast pathed to avoid re-serializing and
 
 **What are the limitations to the duplicate value byte?**
 
-The first noteworthy aspect is that the duplicate value byte can only occur after
- a table opener byte has been presented.  That is, duplicate values are not
- considered until the first table is serialized.  The first 61,439 values within
- the provided table are finalized as duplicate values.  The table itself is
- finalized as the `0th` value.  All later usages will cause the duplicate value
- byte to be used, 61,440 and up.  The next 4096 unique values are temporarily
- viable to cause the duplicate value byte to be used.  Each unique value, not
- within the current 65536, will override a prior duplicate value in the 4096.  A
- round robin approach is taken, where upon reaching 4096, it cycles back to 1.
+The first 61,440 unique values serialized are finalized as duplicate values.  
+ Each usage of an above value will result in the value stored in 3 bytes.  Since
+ bytes are `0`-indexed, the value stored alongside the duplicate value byte (`196`)
+ would be `UNIQUE_VALUE_POSITION - 1` where after each time a value is added, 
+ `UNIQUE_VALUE_POSITION` is incremented, starting at 1.  All later unique values
+ will cause the duplicate value byte to be assigned, 61,440 and up.  The next
+ 4096 unique values are temporarily viable to cause the duplicate value byte to be
+ used.  Each unique value, not within the current 65536, will override a prior
+ duplicate value in the 4096.  A round robin approach is taken, where upon
+ reaching 4096, it cycles back to 1.
 
 **How can I find the size of a table?**
 
