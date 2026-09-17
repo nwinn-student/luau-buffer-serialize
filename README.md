@@ -4,7 +4,8 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL_3.0-yellow.svg)](https://opensource.org/licenses/GPL-3.0)
 
 > [!CAUTION]
-> Unstable format specification.  Do not use for stored data (yet).
+> Unstable format specification, see [tips](./docs/tips.md) for migration
+ suggestions for stored data.
 
 ## Purpose
 
