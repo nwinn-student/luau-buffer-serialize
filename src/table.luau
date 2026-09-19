@@ -88,16 +88,14 @@ function tabSerializer(value: { [any]: any }, buf: buffer, pos: number)
 			existingIndex += 1
 			return
 		end
-		-- TODO: Verify validity w/ larger datasets
-		-- 4096 values we cache in a cycle
 		if roundRobinLength == 4096 then
 			if roundRobinIndex == 65_536 then
 				roundRobinIndex = 61_440
 			end
 			-- Cycle time
-			existing[roundRobinCache[roundRobinIndex - 61_439]] = nil
 			existing[data] = roundRobinIndex
-			roundRobinCache[roundRobinIndex] = data
+			existing[roundRobinCache[roundRobinIndex - 61_439]] = nil
+			roundRobinCache[roundRobinIndex - 61_439] = data
 			roundRobinIndex += 1
 			return
 		end
@@ -292,7 +290,6 @@ function tabDeserializer(buf: buffer, pos: number)
 			existingIndex += 1
 			return
 		end
-		-- TODO: roundRobin stuff
 		if roundRobinIndex == 65_536 then
 			roundRobinIndex = 61_440
 		end

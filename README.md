@@ -4,11 +4,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL_3.0-yellow.svg)](https://opensource.org/licenses/GPL-3.0)
 
 > [!CAUTION]
-> Userdata support has been moved from the internal API into the external API.
-> The internal portion has changed, so breakage will occur for relevant cases.
-
-> [!CAUTION]
-> Pairs has been removed.  No data migration concerns.
+> Unstable format specification.  Do not use for stored data (yet).
 
 ## Purpose
 

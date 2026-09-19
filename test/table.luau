@@ -1,6 +1,7 @@
 --!strict
 -- Runs tests for ../src/table
 
+local bs = require("@BufferSerializer")
 local test = require("./test")
 
 local ZERO = 97
@@ -21,6 +22,36 @@ local empty_ref = {}
 empty_ref[1] = {}
 empty_ref[2] = empty_ref[1]
 
+local fullExisting = {}
+for i = 1, 65535 do
+	fullExisting[i] = string.format("%-5i", i) -- force entry into existing
+end
+fullExisting[65536] = fullExisting
+for i = 65537, 65535 + 65536 do
+	fullExisting[i] = fullExisting[i - 65536]
+end
+
+local overflowExisting = {}
+for i = 1, 65536 do
+	overflowExisting[i] = string.format("%-5i", i) -- force entry into existing
+end
+overflowExisting[65537] = overflowExisting[61440]
+
+local overflowExistingUnder = table.clone(overflowExisting)
+overflowExistingUnder[65537] = overflowExistingUnder[61439]
+
+local overflowExistingOver = table.clone(overflowExisting)
+overflowExistingOver[65537] = overflowExistingOver[61441]
+
+local doubleFullExisting = table.clone(fullExisting)
+doubleFullExisting[65536] = doubleFullExisting
+for i = 65536 + 65536, 65536 + 65536 + 4096 do
+	doubleFullExisting[i] = string.format("%-5i", i - 65536)
+end
+for i = 65536 + 65536 + 4097, 65536 + 65536 + 4097 + 4096 do
+	doubleFullExisting[i] = doubleFullExisting[i - 4096]
+end
+
 -- Check that table.luau works properly
 test.compare(test.newBuffer(EMPTY), test.inspect({}))
 test.compare(
@@ -38,6 +69,40 @@ test.compare(
 	test.newBuffer(ARRAY, EMPTY, EXIST, 1, 0, TABLEEND),
 	test.inspect(empty_ref)
 )
+
+-- flaws cause output to be flooded
+local fullExistingBuffer = bs.serialize(fullExisting)
+test.compare(fullExisting, bs.deserialize(fullExistingBuffer))
+test.compare(
+	EXIST,
+	buffer.readu8(fullExistingBuffer, buffer.len(fullExistingBuffer) - 4)
+)
+local overflowExistingBuffer = bs.serialize(overflowExisting)
+test.compare(overflowExisting, bs.deserialize(overflowExistingBuffer))
+test.compare(
+	17, -- string 5, fails to save this as existing
+	buffer.readu8(overflowExistingBuffer, buffer.len(overflowExistingBuffer) - 7)
+)
+local overflowExistingUnderBuffer = bs.serialize(overflowExistingUnder)
+test.compare(overflowExistingUnder, bs.deserialize(overflowExistingUnderBuffer))
+test.compare(
+	EXIST,
+	buffer.readu8(
+		overflowExistingUnderBuffer,
+		buffer.len(overflowExistingUnderBuffer) - 4
+	)
+)
+local overflowExistingOverBuffer = bs.serialize(overflowExistingOver)
+test.compare(overflowExistingOver, bs.deserialize(overflowExistingOverBuffer))
+test.compare(
+	EXIST,
+	buffer.readu8(
+		overflowExistingOverBuffer,
+		buffer.len(overflowExistingOverBuffer) - 4
+	)
+)
+
+test.compare(doubleFullExisting, bs.deserialize(bs.serialize(doubleFullExisting)))
 
 -- error check
 local tabDeserialize = require("../src/table").deserialize
