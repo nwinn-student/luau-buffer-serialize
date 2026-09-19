@@ -33,7 +33,10 @@ Values are recorded and any duplicate is fast pathed to avoid re-serializing and
 
 **What are the limitations to the duplicate value byte?**
 
-The first 61,440 unique values serialized are finalized as duplicate values.  
+The first 61,440 unique values serialized are finalized as duplicate values, excluding 
+ `NaN` values or values that won't benefit from caching, values serializable in 1-2 bytes.  
+ Values that can contain reference to other values, such as tables or userdata are
+ always counted as unique values that can benefit from the duplicate value byte.
  Each usage of an above value will result in the above value stored in 3 bytes.  Since
  bytes are `0`-indexed, the value stored alongside the duplicate value byte (`196`)
  would be `UNIQUE_VALUE_POSITION - 1` where after each time a value is added, 
