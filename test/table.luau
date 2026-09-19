@@ -18,6 +18,10 @@ local TABLEEND = 200
 local recurse = {}
 recurse[1] = recurse
 
+local empty_ref = {}
+empty_ref[1] = {}
+empty_ref[2] = empty_ref[1]
+
 local fullExisting = {}
 for i = 1, 65535 do
 	fullExisting[i] = string.format("%-5i", i) -- force entry into existing
@@ -61,6 +65,10 @@ test.compare(
 	test.inspect({ "bbb", "bbb" })
 )
 test.compare(test.newBuffer(ARRAY, EXIST, 0, 0, TABLEEND), test.inspect(recurse))
+test.compare(
+	test.newBuffer(ARRAY, EMPTY, EXIST, 1, 0, TABLEEND),
+	test.inspect(empty_ref)
+)
 
 -- flaws cause output to be flooded
 local fullExistingBuffer = bs.serialize(fullExisting)
