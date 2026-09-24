@@ -40,3 +40,6 @@ For network data, or other data that is in-transit and does not require storing,
  into a cheaper form (using 3.).
    - Numbers can be compressed when precision is not important.  Ex: A random number (0-1) can be stored as a byte when we only care about nearest 0.005.
 
+## Using backwards references
+
+Backwards references are <!-- what they are -->.  <!-- What are their limitations -->.
