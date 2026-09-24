@@ -5,6 +5,17 @@ When migrating, the following steps are used.
 1. Pass the serialized data into the deserializer, retrieving the original data
 2. Pass the original data into the serializer for the desired format or version.
 
+For stored data:
+
+In order to know which deserializer to use, it is recommended to consistently store
+ the format's version outside of the data itself.  Failing to do so will result in
+ illformed data.  Storing the version inside the data itself fails to account for
+ incompatible data format changes.
+
+For network data, or other data that is in-transit and does not require storing,
+ there is no need to migrate between format versions.  Merely ensuring that both
+ ends use the same format version is enough.
+
 ## Reducing output size
 
 1. Reformat the dataset to produce a minimal output size in
