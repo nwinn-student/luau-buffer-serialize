@@ -1,3 +1,118 @@
+Definitions:
+
+- All sets are made up of "\N" characters, where `N` is a number between 0 and 255, including both ends, `ANY`.
+- `|` is a union of the two sets
+- `..` is a concatenation of the two sets
+- Whitespace has no meaning.
+- `&` is an intersection of the two sets
+- `~` is a negation of the set
+- `+` is one or more repetitions of the set
+- `[a-b]` is a set of all bytes between the two specified bytes, including both `a` and `b`.
+- `a{N}` where `N` is a number represents `N` repetitions of set `a`
+- `(a)` allows for order of operations, first priority
+- `$NAME` is an `ANY` variable where `NAME` is `[a-zA-Z]+`, and can be narrowed using operations.
+ `NAME` can be used in the same scope, or definition origin, as a number representing the byte at the specified location, or the byte itself.
+ Redefinitions (`$NAME`) do not change the value of prior usages of `NAME`.
+
+- An intersection of a set with one or more repetitions (+) and a limited repetition set result in the a set with strings of length specified by the limited repetitions
+
+Regular Expression Form:
+
+What format is capable of being deserialized.
+
+```terminaloutput
+FORMAT = ANY_TYPE
+ANY_TYPE = NIL | BOOLEAN | BUFFER | STRING | NUMBER | VECTOR | TABLE | USERDATA
+
+NIL = "\0"
+
+BOOLEAN = TRUE | FALSE
+TRUE = "\1"
+FALSE = "\2"
+
+ANY = ["\0"-"\255"]
+
+BUFFER = EMPTY_BUFFER
+      | (BUFFER_BYTE_SIZE .. $BYTE .. ANY{BYTE})
+      | (BUFFER_CHAR_SIZE .. $BYTE .. $CHAR .. ANY{CHAR * 2^8 + BYTE})
+      | (BUFFER_TRYTE_SIZE .. $BYTE .. $CHAR .. $TRYTE .. ANY{TRYTE * 2^16 + CHAR * 2^8 + BYTE})
+      | (BUFFER_INT_SIZE .. $BYTE .. $CHAR .. $TRYTE .. $INT .. ANY{INT * 2^24 + TRYTE * 2^16 + CHAR * 2^8 + BYTE})
+EMPTY_BUFFER = "\3"
+BUFFER_BYTE_SIZE = "\4"
+BUFFER_CHAR_SIZE = "\5"
+BUFFER_TRYTE_SIZE = "\6"
+BUFFER_INT_SIZE = "\7"
+
+STRING = EMPTY_STRING
+      | (STRING_BYTE_SIZE .. $BYTE .. ANY{BYTE})
+      | (STRING_CHAR_SIZE .. $BYTE .. $CHAR .. ANY{CHAR * 2^8 + BYTE})
+      | (STRING_TRYTE_SIZE .. $BYTE .. $CHAR .. $TRYTE .. ANY{TRYTE * 2^16 + CHAR * 2^8 + BYTE})
+      | (STRING_INT_SIZE .. $BYTE .. $CHAR .. $TRYTE .. $INT .. ANY{INT * 2^24 + TRYTE * 2^16 + CHAR * 2^8 + BYTE})
+      | (($SIZE & SHORT_STRING) .. ANY{SIZE - 13})
+EMPTY_STRING = "\8"
+STRING_BYTE_SIZE = "\9"
+STRING_CHAR_SIZE = "\10"
+STRING_TRYTE_SIZE = "\11"
+STRING_INT_SIZE = "\12"
+SHORT_STRING = ["\13"-"\27"]
+
+NUMBER = NUMBER_CONSTANTS
+      | (BYTE .. ANY)
+      | (CHAR .. ANY{2})
+      | (TRYTE .. ANY{3})
+      | (INT .. ANY{4})
+      | (FLOAT .. ANY{4})
+      | (DOUBLE .. ANY{8})
+NUMBER_CONSTANTS = ZERO | ONE | NAN
+ZERO = "\97"
+ONE = "\98"
+BYTE = "\99"
+CHAR = "\100"
+TRYTE = "\101"
+INT = "\102"
+FLOAT = "\103"
+DOUBLE = "\104"
+NAN = "\105"
+
+VECTOR = VECTOR_CONSTANTS
+      | (VECTOR_BYTE .. ANY{3})
+      | (VECTOR_CHAR .. ANY{6})
+      | (VECTOR_TRYTE .. ANY{9})
+      | (VECTOR_FLOAT .. ANY{12})
+      | (VECTOR_NUMBER .. NUMBER{3})
+      | (VECTOR_SCALAR .. VECTOR_CONSTANTS .. NUMBER)
+VECTOR_CONSTANTS = ["\142"-"\149"]
+VECTOR_BYTE = "\150"
+VECTOR_CHAR = "\151"
+VECTOR_TRYTE = "\152"
+VECTOR_FLOAT = "\153"
+VECTOR_NUMBER = "\154"
+VECTOR_SCALAR = "\155"
+
+TABLE = EMPTY_TABLE
+     | (DICT .. (KEY .. VALUE)+ .. TABLEEND)
+     | (ARRAY .. ARRAY_VALUE+ .. TABLEEND)
+     | (TABLESTART .. ARRAY_VALUE+ .. ARRAYEND .. (KEY .. VALUE)+ .. TABLEEND)
+ARRAY_VALUE = VALUE & NIL
+VALUE = ANY_TYPE & ~NIL & EXISTING_SEQUENCE
+KEY = ANY_TYPE & ~INVALID_KEY & EXISTING_SEQUENCE
+INVALID_KEY = NIL | NAN
+      | (VECTOR_NUMBER .. (NUMBER{3} & NAN+))
+      | (VECTOR_SCALAR .. VECTOR_CONSTANTS .. NAN)
+EXISTING_SEQUENCE = EXISTING .. ANY{2}
+EMPTY_TABLE = "\194"
+TABLESTART = "\195"
+EXISTING = "\196"
+DICT = "\197"
+ARRAY = "\198"
+ARRAYEND = "\199"
+TABLEEND = "\200"
+
+USERDATA = UNSUPPORTED | CUSTOM .. ANY+
+CUSTOM = "\202"
+UNSUPPORTED = "\203"
+```
+
 ### Supported Types
 
 `nil`, `boolean`, `buffer`, `string`, `number`, `vector`, `table`, `userdata`
